@@ -3095,6 +3095,8 @@ their build or execution shape cannot be combined.</p>
 <li><strong><code>picologging</code></strong> — a C-accelerated, drop-in-compatible reimplementation of the standard library
     logging module. Faster, same API.</li>
 <li><strong><code>logging</code></strong> — the standard library logging module. No extra dependency.</li>
+<li><strong><code>cicd_extras</code></strong> (bool; default yes) — Include the optional project infrastructure extras? If no,
+  the render stays minimal: no .devcontainer, .vscode, .envrc, renovate.json,…</li>
 </ul>
 <h3 id="use_recommended_web_api"><code>use_recommended_web_api</code><a class="headerlink" href="#use_recommended_web_api" title="Permanent link">&para;</a></h3>
 <p>Use the recommended web API stack? Recommended: a FastAPI app in a top-level <code>app/</code> package (no library <pkg>): async SQLAlchemy 2.0 + Alembic + Postgres, a demo CRUD router, request-id logging (asgi-correlation-id), a BackgroundTasks example, and /health + /docs endpoints.</p>

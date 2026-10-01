@@ -2537,6 +2537,10 @@ exit 2 instead of silently checking nothing.</p>
 <td><code>toml</code></td>
 <td><code>[{path, key, equals}]</code> — dotted-key lookup (integer segments index lists).</td>
 </tr>
+<tr>
+<td><code>agents_md</code></td>
+<td><code>[{present: [registry-id], absent: [registry-id]}]</code> — the generated AGENTS.md must carry/not carry the ethics appendix section; ids resolve to section titles through <code>_shared/ethics/REGISTRY.yml</code>.</td>
+</tr>
 </tbody>
 </table>
 <p><code>expect</code> and <code>commands</code> are judged against the state <em>after</em> <code>update</code>, if

@@ -1340,6 +1340,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#market-triggered-rules-the-regions-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Market-triggered rules: the regions table
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#keeping-sections-alive" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2395,6 +2406,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#market-triggered-rules-the-regions-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Market-triggered rules: the regions table
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#keeping-sections-alive" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2477,46 +2499,19 @@ any render — a "bad" example is bad semantically, not stylistically).</p>
 distribution condition, or one section needing a distinct code/test gate
 (enforcement L2). A promotion changes generated renders, so it wires the
 verification stack as it goes — each step below has a check that catches
-its omission.</p>
-<table>
-<thead>
-<tr>
-<th>#</th>
-<th>Touchpoint</th>
-<th>What catches the omission</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>Registry row: bump <code>version</code>, set <code>status: active</code>, name the parent(s) in <code>rendered_from</code> (usually <code>template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja</code>)</td>
-<td><code>test_ethics_registry.py</code>: a distributed row must name parents that actually reference the file</td>
-</tr>
-<tr>
-<td>2</td>
-<td>The include, on one line, in the parent's include chain, gated on existing answers (never a new question)</td>
-<td>the <code>ethics-appendix</code> predicate in <code>tests/test_render_invariants.py</code> — it fails a leaf missing the section <em>and</em> a leaf shipping it uninvited</td>
-</tr>
-<tr>
-<td>3</td>
-<td>The same gate as a named trait helper + an <code>ETHICS_SECTIONS</code> entry (h1 marker + selector)</td>
-<td>the docstring rule in that file: one spelling per trait, no inline disjunctions to drift</td>
-</tr>
-<tr>
-<td>4</td>
-<td><code>tests/matrix/invariants.yml</code>: content pairs <code>[AGENTS.md, "&lt;h1 marker&gt;"]</code> on every row whose leaves select the section</td>
-<td>those rows' leaves fail the content predicate</td>
-</tr>
-<tr>
-<td>5</td>
-<td><code>task witness</code> + the fast tier</td>
-<td>the ledger freshness and content checks</td>
-</tr>
-</tbody>
-</table>
+| # | Touchpoint | What catches the omission |
+| --- | --- | --- |
+| 1 | Registry row: bump <code>version</code>, set <code>status: active</code>, name the parent(s) in <code>rendered_from</code>, and write the <code>gate</code> expression (the single spelling of "which leaf carries this section") | <code>test_ethics_registry.py</code>: a distributed row must name parents and carry a gate; its gate must parse under the allowlisted evaluator and name only leaf-context flags |
+| 2 | <code>uv run python tools/gen_ethics_appendix.py</code> — regenerate <code>_shared/ethics-appendix.jinja</code> from the registry | <code>test_the_generated_appendix_matches_the_registry</code> — a stale committed file fails |
+| 3 | The generated include lands in the AGENTS.md appendix automatically — there is no hand-written chain left to edit | the <code>ethics-appendix</code> predicate in <code>tests/test_render_invariants.py</code> evaluates the same gate string per leaf and fails a leaf missing the section <em>or</em> shipping it uninvited |
+| 4 | <code>tests/matrix/invariants.yml</code>: name the <code>ethics-appendix</code> predicate on every row whose leaves select the section (content pairs for section markers are gone — the predicate is the pin) | the predicate registry fails a named row without it |
+| 5 | <code>task witness</code> + the fast tier | the ledger freshness and content checks |</p>
 <p>The audience in the registry row is the human-readable word for the gate
 (<code>iot</code> may map to <code>micropython</code>, as <code>baseline-pki-chain</code> does); the gate
-and the selector spell the mapping, the row keeps the word.</p>
+spells the mapping, the row keeps the word. A draft row may carry its
+intended <code>gate</code> at registration time — it is linted (safe AST) but not
+bound-checked until activation, so a promotion is a status flip plus the
+answer wiring the gate already names.</p>
 <h2 id="enforcement-levels">Enforcement levels<a class="headerlink" href="#enforcement-levels" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2581,6 +2576,23 @@ the data in <code>_shared/ethics/lang/&lt;name&gt;.yml</code> — see
 serves (<code>serves:</code>), matches its <code>review_by</code>, carries primary sources per
 row, and the section references it back; a guard in
 <code>tests/test_ethics_registry.py</code> holds the two together.</p>
+<h2 id="market-triggered-rules-the-regions-table">Market-triggered rules: the regions table<a class="headerlink" href="#market-triggered-rules-the-regions-table" title="Permanent link">&para;</a></h2>
+<p>Some rules have no questionnaire channel at all: whether Japan's
+third-party-transmission disclosure duty or the EU Accessibility Act
+applies depends on the markets a project ships to, and a
+<code>target_markets</code> question would add a leaf-space dimension for two
+sections. Those rules do not promote into the AGENTS.md appendix;
+instead the generated project ships <code>ethics/regions.yml</code> (web_api
+renders only — both current rules are frontend/UI duties), a per-rule
+summary table whose <code>serves:</code> entries point back at the registry draft
+the rule abbreviates. The AGENTS.md appendix links to the file rather
+than including the sections, so the draft isolation the registry test
+enforces stays intact.</p>
+<p>A <code>serves:</code> line in <code>regions.yml</code> is the one permitted reference to a
+draft section from a <code>template/</code> file — it names the file for the
+reader without distributing its body. A rule graduates out of the
+table the same way any draft does: three sections sharing one
+distribution condition, or one needing its own gate.</p>
 <h2 id="keeping-sections-alive">Keeping sections alive<a class="headerlink" href="#keeping-sections-alive" title="Permanent link">&para;</a></h2>
 <p>Every row's <code>review_by</code> is the date its 制度変更ウォッチ items must be
 re-checked by. A passed date fails the registry test, so CI reddens
