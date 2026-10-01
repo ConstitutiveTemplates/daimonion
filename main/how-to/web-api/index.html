@@ -2512,6 +2512,12 @@ scaffold.</p>
 <li><strong>Background task queues</strong> (taskiq / arq / Celery + Redis). The scaffold
   demonstrates FastAPI's built-in <code>BackgroundTasks</code> (no extra dependency, runs
   in-process after the response). Outgrow it → add a real queue.</li>
+<li><strong>Serverless deployment</strong> (AWS Lambda / Cloud Functions). The <code>aws</code>
+  answer adds boto3 and the service-specific dependencies, nothing more —
+  no Lambda handler, no function memory/timeout settings, no SAM/CDK
+  template. FastAPI's ASGI app is not a Lambda function handler; add an
+  adapter (e.g. Mangum) and a deployment definition when you actually want
+  serverless.</li>
 <li><strong>Caching</strong> (Redis / memcached), <strong>gunicorn</strong> (uvicorn is fine for most
   deployments; put gunicorn in front only when you need process management),
   <strong>GraphQL</strong>, <strong>Kafka / RabbitMQ</strong>, <strong>self-hosted Swagger</strong> (FastAPI serves

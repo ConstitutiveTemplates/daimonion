@@ -1153,6 +1153,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Notebooks: marimo or Jupyter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-a-notebook-in-colab" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Running a notebook in Colab
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2370,6 +2387,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Notebooks: marimo or Jupyter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-a-notebook-in-colab" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Running a notebook in Colab
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2482,6 +2516,18 @@ bottom with no hidden state, and the generated lint/<code>type-check</code> appl
 to them like any other source. Keep scratch work in <code>notebooks/</code>; the
 moment a cell is worth keeping, promote it into <code>src/</code> (with a test) and
 call it from the notebook.</p>
+<h3 id="running-a-notebook-in-colab">Running a notebook in Colab<a class="headerlink" href="#running-a-notebook-in-colab" title="Permanent link">&para;</a></h3>
+<p>The project's environment is <code>uv</code>-managed; a notebook opened in Google
+Colab has no such environment, so the project's dependencies are not on
+the path. Install them into the Colab runtime first:</p>
+<div class="highlight"><pre><span></span><code><span class="o">%</span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
+</code></pre></div>
+<p>(the build backend is <code>setuptools-scm</code>, so the editable install is the
+same version the CI builds). GPU-heavy stacks: the project does not
+pin CPU vs CUDA torch wheels — install the variant Colab's runtime
+expects before the editable install if <code>torch</code> is a dependency. Data and
+notebooks are already on disk; keep edits to <code>notebooks/</code> so the rest of
+the workspace stays clean.</p>
 <h2 id="sharing-data-out-the-de-identification-gate">Sharing data out: the de-identification gate<a class="headerlink" href="#sharing-data-out-the-de-identification-gate" title="Permanent link">&para;</a></h2>
 <p><code>data/sharing/</code> exists because "send someone the extract" is a decision,
 not a file copy. <code>data/DEIDENTIFICATION.md</code> is a one-page standard —
