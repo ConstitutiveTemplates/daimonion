@@ -617,9 +617,10 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
 
 - [ ] renovate の digest 更新を確認（SHA 固定済み参照の新バージョン追随は renovate の
       digest PR が担う。初回実行で pinning/digest PR が開くのを確認する）
-- [ ] example リポジトリ（kasi-x/python-copier-template-example）を copier update で
-      再生成し、test_example_repo_updates のパリティを通す
-      （main push で _example.yml が自動実行）
+- [x] example リポジトリを copier update で再生成し、test_example_repo_updates
+      のパリティを通す（main push で _example.yml が自動実行）
+      → **org 移行済み（2026-10-04）**: `ConstitutiveTemplates/foundry-example`
+      を新設、全参照を移行、初期 render 済み。旧 kasi-x 名の原文は当時の記録
 - [ ] リポジトリ公開後に Scorecard のスコア・バッジを確認（private では機能しない）
       → **公開後初回着地（2026-10-04）**: 定例 push で scorecard.yml 成功済み
       （Ecosystem スコアは scorecard.dev viewer/週次 run で追随）
