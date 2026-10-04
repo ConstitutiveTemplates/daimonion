@@ -24,9 +24,11 @@
 - [x] **NOTICE ファイル新設**: ✅ DiamondLightSource / python3-pip-skeleton /
       copier の系譜と Apache-2.0 を明記済み（2026-10-04）
 - [ ] **v1.0.0 リリース**: タグ打ち直し、リリースノート確認。
-- [ ] **Scorecard 初回計測 + Branch Protection 再設定**:
-      署名コミット・リニア履歴・CI 必須チェック。
-      Secrets（`EXAMPLE_DEPLOY_KEY`, `PYPI_API_TOKEN`）の再設定。
+- [ ] **Secrets 再設定（3種）**: org 再作成で旧リポの secret が消滅。
+      `GITLEAKS_LICENSE`（なしだと hygiene の gitleaks がエラー死・2026-10-04
+      実測）、`EXAMPLE_DEPLOY_KEY`（example 連携の deploy key。
+      org リポは設定で deploy key 無効のため _example.yml の publish 経路を
+      見直す必要あり）、`PYPI_API_TOKEN`。
 - [x] **`uvx --from git+...` の実ネットワーク検証**: ✅ 2026-10-04。
       `uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git
       foundry new . --preset bare` が clone→cache→render（61 files）まで
