@@ -11,6 +11,7 @@ ready-to-file patches live in `notes/upstream-drafts/patches/` (see
 | `notes/.../unsafe-refusal-message-and-exit-codes.patch`      | `errors.py`, `docs/faq.md`, `tests/test_unsafe.py` | Ready (frozen) |
 | `notes/.../answers-file-error-hint.patch`                    | `errors.py`, `tests/test_cli.py`             | Ready (frozen) |
 | `cli-missing-answers-batch.patch` (this directory, F3) | `copier/_main.py`, `tests/test_copy.py` | Implemented 2026-10-04 on `kasi-x/copier` branch `f3-missing-batch` (pushed, PR unfiled per AI_POLICY — file manually). Upstream tests green: `test_copy` + `test_cli` + `test_config` + `test_answersfile` (323 passed). |
+| `vcs-stale-tag-warning.patch` (this directory, F5) | `copier/_vcs.py`, `_template.py`, `errors.py`, `tests/test_vcs.py` | Implemented 2026-10-05 on `kasi-x/copier` branch `f5-stale-tag-warning` (pushed, PR unfiled per AI_POLICY). Emits `StaleTagWarning` on the implicit latest-tag resolution when the tag is behind the default branch; silent on explicit `--vcs-ref`. Tests: `test_vcs` + `test_copy` green (229+205). |
 
 ## Naming
 
