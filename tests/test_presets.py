@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:  # tests/test_cli.py does the same to reach tools/
@@ -100,3 +101,19 @@ def test_every_preset_has_a_sentinel():
     """A preset without a sentinel would fail in the parametrized test only
     after a render; this pins the maps to the preset list up front."""
     assert set(SENTINEL_PATH) | set(SENTINEL_README) == set(PRESETS)
+
+
+def test_every_preset_is_named_in_project_type_help():
+    """The project_type help text advertises presets to interactive users
+    (copier.yml `help:` -- see notes/DESIGN-preset-guidance.md decision A).
+    A preset added without updating the pointer would silently ship an
+    invisible preset; this pins the advertisement to the preset list."""
+    from tools import when_model
+
+    questions, _ = when_model.load_questions()
+    help_text = questions["project_type"]["help"]
+    for preset in PRESETS:
+        assert preset in help_text, (
+            f"preset {preset!r} is not named in copier.yml's project_type help -- "
+            "either add it to the preset pointer or drop the preset"
+        )

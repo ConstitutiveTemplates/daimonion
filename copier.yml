@@ -40,6 +40,13 @@ project_type:
           rp2, ...). Deployed with mpremote; the CPython dev toolchain
           (uv/ruff/pytest/basedpyright) coexists for testing and type-checking
           against micropython-<port>-stubs.
+
+        Many of these configurations ship as ready-made presets
+        (presets/: bare, cli, data-science, library, mcp-server,
+        micropython, online-judge-atcoder, online-judge-codeforces,
+        online-judge-kattis, ros2, web-api). For a non-interactive run,
+        use `foundry new <name> --preset <preset>` instead of answering
+        here.
     choices:
         - library
         - web_api
