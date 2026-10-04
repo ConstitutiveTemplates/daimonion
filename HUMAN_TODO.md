@@ -58,16 +58,22 @@
       文面素案は `notes/outreach/awesome-list-entries.md` に起票済み。
 - [ ] **ニュースレター推薦**: Python Weekly / PyCoder's Weekly の
       推薦フォーム、Python Bytes へのトピック提案。
+      **文面素案は `notes/outreach/newsletter-pitches.md` に起票済み**
+      （~50語 / ~30語 / Python Bytes セグメント文の3形態 + 各フォーム URL）。
 - [x] **移行ガイド**: ✅ `docs/how-to/migrate-from-hypermodern.md` 新設済み
       （2026-10-04。toolchain 対比表 + fresh/adopt 2 経路 + 実在の gap 列挙。
       zensical.toml nav 登録済み）
 - [ ] **`cookiecutter-hypermodern-python` の代替探しスレッドへ案内**:
       敬意を払い中立な形で後継として言及（元作者のスレッドは慎重に）。
+      **返信草案は `notes/outreach/hypermodern-thread-reply.md` に起票済み**
+      （中立文案 + 投稿前チェックリスト付き）。
 
 ## Phase 4: コミュニティ定着（継続）
 
 - [ ] **demo GIF 作成**: `vhs` (Charmbracelet) で15秒 — 生成→`task check`
       通過→`AGENTS.md` 配備。README ヘッダへ埋め込み。
+      **tape ファイルは `notes/outreach/demo.tape` に起票済み**
+      （vhs 未導入のため生成自体は人間）。
 - [ ] **Showcase 開設**: 自分のプロジェクトを本テンプレートで生成し
       「採用例」を README/Docs に掲載。`built with` バッジの配布。
 - [x] **`good first issue` シード**: ✅ 5 件起票済み（#4 preset 追加、#5
