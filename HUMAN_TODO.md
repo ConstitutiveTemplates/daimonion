@@ -26,9 +26,11 @@
 - [ ] **Scorecard 初回計測 + Branch Protection 再設定**:
       署名コミット・リニア履歴・CI 必須チェック。
       Secrets（`EXAMPLE_DEPLOY_KEY`, `PYPI_API_TOKEN`）の再設定。
-- [ ] **`uvx --from git+...` の実ネットワーク検証**:
-      push 後に実コマンドで一度実行し、clone→cache→render が通ることを確認
-      （file:// remote での代替検証は済）。
+- [x] **`uvx --from git+...` の実ネットワーク検証**: ✅ 2026-10-04。
+      `uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git
+      foundry new . --preset bare` が clone→cache→render（61 files）まで
+      完走（cold cache、実 GitHub 経由）。tag 6.1.0 が最新 questionnaire を
+      持たないため ref は main にフォールバック（v1.0.0 タグで解消）
 - [ ] **PyPI 公開判断**: `uvx foundry`（git+ URL なし）に
       するかどうか。公開するなら `_pypi.yml` の有効化・トークン設定。
 
