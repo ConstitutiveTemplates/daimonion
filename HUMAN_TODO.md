@@ -77,7 +77,7 @@
 
 ## Phase 1 補遺（判断待ち）
 
-- [ ] **質問票第1問のプリセット案内**: 「推奨プリセットから選ぶ」導線を
-      questionnaire に追加するか — `notes/DESIGN-preset-guidance.md` に
-      選択肢（help 追記 / 疑似質問 / docs のみ）と blast radius を整理済み。
-      推奨は `project_type.help` への導線追記（leaf 空間非接触）
+- [x] **質問票第1問のプリセット案内**: ✅ 採用（A: help 追記、2026-10-05）。
+      `project_type.help` に全 12 プリセット名を列挙する導線を追加 +
+      `test_every_preset_is_named_in_project_type_help` でプリセット名↔help
+      の一致を機械化（新プリセットで help 未更新なら失敗）。leaf 空間非接触。
