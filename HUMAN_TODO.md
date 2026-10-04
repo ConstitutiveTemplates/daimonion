@@ -40,11 +40,15 @@
 ## Phase 3: 対外発信（ローンチ後 2〜4週間）
 
 - [ ] **3大技術記事の執筆・公開**（PLAN §3 ステップ1 に構成案あり）:
+  下書き 3 本は `notes/outreach/` に起票済み（DRAFT ヘッダ付き。
+  葉数は現行 272 に同期済み。公開・最終編集は人間）:
   - [ ] EN: "Why we used an SMT solver (Z3) to verify 272 question
         combinations" → Show HN + r/Python（PST 火/水 7-8時）
+        `notes/outreach/show-hn-z3-verified-template.md`
   - [ ] EN: "Continuous Drift Detection: 5 failure dimensions" →
-        r/programming / DevOps 系
+        r/programming / DevOps 系 `notes/outreach/drift-detection-article.md`
   - [ ] JA: 『272通りを Z3 で形式検証した話』→ Zenn/Qiita
+        `notes/outreach/zenn-z3-template.md`
 - [ ] **Awesome リスト PR**: `vinta/awesome-python`（Project Templates）、
       `copier-org/awesome-copier`。Astral Discord `#showcase` への投稿。
 - [ ] **ニュースレター推薦**: Python Weekly / PyCoder's Weekly の
