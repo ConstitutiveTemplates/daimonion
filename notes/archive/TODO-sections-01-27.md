@@ -785,6 +785,12 @@ Strategy.md ①②③④ は commit a82f9a46 で実装済み。当日の push �
       → リポジトリを新規作成（public）+ 現 HEAD から生成して初期 push +
       書き込み可能 deploy key を登録 + `EXAMPLE_DEPLOY_KEY` secret を設定。
       テストがローカルで pass することまで確認済み
+      → **再発（2026-10-04、org 移行時）**: `ConstitutiveTemplates/foundry-example`
+      を新設し `_example.yml`・example-answers・README・example テストを移行、
+      初期 render を force-push 済み。ただし **org リポは設定で deploy key が
+      無効** のため `_example.yml` の `peaceiris/actions-gh-pages` publish 経路が
+      `Permission denied (publickey)` で失敗中 — HUMAN_TODO Secrets 項に記録、
+      publish 経路の見直し（GITHUB_TOKEN 方式等）が人間判断待ち
 - [x] test 失敗②（テンプレートバグ）: CI の `_test.yml` は Postgres サービスなしの
       組み合わせで**空文字の `DATABASE_URL` を export する**ため、生成 web_api の
       `settings.py` が空 URL を既定値の代わりに採用し `test_app.py` の import が
