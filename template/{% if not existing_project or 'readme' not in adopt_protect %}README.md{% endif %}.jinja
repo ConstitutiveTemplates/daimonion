@@ -534,6 +534,11 @@ code, so if a helper needs a third-party import, add it to
 otherwise `deptry` flags it. Rename or extend the stub set via the
 structured `src_dirs` answer (`.copier-answers.yml`, picked up by
 `copier recopy --overwrite`).
+
+`notebooks/` ships a marimo seed (`notebooks/explore.py`); open it with the
+`marimo` task. Jupyter Lab is also available via the `notebook` task —
+both come from the `experiment` extra (`uv sync --extra experiment` /
+`pixi run -e experiment`).
 {% endif %}
 {% if mcp_effective %}
 The project also ships an [MCP](https://modelcontextprotocol.io) server with

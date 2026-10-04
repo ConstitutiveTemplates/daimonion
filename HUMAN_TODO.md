@@ -66,9 +66,10 @@
       #8 codex セクション草案 — すべて leaf 空間非接触）
 - [ ] **Issue/PR 初動体制**: 24h 以内応答、`CONTRIBUTORS.md` 記載で
       リテンション。
-- [x] **marimo 統合の判断**: ✅ 実装済みであることが判明（experiment extra +
-      `task marimo` + docs/how-to/data-science.md。TODO.md §37.3 の記述は
-      「新規統合」だったが現状は既存レイヤー）
+- [x] **marimo 統合の判断**: ✅ 実装済み + 本セッションで 3 件のギャップを修正
+      （data_science の notebooks/ に marimo seed 追加、`notebook` task が
+      必要とする jupyterlab を experiment extra へ、per-file-ignores を
+      kaggle 専用から `**/notebook*/**` へ一般化 — 2026-10-04）
 
 ## Phase 1 補遺（判断待ち）
 

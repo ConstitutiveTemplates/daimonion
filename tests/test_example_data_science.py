@@ -77,6 +77,8 @@ def test_template_data_science_layout(tmp_path: Path):
     copy_project(tmp_path, project_type="data_science")
     # Standard DS layout
     assert (tmp_path / "notebooks").is_dir()
+    # marimo seed notebook + the jupyterlab dep the `notebook` task needs
+    assert (tmp_path / "notebooks" / "explore.py").exists()
     for d in ["external", "interim", "processed", "raw"]:
         assert (tmp_path / "data" / d).is_dir(), f"missing data/{d}"
     assert (tmp_path / "models").is_dir()

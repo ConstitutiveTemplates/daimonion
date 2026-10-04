@@ -272,7 +272,7 @@ suppress-none-returning = false
     "E501",   # line-too-long  CONTEXT: test_qa.py の assert メッセージ
     "PLR0912",# too-many-branches  CONTEXT: test_qa.py の依存宣言チェックは複数分岐が自然
 ]
-{# CTF / scraping / kaggle lint bodies are shared (see _shared/pyproject-*-lint.toml.jinja). #}{% include "_shared/pyproject-ctf-lint.toml.jinja" %}{% include "_shared/pyproject-scraping-lint.toml.jinja" %}{% include "_shared/pyproject-kaggle-lint.toml.jinja" -%}
+{# CTF / scraping / analysis lint bodies are shared (see _shared/pyproject-*-lint.toml.jinja). #}{% include "_shared/pyproject-ctf-lint.toml.jinja" %}{% include "_shared/pyproject-scraping-lint.toml.jinja" %}{% include "_shared/pyproject-analysis-lint.toml.jinja" -%}
 {% if micropython_pkg %}"firmware/main.py" = [
     "PLC0415", # import-outside-top-level  CONTEXT: machine は unix/windows ポートに
                #   存在しないため、実機（LED 有り）の時だけ遅延 import する。

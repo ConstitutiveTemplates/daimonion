@@ -1000,10 +1000,15 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 - **`presets/mcp-server.yml` の新設**:
   - `project_type: cli`, `include_mcp: true`, `mcp_transport: stdio`, `use_recommended_security: true` 等の構成。
   - `tests/test_presets.py` に `test_preset_renders[mcp-server]` を追加し、sentinel ファイルをアサート。
-- **`marimo` ノートブックの統合**: → **既存レイヤーと判明（2026-10-04）**。
-  `data_science` の `experiment` extra に marimo 同梱済み（`pyproject-deps`
-  macro、`deptry` 許可リスト、`task marimo`＝`_tasks.jinja`、
-  `docs/how-to/data-science.md`「Notebooks: marimo or Jupyter」）。新規作業なし。
+- **`marimo` ノートブックの統合**: → **既存レイヤー + ギャップ 3 件を修正済み
+  （2026-10-04）**。`data_science` の `experiment` extra に marimo 同梱済み
+  だったが、(1) `notebooks/` に seed が無かった → `notebooks/explore.py` を
+  追加（kaggle の `src/notebook/explore.py` に倣い data/raw 起点の
+  polars 探索）、(2) `notebook` task の `jupyter lab` に必要な `jupyterlab`
+  が experiment extra に無かった → `EXPERIMENT_PAIRS` と deptry DEP002
+  許可リストに追加、(3) per-file-ignores が kaggle の
+  `src/notebook/explore.py` 一点張りだった → `_shared/pyproject-analysis-lint`
+  （旧 kaggle-lint）に一般化し `**/notebook{,s}/**` に適用。
 
 ---
 
