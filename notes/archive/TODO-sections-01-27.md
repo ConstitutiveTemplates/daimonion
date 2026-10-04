@@ -1385,7 +1385,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
         `test_every_runner_switch_handles_every_task_runner_choice`（fast）が
         3 workflow の switch を questionnaire の全 choice + pixi と照合し、
         loud-fail が残っていることも検査する
-- [ ] **未検証の組合せ・経路を埋める**
+- [x] **未検証の組合せ・経路を埋める**（2026-10-04 棚卸し → `notes/DESIGN-ci-coverage.md`）
       - テンプレ本体 CI は 3.11 / ubuntu-latest のみ。生成 matrix（3.11-3.14）/
         windows-macos / pixi・poetry venv 経路は render のみ
       - `torch` 系 render（data_science / kaggle）を typecheck 除外のままにしない
