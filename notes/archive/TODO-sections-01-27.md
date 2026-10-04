@@ -617,13 +617,19 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
 
 - [ ] renovate の digest 更新を確認（SHA 固定済み参照の新バージョン追随は renovate の
       digest PR が担う。初回実行で pinning/digest PR が開くのを確認する）
+      → **初回確認済み（2026-10-04）**: renovate は生成物の renovate.json で
+      pin/digest 追従を担う設計（`test_renovate_baseline_matches_generated_template`
+      で固定）。ConstitutiveTemplates org への renovate app 連携自体は
+      人間判断のため HUMAN_TODO に残す
 - [x] example リポジトリを copier update で再生成し、test_example_repo_updates
       のパリティを通す（main push で _example.yml が自動実行）
       → **org 移行済み（2026-10-04）**: `ConstitutiveTemplates/foundry-example`
       を新設、全参照を移行、初期 render 済み。旧 kasi-x 名の原文は当時の記録
-- [ ] リポジトリ公開後に Scorecard のスコア・バッジを確認（private では機能しない）
-      → **公開後初回着地（2026-10-04）**: 定例 push で scorecard.yml 成功済み
-      （Ecosystem スコアは scorecard.dev viewer/週次 run で追随）
+- [x] リポジトリ公開後に Scorecard のスコア・バッジを確認（private では機能しない）
+      → **確認済み（2026-10-04）**: workflow 成功 + api.securityscorecards.dev で
+      総合 5.3。低いのは Branch-Protection(0) / Code-Review(0) / SAST(0) /
+      Maintained(0) — いずれも org 移転直後で PR 履歴・保護設定が未反映
+      （HUMAN_TODO の Branch Protection 再設定で解消見込み）
 
 ## 13. 質問票・テンプレートソースの保守性向上（2026-09）
 
@@ -1549,7 +1555,13 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
        （fork 作成・upstream 同期・`git apply --check` 検証。`bash -n` 済み）
       - 非目標の明記: upstream コードの vendoring なし（patch は quoted context のみ）、
         生成物への混入なし（`template/` 外のため `copier.yml` 除外不要）
-- [ ] **fork を作成し、F3（missing 一括報告）から着手する**
+- [x] **fork を作成し、F3（missing 一括報告）から着手する**（2026-10-04）
+      → **着地**: `kasi-x/copier` fork 上に `f3-missing-batch` ブランチを push 済み
+        （base upstream/master = 9.18.2 系）。`_ask` で missing を収集して一括
+        `UserMessageError` に変更、upstream tests（test_copy/test_cli/test_config/
+        test_answersfile = 323 passed）緑。patch は
+        `copier-fork/patches/cli-missing-answers-batch.patch` として保存、
+        `verify-patch.sh` で clean apply 確認済み。PR 投稿は下項どおり人間作業
       - `copier-fork/scripts/fork-setup.sh` で fork（先方慣例ブランチは `master`）。
         ベースラインは copier 9.18.1（本リポジトリ `.venv` 版）。以降は
         `sync-upstream.sh` で追従し、FEATURES.md の行番号参照を更新する
