@@ -8,7 +8,7 @@
 ## 0. 診断: 驚異的な技術的完成度と、普及におけるギャップ
 
 ### 0.1 本テンプレートの技術的資産
-- **SMT (Z3) による質問空間の形式検証**: 質問票の論理式（`when:`）を Z3 で充足可能性証明。デッドコードやタイポを数学的に排除し、234葉の証人空間を完全網羅。
+- **SMT (Z3) による質問空間の形式検証**: 質問票の論理式（`when:`）を Z3 で充足可能性証明。デッドコードやタイポを数学的に排除し、272葉の証人空間を完全網羅。
 - **5次元×4タイミングのMECEドリフト検知**: コード無変更でも経年劣化（ツールチェーン進化・依存更新・上流変化）で壊れる問題を、定期スケジュールCI等で自動検出。
 - **AIコーディングエージェント共創基盤（AGENTS.md）**: 各プロジェクト種別・ルールに即した `AGENTS.md`、倫理・法務レジストリ（EU CRA, SAMD, PKI, ライセンスドリフト）を動的コンパイル。
 - **エンタープライズ級のサプライチェーン保護**: 全 GitHub Actions の SHA 固定、zizmor 監査、OpenSSF Scorecard 高得点基準。
@@ -16,7 +16,7 @@
 
 ### 0.2 普及を妨げている「5つの壁」
 1. **フォーク属性とブランドの壁**: GitHub 上で `DiamondLightSource/python-copier-template` のフォーク表示。名称が一般名詞のまま（固有の存在として認知・言及されにくい）。
-2. **導入・試用体験の摩擦（UX）**: README の先頭が「リポジトリを `git clone` してローカルCLI実行」。高度な数理専門用語（SMT/Z3/234葉）が前面に出過ぎており、ライト層が「大げさすぎる」と離脱。
+2. **導入・試用体験の摩擦（UX）**: README の先頭が「リポジトリを `git clone` してローカルCLI実行」。高度な数理専門用語（SMT/Z3/272葉）が前面に出過ぎており、ライト層が「大げさすぎる」と離脱。
 3. **卓越した技術力の対外未発信**: Z3検証、ドリフト検知、AGENTS.md 等の独創的仕組みがリポジトリ内ドキュメントに埋没し、外部コミュニティ（Hacker News, Reddit, Zenn, Qiita）に届いていない。
 4. **既存導入（Adopt）の埋没**: 最大のキラー機能である「既存プロジェクトを壊さず近代化する（`adopt.py`）」がローカルスクリプト扱いになっており、世界中の既存リポジトリへ届くワンライナーになっていない。
 5. **ソーシャルプルーフと貢献の敷居**: Showcase（採用リポジトリ一覧）の不在。質問票変更に6コマンドを要する保守コスト（§36）により、Bus Factor = 1 の状態が継続。
@@ -49,7 +49,7 @@
 
 ### P3. 技術的特異性の対外発信・エバンジェリズム（Technical Content & Buzz）
 - **3大キラー技術記事の公開（英語・日本語）**:
-  - 記事1: **"Why we used an SMT solver (Z3) to mathematically verify our Copier template's 234 question combinations"**
+  - 記事1: **"Why we used an SMT solver (Z3) to mathematically verify our Copier template's 272 question combinations"**
     （Hacker News / Reddit r/Python / Lobsters 向け技術ディープダイブ。テンプレート業界初のアプローチとして技術者の知的好奇心を刺激）
   - 記事2: **"Continuous Drift Detection: How we keep generated Python projects from rotting across 5 failure dimensions"**
     （ツールチェーン進化でコード無変更でもCIが壊れる問題への解法。DevOps/SRE/メンテナ層に響く）
@@ -84,7 +84,7 @@
 ### P6. 信頼と品質のエンタープライズ級アピール（Trust & Enterprise Reliability）
 - **アップデート検証（Rehearsal）の可視化**:
   - テンプレート利用者の最大の恐怖「将来テンプレートを更新したときに自分のプロジェクトが壊れるのではないか？」。
-  - 「全234葉でタグ間アップデートが機械的にリハーサルされている」事実を明示し、安心感を提供。
+  - 「全272葉でタグ間アップデートが機械的にリハーサルされている」事実を明示し、安心感を提供。
 - **OpenSSF Scorecard 高得点の前面化**:
   - SHA固定、zizmor、最小権限トークンによる強固なサプライチェーンセキュリティ。企業の基幹システムでも採用できる品質。
 
@@ -145,11 +145,11 @@
 
 ### ステップ 1: リブランディング＆v1.0.0 ローンチ時の告知プロセス（Day 1）
 1. **Hacker News (Show HN)**:
-   - **タイトル案**: `Show HN: We mathematically verified a Python project template's 234 paths with Z3`
+   - **タイトル案**: `Show HN: We mathematically verified a Python project template's 272 paths with Z3`
    - **投稿形式**: テキスト投稿（Show HN）。
    - **本文の構成**:
      - *Hook*: 多くのPythonテンプレートはオプションが増えるとサイレントに壊れる（組合せ爆発）。
-     - *Solution*: 質問票の論理式（`when:`）を SMT ソルバ (Z3) で充足可能性証明し、234の「証人葉」を網羅テストするアーキテクチャを構築した。
+     - *Solution*: 質問票の論理式（`when:`）を SMT ソルバ (Z3) で充足可能性証明し、272の「証人葉」を網羅テストするアーキテクチャを構築した。
      - *Features*: uv-native, ruff ALL, basedpyright, 自動生成される `AGENTS.md`、OpenSSF Scorecard 満点基準、既存リポジトリへの安全な `adopt`。
      - *Call to Action*: 1行で試せるコマンド `uvx copier copy ...` と GitHub リンク。
    - **タイミング**: 米国太平洋標準時（PST）火曜または水曜の朝 7:00〜8:00（最もHNのトラフィックと投票が活発な時間帯）。
@@ -157,7 +157,7 @@
    - **r/Python**: `[Project] A formally verified, agent-ready Copier template for Python (uv, ruff, basedpyright, AGENTS.md)` として投稿。モデレーターのセルフプロモーションルール（通常 10% ルール）を遵守し、技術的洞察とコミュニティへの価値提供を中心に記述。
    - **r/programming**: Z3 による制約充足問題としてのテンプレート検証にフォーカスした技術重視の投稿。
 3. **日本語圏（Zenn / Qiita / はてなブックマーク）**:
-   - **Zenn 記事**: 『Copierテンプレートの全分岐（234通り）をZ3ソルバで数学的に形式検証した話』
+   - **Zenn 記事**: 『Copierテンプレートの全分岐（272通り）をZ3ソルバで数学的に形式検証した話』
      - なぜテンプレートの条件式は壊れるのか
      - Jinjaの `when` 条件を Z3 の論理式に落とし込む実装（`when_model.py`）
      - 未到達分岐やタイポを静的解析で一網打尽にする仕組み

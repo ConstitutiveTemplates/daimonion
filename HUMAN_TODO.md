@@ -40,11 +40,11 @@
 ## Phase 3: 対外発信（ローンチ後 2〜4週間）
 
 - [ ] **3大技術記事の執筆・公開**（PLAN §3 ステップ1 に構成案あり）:
-  - [ ] EN: "Why we used an SMT solver (Z3) to verify 234 question
+  - [ ] EN: "Why we used an SMT solver (Z3) to verify 272 question
         combinations" → Show HN + r/Python（PST 火/水 7-8時）
   - [ ] EN: "Continuous Drift Detection: 5 failure dimensions" →
         r/programming / DevOps 系
-  - [ ] JA: 『234通りを Z3 で形式検証した話』→ Zenn/Qiita
+  - [ ] JA: 『272通りを Z3 で形式検証した話』→ Zenn/Qiita
 - [ ] **Awesome リスト PR**: `vinta/awesome-python`（Project Templates）、
       `copier-org/awesome-copier`。Astral Discord `#showcase` への投稿。
 - [ ] **ニュースレター推薦**: Python Weekly / PyCoder's Weekly の

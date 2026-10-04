@@ -820,14 +820,14 @@ Colaboratory / AWS Lambda 等がある。スライスごとの衝突を棚卸し
 - **判定基準**: 各スライスの「検証環境」と「実際の実行環境」のズレを
   ドキュメントで明示するだけに留めるか、質問（`deploy_target` 等）を足して
   Lambda 向けハンドラ/project 設定を生成するか、を設計監査として判断。
-  Leaf 空間を広げるなら witness 再生成（234 葉基準）が必要。
+  Leaf 空間を広げるなら witness 再生成（272 葉基準）が必要。
 - 着手はこのTODOの番号（§35）を参照。まず `data_science` の notebook が
   Colab で開けるか（依存インストール経路）と、`web_api` cloud_provider=aws
   の Lambda 適合を各1回実レンダで確認するのが最初のステップ。
 
 ## §36 検討: メンテナンス性とコントリビューター増のための設計戦略（2026-10-02）
 
-診断: 資産は検証の深さ（234葉 witness・コスト台帳・不変条件・twin レンダ・
+診断: 資産は検証の深さ（272葉 witness・コスト台帳・不変条件・twin レンダ・
 render cache）。負債は「検証の支払いコスト」— 質問票変更の定義完了に
 `task witness` → `task predicates` → `task question-graph` → `UPDATE_TIERS`
 （台帳）→ `gen_docs.py --write` → zensical docs の **6 コマンド**が別々に必要。
@@ -863,11 +863,11 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 ## §37 構想: このOSSが広く普及・愛用されるための包括的拡大戦略（2026-10-04）
 
 ### 37.0 診断: 驚異的な技術的完成度と、普及におけるギャップ
-本テンプレートは「Z3ソルバによる質問空間（234葉）の数理的充足性証明」「5次元×4タイミングのMECEドリフト検知」「AIコーディングエージェント（AGENTS.md）および法務・倫理レジストリの動的コンパイル」「OpenSSF Scorecard / 全Action SHA固定の徹底的サプライチェーン保護」など、Pythonテンプレート界において世界屈指の技術的深度を持つ。
+本テンプレートは「Z3ソルバによる質問空間（272葉）の数理的充足性証明」「5次元×4タイミングのMECEドリフト検知」「AIコーディングエージェント（AGENTS.md）および法務・倫理レジストリの動的コンパイル」「OpenSSF Scorecard / 全Action SHA固定の徹底的サプライチェーン保護」など、Pythonテンプレート界において世界屈指の技術的深度を持つ。
 しかし、外部への普及・利用拡大においては以下の「5つの壁」が存在し、利用者の獲得を妨げている:
 
 1. **フォーク属性とブランドの壁**: GitHub 上で `DiamondLightSource/python-copier-template` のフォークとして表示され、星が分散し、一般名称（`python-copier-template`）のままのため固有の存在として認知・言及されにくい。
-2. **導入・試用の摩擦の壁**: README の先頭が「リポジトリを `git clone` して CLI 実行」となっており、プロジェクトを作りたいだけの初見ユーザーにとって心理的敷居が高い。また高度な専門用語（SMT、234葉、EU CRA）が全面に出過ぎており、ライト層が「大げさすぎる」と敬遠する認知的過負荷がある。
+2. **導入・試用の摩擦の壁**: README の先頭が「リポジトリを `git clone` して CLI 実行」となっており、プロジェクトを作りたいだけの初見ユーザーにとって心理的敷居が高い。また高度な専門用語（SMT、272葉、EU CRA）が全面に出過ぎており、ライト層が「大げさすぎる」と敬遠する認知的過負荷がある。
 3. **対外発信・エバンジェリズムの壁**: 他に類を見ない技術的差別化点（Z3数理検証、ドリフト検知、AGENTS.md）がリポジトリ内のドキュメントに留まり、Hacker News、Reddit、Zenn、Qiita、カンファレンス等の外部コミュニティへ届いていない。
 4. **既存リポジトリへの導入（Adopt）の埋没**: 最大のキラー機能である「既存プロジェクトを壊さずに近代化する（`adopt.py`）」がローカルスクリプト扱いになっており、世界中の既存リポジトリへ届くワンライナーになっていない。
 5. **ソーシャルプルーフとコミュニティの壁**: 「誰が本番で使っているか」のShowcaseがなく、コントリビューションの敷居の高さ（§36で指摘）により Bus Factor = 1 の状態が続いている。
@@ -898,7 +898,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 
 #### P3. 技術的特異性の対外発信・エバンジェリズム（Technical Content & Buzz）
 - **3大キラー技術記事の公開（英語・日本語）**:
-  - 記事1: **"Why we used an SMT solver (Z3) to mathematically verify our Copier template's 234 question combinations"**
+  - 記事1: **"Why we used an SMT solver (Z3) to mathematically verify our Copier template's 272 question combinations"**
     （Hacker News / Reddit r/Python / Lobsters 向け技術ディープダイブ。テンプレート業界初のアプローチとして技術者の知的好奇心を刺激）
   - 記事2: **"Continuous Drift Detection: How we keep generated Python projects from rotting across 5 failure dimensions"**
     （ツールチェーン進化でコード無変更でもCIが壊れる問題への解法。DevOps/SRE/メンテナ層に響く）
@@ -933,7 +933,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 #### P6. 信頼と品質のエンタープライズ級アピール（Trust & Enterprise Reliability）
 - **アップデート検証（Rehearsal）の可視化**:
   - テンプレート利用者の最大の恐怖「将来テンプレートを更新したときに自分のプロジェクトが壊れるのではないか？」。
-  - 「全234葉でタグ間アップデートが機械的にリハーサルされている」事実を明示し、安心感を提供。
+  - 「全272葉でタグ間アップデートが機械的にリハーサルされている」事実を明示し、安心感を提供。
 - **OpenSSF Scorecard 高得点の前面化**:
   - SHA固定、zizmor、最小権限トークンによる強固なサプライチェーンセキュリティ。企業の基幹システムでも採用できる品質。
 
@@ -976,7 +976,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 #### 2. メンテナンス基盤（§36 S1/S2/S4）の実装方針
 - **`task regen` を `Taskfile.yml` に新設**:
   - コマンド連鎖:
-    1. `uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl` (witness 234葉生成)
+    1. `uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl` (witness 272葉生成)
     2. `uv run --locked python tools/batch.py tests/matrix/witnesses.jsonl --jobs {{ .JOBS | default numCPU }} --quiet` (判定)
     3. `UPDATE_TIERS=1 uv run --locked pytest -q -m meta` (コスト台帳更新)
     4. `uv run --locked python tools/gen_ethics_appendix.py` (ethics-appendix 生成)
@@ -1016,11 +1016,11 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 
 #### ステップ 1: リブランディング＆v1.0.0 ローンチ時の告知プロセス（Day 1）
 1. **Hacker News (Show HN)**:
-   - **タイトル案**: `Show HN: We mathematically verified a Python project template's 234 paths with Z3`
+   - **タイトル案**: `Show HN: We mathematically verified a Python project template's 272 paths with Z3`
    - **投稿形式**: テキスト投稿（Show HN）。
    - **本文の構成**:
      - *Hook*: 多くのPythonテンプレートはオプションが増えるとサイレントに壊れる（組合せ爆発）。
-     - *Solution*: 質問票の論理式（`when:`）を SMT ソルバ (Z3) で充足可能性証明し、234の「証人葉」を網羅テストするアーキテクチャを構築した。
+     - *Solution*: 質問票の論理式（`when:`）を SMT ソルバ (Z3) で充足可能性証明し、272の「証人葉」を網羅テストするアーキテクチャを構築した。
      - *Features*: uv-native, ruff ALL, basedpyright, 自動生成される `AGENTS.md`、OpenSSF Scorecard 満点基準、既存リポジトリへの安全な `adopt`。
      - *Call to Action*: 1行で試せるコマンド `uvx copier copy ...` と GitHub リンク。
    - **タイミング**: 米国太平洋標準時（PST）火曜または水曜の朝 7:00〜8:00（最もHNのトラフィックと投票が活発な時間帯）。
@@ -1028,7 +1028,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
    - **r/Python**: `[Project] A formally verified, agent-ready Copier template for Python (uv, ruff, basedpyright, AGENTS.md)` として投稿。モデレーターのセルフプロモーションルール（通常 10% ルール）を遵守し、技術的洞察とコミュニティへの価値提供を中心に記述。
    - **r/programming**: Z3 による制約充足問題としてのテンプレート検証にフォーカスした技術重視の投稿。
 3. **日本語圏（Zenn / Qiita / はてなブックマーク）**:
-   - **Zenn 記事**: 『Copierテンプレートの全分岐（234通り）をZ3ソルバで数学的に形式検証した話』
+   - **Zenn 記事**: 『Copierテンプレートの全分岐（272通り）をZ3ソルバで数学的に形式検証した話』
      - なぜテンプレートの条件式は壊れるのか
      - Jinjaの `when` 条件を Z3 の論理式に落とし込む実装（`when_model.py`）
      - 未到達分岐やタイポを静的解析で一網打尽にする仕組み
