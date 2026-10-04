@@ -816,15 +816,18 @@ Strategy.md ①②③④ は commit a82f9a46 で実装済み。当日の push �
       ピン + check_upstream の週次ドリフト報告に追加(87058c2a)。③同 v1.30 の
       `self-repository` 監査が既存の `./.github/workflows/*` 参照形式全体に発火
       → 両 zizmor.yml に意図的 ignore を記載(87e3525e)。最終ランの結果確認が残る
-      - [ ] **教訓**: security.yml の zizmor `version: latest` は新監査追加時に
-            全プロジェクトの Security を赤くする。ignore 追加はリポジトリ慣例どおり
-            理由付きで。zizmor バージョンの固定+renovate追従も検討余地
+      - [x] **教訓**: security.yml の zizmor `version: latest` は新監査追加時に
+            全プロジェクトの Security を赤くする → **恒久対策済み（2026-10-04
+            確認）**: security.yml は cli `1.30.1` + action `v0.6.4` の SHA pin。
+            renovate 追従は生成物の renovate.json baseline 管理対象
+            （`test_renovate_baseline_matches_generated_template` で固定）
+- [x] Periodic（リンクチェック）: 2026-08-26 / 09-02 の赤は旧 tox 版 workflow の
+      失敗。現行 lychee 版（085b1579 で投入）は水曜スケジュールが初回実行 →
+      初回結果を確認し、赤ならリンク修正
+      → **初回着地（2026-10-04）**: workflow_dispatch で手動初回実行 → success
 - [ ] README の CI バッジと実態の乖離に注意: 直近コミットで CI が赤でも
       バッジは古い成功を示し続けた。赤を放置しない運用（push 後の run 確認、
       または merge queue / required checks の見直し）を習慣化する
-- [ ] Periodic（リンクチェック）: 2026-08-26 / 09-02 の赤は旧 tox 版 workflow の
-      失敗。現行 lychee 版（085b1579 で投入）は水曜スケジュールが初回実行 →
-      初回結果を確認し、赤ならリンク修正
 - [x] flaky: `test_template_task_runner_just_works` がフル並列実行で 1 回のみ
       失敗（単独・再実行は pass）→ **診断完了（2026-09-06、サブエージェント調査）**。
       最有力は pre-commit 共有ストアの hook 環境インストール競合:
