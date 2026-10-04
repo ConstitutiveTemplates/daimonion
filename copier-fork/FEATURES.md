@@ -18,7 +18,7 @@ upstream appetite is confirmed.
 
 ## F1. Machine-readable questionnaire export (LLM-friendly)
 
-Status: proposed.
+Status: discussion drafted (`notes/upstream-drafts/13-questions-schema-export.md`) — to be filed manually per upstream AI_POLICY.
 
 Problem: agents and CI cannot drive the interactive questionnaire. Answering
 requires parsing help text, and `--data-file` mistakes surface one at a
@@ -36,7 +36,7 @@ machine-readable missing list into the same schema.
 
 ## F2. `copier template lint`
 
-Status: proposed.
+Status: discussion drafted (`notes/upstream-drafts/14-template-lint.md`) — to be filed manually per upstream AI_POLICY.
 
 Problem: every serious template reimplements the same structural checks.
 Ours took ~750 lines (`tests/test_copier_structure.py`): every asked
@@ -53,7 +53,7 @@ error/warning split.
 
 ## F3. Batch missing-answer report (+ machine-readable form)
 
-Status: proposed (extends `notes/` item 5 and draft `05`).
+Status: **implemented** on `kasi-x/copier` branch `f3-missing-batch` (patch: `patches/cli-missing-answers-batch.patch`; PR to be filed manually per upstream AI_POLICY).
 
 Problem: non-interactive runs abort on the *first* missing required answer
 as a bare `ValueError` with a traceback — one CI round-trip per answer.
@@ -88,7 +88,7 @@ via Discussion.
 
 ## F5. Stale-tag checkout warning
 
-Status: proposed (extends `notes/` item 9 and draft `09`).
+Status: **implemented** on `kasi-x/copier` branch `f5-stale-tag-warning` (patch: `patches/vcs-stale-tag-warning.patch`; PR to be filed manually per upstream AI_POLICY).
 
 Problem: `copier copy <url>` without `--vcs-ref` checks out the latest git
 *tag*, not the default branch. A fork that has not cut its own releases
@@ -108,7 +108,7 @@ warning second.
 
 ## F6. Trust-list management CLI
 
-Status: proposed (extends `notes/` item 7 and draft `07`).
+Status: **partially implemented** on `kasi-x/copier` branch `f6-trust-discoverability` (patch: `patches/cli-trust-discoverability.patch`; PR manual). The `settings trust add` subcommand sketch is deferred — it needs upstream appetite confirmed first.
 
 Problem: `--trust` can be persisted in the settings `trust` list, but there
 is no CLI path and the docs bury it — so every F1-style refusal message
@@ -119,7 +119,7 @@ Proposal: docs example first (small), then a CLI sketch such as
 
 ## F7. Dry-run / preview rendering
 
-Status: proposed.
+Status: **implemented at reduced scope** on `kasi-x/copier` branch `f7-pretend-summary` (patch: `patches/cli-pretend-dry-run.patch`; PR manual). `--pretend` already covered the preview ask; the patch adds the missing summary line and docs.
 
 Problem: CI and agents cannot preview what a template *would* generate:
 resolving answers, rendering to a temp dir, and listing the file set with a
