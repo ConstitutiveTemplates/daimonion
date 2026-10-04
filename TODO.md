@@ -127,6 +127,7 @@
 
 - 機能の将来拡張（7）: OJ 9 種＋その他（§2, archive L117）/ bot LINE・Gmail 残り（§4, L182）/ スタンドアロン MCP レシピ・MCP 本番運用（§5, L362–363）/ SQLAdmin・FastCRUD（§6, L440）/ library 空依存の維持・質問化（§17, L1058）/ 実行環境への配慮 — Colab / AWS Lambda（§35, このファイル）
 - 設計・メンテナンス戦略（§36, このファイル）: 検証生成の一元化（`task regen`）/ blast-radius 分類 + 貢献レダー / フォーク・アイデンティティ確定 / オンボーディング面 / 結合アーティファクトの導出化。lint・hygiene の docs-only skip 縮小を含む
+- 普及・利用拡大戦略（§37, このファイル）: ゼロインストール体験（clone不要化）/ 固有ブランド・脱フォーク / AIエージェント共創ポジショニング / 技術発信（Z3検証・ドリフト検知・AGENTS.md）/ 既存リポジトリ adopt の1コマンド化 / コミュニティ育成と Showcase
 - 公開・運用手順（14）: v1.0 fork 解除手順（§11, L544）/ renovate digest・example 再生成・Scorecard 確認・branch 保護（§12, L615–621）/ 改名・由来明記・Scorecard 初回・告知・hypermodern 乗換・Z3 記事・bus-factor（§16, L995–1028）/ fork 作成 F3 着手・手動投稿（§21, L1489–1497）
 - CI・検証の残り（8）: CI 緑確認・教訓（ネスト）・バッジ乖離・Periodic（§15, L800–815。日付が古い。要確認）/ setup composite 化・未検証組合せ（§19, L1328–1348）/ `render_project` 戻り値・手書きテスト棚卸し（§23, L1841–1910）
 
@@ -858,3 +859,197 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
   実行に狭める（~20s の追加で、CI 失敗カスケードの再発防止）。
 - 推奨着手順: S1 + lint/hygiene の docs-only skip 縮小 → S2 レダー + good
   first issue。
+
+## §37 構想: このOSSが広く普及・愛用されるための包括的拡大戦略（2026-10-04）
+
+### 37.0 診断: 驚異的な技術的完成度と、普及におけるギャップ
+本テンプレートは「Z3ソルバによる質問空間（234葉）の数理的充足性証明」「5次元×4タイミングのMECEドリフト検知」「AIコーディングエージェント（AGENTS.md）および法務・倫理レジストリの動的コンパイル」「OpenSSF Scorecard / 全Action SHA固定の徹底的サプライチェーン保護」など、Pythonテンプレート界において世界屈指の技術的深度を持つ。
+しかし、外部への普及・利用拡大においては以下の「5つの壁」が存在し、利用者の獲得を妨げている:
+
+1. **フォーク属性とブランドの壁**: GitHub 上で `DiamondLightSource/python-copier-template` のフォークとして表示され、星が分散し、一般名称（`python-copier-template`）のままのため固有の存在として認知・言及されにくい。
+2. **導入・試用の摩擦の壁**: README の先頭が「リポジトリを `git clone` して CLI 実行」となっており、プロジェクトを作りたいだけの初見ユーザーにとって心理的敷居が高い。また高度な専門用語（SMT、234葉、EU CRA）が全面に出過ぎており、ライト層が「大げさすぎる」と敬遠する認知的過負荷がある。
+3. **対外発信・エバンジェリズムの壁**: 他に類を見ない技術的差別化点（Z3数理検証、ドリフト検知、AGENTS.md）がリポジトリ内のドキュメントに留まり、Hacker News、Reddit、Zenn、Qiita、カンファレンス等の外部コミュニティへ届いていない。
+4. **既存リポジトリへの導入（Adopt）の埋没**: 最大のキラー機能である「既存プロジェクトを壊さずに近代化する（`adopt.py`）」がローカルスクリプト扱いになっており、世界中の既存リポジトリへ届くワンライナーになっていない。
+5. **ソーシャルプルーフとコミュニティの壁**: 「誰が本番で使っているか」のShowcaseがなく、コントリビューションの敷居の高さ（§36で指摘）により Bus Factor = 1 の状態が続いている。
+
+---
+
+### 37.1 普及のための6大戦略（Pillars）
+
+#### P1. アイデンティティ確立とリブランディング（Brand & Identity）
+- **フォーク解除・独立リポジトリ化**: §11/§16 の合意を実行。`git checkout --orphan` による新履歴での独立公開、または GitHub Support を通じた detach。DiamondLightSource および祖先への謝辞・クレジットは NOTICE / README / docs に明確に刻む。
+- **固有のプロジェクト名・呼称の策定**: 会話やSNSで指名しやすく、検索性の高い名前（例: `copier-python-hypermodern` / `agentic-python` / `proven-python` 等の軸から決定）。
+- **2026年の最前線ポジショニング**:
+  - 「**AIコーディングエージェント共創時代の、数理検証された高信頼Pythonテンプレート**」
+  - 開発停止した `cookiecutter-hypermodern-python`（1900+ stars）の正統後継・移行先としての旗幟。
+  - `copier-uv`（ライブラリ特化）との住み分け: 「単機能ライブラリなら copier-uv。実務全般（Web API / Data Science / CLI / 競プロ / 組込）× AIエージェント × 堅牢性なら本テンプレート」。
+
+#### P2. 導入体験（UX）の極小摩擦化（Zero-Friction Onboarding）
+- **ゼロインストール・ワンライナーの前面化**:
+  - `git clone` 前提の手順を即時廃止。README 先頭を `uvx copier copy --trust gh:<org>/<repo> my-project` に刷新。
+  - CLI（`python-copier-template`）の PyPI 公開または `uvx` 配布対応（パッケージ構成を整理し、clone なしで `uvx <name> new my-project --preset library` を可能に）。
+- **プリセット主導の「3秒スタート」体験**:
+  - 質問票の第1問目で「推奨プリセットから選ぶ（Web API / CLI / Data Science / Library / Minimal Bare）」を案内し、1回のリターンキーで即座に走る体験を提供。
+- **既存プロジェクト近代化ツール（Adopt）のワンライナー化**:
+  - `uvx <name> adopt .` を提供。「すでにあるリポジトリに Ruff、basedpyright、GitHub Actions CI、AGENTS.md を安全に追加する」ユースケースを開放（アドレス可能市場が新規作成の10倍に拡大）。
+- **視覚的証明（Visual Proof）**:
+  - 15秒のターミナルGIF（vhs）: プロジェクト生成から `task check` が爆速でパスし、`AGENTS.md` が配備される様子。
+  - GitHub "Use this template" ボタン用のクリーンなテンプレートリポジトリ（exampleプロジェクト）の整備。
+
+#### P3. 技術的特異性の対外発信・エバンジェリズム（Technical Content & Buzz）
+- **3大キラー技術記事の公開（英語・日本語）**:
+  - 記事1: **"Why we used an SMT solver (Z3) to mathematically verify our Copier template's 234 question combinations"**
+    （Hacker News / Reddit r/Python / Lobsters 向け技術ディープダイブ。テンプレート業界初のアプローチとして技術者の知的好奇心を刺激）
+  - 記事2: **"Continuous Drift Detection: How we keep generated Python projects from rotting across 5 failure dimensions"**
+    （ツールチェーン進化でコード無変更でもCIが壊れる問題への解法。DevOps/SRE/メンテナ層に響く）
+  - 記事3: **"The AI-Agent-Native Project Template: Why every Python project in 2026 needs AGENTS.md and verified constraints"**
+    （Cursor, Claude Code, omp, Codex 時代の必須インフラとしての訴求。Zenn, Qiita, X/Twitter, Dev.to）
+- **エコシステムカタログ・リストへの登録**:
+  - `awesome-python`, `awesome-copier`, `awesome-uv` への PR 提出。
+  - Astral 公式 Discord や Python コミュニティ（PyCon, Python Weekly, Python Bytes ポッドキャスト）への露出。
+
+#### P4. 2026年キラーユースケースの研磨（Use-Case Excellence）
+- **AI / LLM / Agent 開発者向けスタックの強化**:
+  - プリセットに `preset: mcp-server`（MCPサーバー開発特化）を新設・前面化（AIツール作者層の獲得）。
+  - すでに持つ bot platform（Slack/Discord/LINE/Gmail）や web scraping との組み合わせを「AIエージェントの道具箱」として位置づけ。
+- **モダン・データサイエンス環境の強化**:
+  - §35 で Colab 対応を確認済み。2026年標準の `marimo`（モダン・リアクティブ・gitフレンドリーなノートブック）対応や Quarto 連携の強化。
+  - Poetry や Conda の重さに疲弊したデータサイエンティスト層に uv 爆速環境を提供。
+- **Web API の実用性向上**:
+  - FastAPI + Docker + Pydantic v2 + Sentry + OpenTelemetry/Prometheus。
+
+#### P5. コミュニティ基盤とコントリビューター育成（Community & Lowering Barriers）
+- **§36（S1〜S4）の着実な実行**:
+  - `task regen`（S1）の導入で、質問票変更の手間を1コマンドに集約。
+  - blast-radius レダー（S2）と Contributing 101（S4）の整備。
+- **「コードを書かない/小さく書く」貢献の受け口**:
+  - 倫理/法務セクション（`_shared/ethics/`）の一次情報ウォッチ・ドラフト作成。
+  - プリセットの追加、ドキュメント改善。
+  - `good first issue` を常に5〜8件維持。
+- **Showcase / "Used by" ギャラリー**:
+  - 本テンプレートを採用しているオープンソースプロジェクト一覧を README/Docs に掲載。
+  - ドッグフーディング成果の可視化。
+
+#### P6. 信頼と品質のエンタープライズ級アピール（Trust & Enterprise Reliability）
+- **アップデート検証（Rehearsal）の可視化**:
+  - テンプレート利用者の最大の恐怖「将来テンプレートを更新したときに自分のプロジェクトが壊れるのではないか？」。
+  - 「全234葉でタグ間アップデートが機械的にリハーサルされている」事実を明示し、安心感を提供。
+- **OpenSSF Scorecard 高得点の前面化**:
+  - SHA固定、zizmor、最小権限トークンによる強固なサプライチェーンセキュリティ。企業の基幹システムでも採用できる品質。
+
+---
+
+### 37.2 ロードマップ・実行順序（提案）
+
+1. **フェーズ 1: 摩擦の撤廃（即効性・1〜2日）**
+   - README の導入手順を `uvx copier copy --trust ...` に全面刷新（clone 手順を後退）。
+   - §36 の S1（`task regen`）と lint/hygiene の docs-only skip 縮小を実装。
+   - ターミナル GIF（15秒）を README 先頭に配置。
+2. **フェーズ 2: 独立とリブランディング（1週間）**
+   - リポジトリの detach / 独立公開、固有名称・新リポジトリの確定。
+   - v1.0.0 タグの打ち直し、Scorecard 初回計測、Branch Protection 設定。
+   - `python-copier-template` CLI パッケージの整理（PyPI または `uvx` 配布）。
+3. **フェーズ 3: 対外発信と認知拡大（ローンチ後 2〜4週間）**
+   - 3大技術ブログ（Z3検証、ドリフト検知、AGENTS.md）の同時公開（Hacker News / Reddit / Zenn）。
+   - `awesome-python` / `awesome-copier` への PR 提出。
+   - `cookiecutter-hypermodern-python` ユーザー向けの移行ドキュメント公開。
+4. **フェーズ 4: エコシステムとコミュニティ育成（継続）**
+   - `good first issue` のシード、Showcase ページの開設。
+   - `preset: mcp-server`、Marimo データサイエンス連携等の2026年キラー機能拡充。
+
+### 37.3 具体実装方針（Implementation Specifications）
+
+#### 1. ゼロクローン・ワンライナー化（P2）の実装方針
+- **README.md の構成刷新**:
+  - `TL;DR` を冒頭に配置し、最優先の生成コマンドを `uvx copier copy --trust gh:<org>/<repo> my-project` とする。
+  - `--preset` の利用方法を Copier の `--data-file` URL 経由、または `answers` 注入で案内。
+  - 旧来の `git clone` 手順は「開発者向け・オフライン環境向け」として後方へ移設。
+  - `vhs` (Charmbracelet) を用いた 15 秒のターミナルデモ GIF（`demo.gif`）を生成し、README ヘッダに埋め込み。
+- **CLI のスタンドアロン・リモート対応**:
+  - 現状 `tools/cli.py` は `TOP = Path(__file__).resolve().parent.parent` でローカルリポジトリを前提としている。
+  - 改善: `cli.py` において、ローカルに `copier.yml` が見つからない場合は自動的に最新リリースタグのリモート git URL（`https://github.com/<org>/<repo>.git`）をテンプレートソースとして Copier に渡すフォールバックロジックを実装。
+  - `pyproject.toml` に `dependencies = ["copier>=9,<10", "pyyaml>=6.0,<7"]` を最小限のランタイム依存として定義（現状は `dev` のみに存在）。
+  - これにより `uvx --from git+https://github.com/<org>/<repo>.git <cli-name> new my-project --preset library` や PyPI 配布時の即時実行が実現。
+- **Adopt のリモート・ワンライナー対応**:
+  - 既存プロジェクトのディレクトリ内で `uvx <cli-name> adopt .` を実行した際、リモートテンプレートを一時クローン/キャッシュして衝突検知・トランザクション適用・ロールバックを実行可能にする。
+
+#### 2. メンテナンス基盤（§36 S1/S2/S4）の実装方針
+- **`task regen` を `Taskfile.yml` に新設**:
+  - コマンド連鎖:
+    1. `uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl` (witness 234葉生成)
+    2. `uv run --locked python tools/batch.py tests/matrix/witnesses.jsonl --jobs {{ .JOBS | default numCPU }} --quiet` (判定)
+    3. `UPDATE_TIERS=1 uv run --locked pytest -q -m meta` (コスト台帳更新)
+    4. `uv run --locked python tools/gen_ethics_appendix.py` (ethics-appendix 生成)
+    5. `uv run --locked python tools/gen_docs.py --write` (docs 自動生成ブロック更新)
+    6. `uv run --locked python tools/predicates.py --json > /dev/null` (述語分類の整合性確認)
+  - 依存順に一括実行し、作業者が1コマンドで Definition of Done を達成できる。
+- **CI docs-only 判定の狭隘化**:
+  - `.github/workflows/_hygiene.yml` / `ci.yml` において、変更がドキュメントのみの場合でも `lint`（ruff / typos / basedpyright）は常時実行し、コミット間の債務蓄積を遮断（~20秒の最小コスト）。
+- **`CONTRIBUTING.md` への「変更の blast-radius 表」と「Contributing 101」追記**:
+  - 変更対象（docsのみ / テンプレートpayloadのみ / 質問票本体）ごとの必要な検証ステップを明文化。
+
+#### 3. 独立リポジトリ化とアイデンティティ確立（P1）の実装方針
+- **リポジトリ移行手順**:
+  - リポジトリ新設（例: `github.com/<org>/<new-name>`）。
+  - `git checkout --orphan main-standalone` によるクリーンな履歴での独立、または GitHub Support への detach 依頼（過去 Issue 履歴を維持したい場合）。
+  - `NOTICE` ファイルを新設し、DiamondLightSource / python3-pip-skeleton / copier-template の系譜と Apache-2.0 ライセンスを明記。
+  - リポジトリメタデータ（`pyproject.toml`, `CITATION.cff`, `codemeta.json`, `README.md`）のプロジェクト名と URL を統一。
+  - GitHub Secrets（`EXAMPLE_DEPLOY_KEY`, `PYPI_API_TOKEN`）、Pages、Branch Protection rulesets（署名コミット・リニア履歴・CI必須チェック）の再設定。
+
+#### 4. キラー機能・プリセット（P4）の実装方針
+- **`presets/mcp-server.yml` の新設**:
+  - `project_type: cli`, `include_mcp: true`, `mcp_transport: stdio`, `use_recommended_security: true` 等の構成。
+  - `tests/test_presets.py` に `test_preset_renders[mcp-server]` を追加し、sentinel ファイルをアサート。
+- **`marimo` ノートブックの統合**:
+  - `data_science` 向けに `marimo` の設定・タスク・.gitignore 除外を追加（Jupyter/Quarto との選択または併用）。
+
+---
+
+### 37.4 対外アピール・エバンジェリズムの実践プロセス（Outreach & Evangelism Process）
+
+#### ステップ 1: リブランディング＆v1.0.0 ローンチ時の告知プロセス（Day 1）
+1. **Hacker News (Show HN)**:
+   - **タイトル案**: `Show HN: We mathematically verified a Python project template's 234 paths with Z3`
+   - **投稿形式**: テキスト投稿（Show HN）。
+   - **本文の構成**:
+     - *Hook*: 多くのPythonテンプレートはオプションが増えるとサイレントに壊れる（組合せ爆発）。
+     - *Solution*: 質問票の論理式（`when:`）を SMT ソルバ (Z3) で充足可能性証明し、234の「証人葉」を網羅テストするアーキテクチャを構築した。
+     - *Features*: uv-native, ruff ALL, basedpyright, 自動生成される `AGENTS.md`、OpenSSF Scorecard 満点基準、既存リポジトリへの安全な `adopt`。
+     - *Call to Action*: 1行で試せるコマンド `uvx copier copy ...` と GitHub リンク。
+   - **タイミング**: 米国太平洋標準時（PST）火曜または水曜の朝 7:00〜8:00（最もHNのトラフィックと投票が活発な時間帯）。
+2. **Reddit (`r/Python`, `r/programming`)**:
+   - **r/Python**: `[Project] A formally verified, agent-ready Copier template for Python (uv, ruff, basedpyright, AGENTS.md)` として投稿。モデレーターのセルフプロモーションルール（通常 10% ルール）を遵守し、技術的洞察とコミュニティへの価値提供を中心に記述。
+   - **r/programming**: Z3 による制約充足問題としてのテンプレート検証にフォーカスした技術重視の投稿。
+3. **日本語圏（Zenn / Qiita / はてなブックマーク）**:
+   - **Zenn 記事**: 『Copierテンプレートの全分岐（234通り）をZ3ソルバで数学的に形式検証した話』
+     - なぜテンプレートの条件式は壊れるのか
+     - Jinjaの `when` 条件を Z3 の論理式に落とし込む実装（`when_model.py`）
+     - 未到達分岐やタイポを静的解析で一網打尽にする仕組み
+   - トレンド入り・はてブ獲得を狙い、日本のPythonコミュニティおよびAIエージェント開発層へ一気にリーチ。
+
+#### ステップ 2: エコシステム・リスト・ポッドキャストへの掲載申請プロセス（Day 2〜14）
+1. **GitHub オーガニック掲載（Awesome リスト等）**:
+   - **`vinta/awesome-python`**: `Project Templates` カテゴリへの PR。既存の cookiecutter や copier-uv と並び、「SMT-verified multi-domain template」として追加。
+   - **`copier-org/awesome-copier`**: 公式の Copier テンプレート一覧への PR。
+   - **`astral-sh/uv` コミュニティ**: uv の Discussions（Show & Tell）や Discord の `#showcase` チャンネルでの紹介。
+2. **Python 系ニュースレター・ポッドキャストへの推薦送信**:
+   - **Python Weekly / PyCoder's Weekly**: 記事 URL（Z3記事やドリフト検知記事）の推薦フォームから送信。
+   - **Python Bytes Podcast**: Michael Kennedy / Brian Okken へのトピック提案（「Copier template with Z3 verification and AGENTS.md」は彼らの好むユニークな切り口）。
+
+#### ステップ 3: 難民層・移行層へのピンポイント訴求プロセス（Week 2〜4）
+1. **`cookiecutter-hypermodern-python` 難民の救済**:
+   - `docs/how-to/migrate-from-hypermodern.md` を作成。
+   - Poetry → uv、Flake8/Black → Ruff、mypy → basedpyright、Cookiecutter → Copier（更新可能）への対比表を明示。
+   - Claudio Jolowicz 氏の元リポジトリの Issue / Discussions（代替を探しているスレッド）において、中立的かつ敬意を払った形で「2026年版の後継アプローチ」として言及・案内。
+2. **AIコーディングエージェント開発者へのアプローチ**:
+   - Cursor / Claude Code / Cline / Roo Code / omp のコミュニティや X (Twitter) で、「AIエージェントにプロジェクトを作らせる・自走させる際のベストプラクティス基盤」として `AGENTS.md` と ethics レジストリの仕組みを解説。
+   - 「AIが勝手にライセンス違反の依存を入れたり、暗号化の古い規約を入れないようにリポジトリで強制する」という実務的価値を強調。
+
+#### ステップ 4: 成果の定着・フィードバックループ（Week 4 以降）
+1. **Showcase（採用実績）の構築**:
+   - 自分のプロジェクト（MCPサーバー、CLIツール、競プロリポジトリ）を本テンプレートで生成し、`README.md` に「採用例」として掲載。
+   - 外部ユーザーのリポジトリに「Adopt」を提案する PR（またはサンプルリポジトリ）を作成し、感謝とともに Showcase への掲載許可を得る。
+   - `[![Built with python-copier-template](https://img.shields.io/badge/built%20with-copier--template-blue)](https://...)]` バッジの配布。
+2. **初動の Issue / PR 体制と contributor ladder**:
+   - 新規スターやフォーク、Issue が立った際は 24時間以内に丁寧に応答。
+   - `good first issue`（倫理ドラフトの追加、タイポ修正、ドキュメント改善）に最初の貢献があった場合、即座にレビューして merge し、`CONTRIBUTORS.md` に記載してリテンションを高める。
