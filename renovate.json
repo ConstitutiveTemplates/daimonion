@@ -16,7 +16,7 @@
   },
   "packageRules": [
     {
-      "description": "Disable python version as that is managed by python-copier-template",
+      "description": "Disable python version as that is managed by foundry",
       "matchManagers": [
         "pyenv"
       ],

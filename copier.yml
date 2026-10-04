@@ -129,7 +129,7 @@ _tasks:
       when: "{{ existing_project }}"
     - command: |
         echo "Fresh project — suggested next steps:"
-        echo '  * git add -A && git commit -m "chore: scaffold from python-copier-template"'
+        echo '  * git add -A && git commit -m "chore: scaffold from foundry"'
         echo '  * git remote add origin {{ repo_url }}.git && git push -u origin main'
         {% if docs %}
         echo '  * after the first docs job succeeds, enable GitHub Pages:'
@@ -164,4 +164,4 @@ _migrations:
       before:
           - echo This update will require you to login to pypi.org and make changes before you can make a new release to PyPI. If you do not have time to do this now, press CTRL+C to abort this update.
       after:
-          - echo Visit https://kasi-x.github.io/python-copier-template/main/how-to/pypi.html to find out how to set up PyPI trusted publishing
+          - echo Visit https://constitutivetemplates.github.io/foundry/main/how-to/pypi.html to find out how to set up PyPI trusted publishing

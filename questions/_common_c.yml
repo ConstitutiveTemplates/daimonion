@@ -64,7 +64,7 @@ package_name:
 description:
     type: str
     help: A short description of your project
-    default: A Python project generated from python-copier-template
+    default: A Python project generated from foundry
 
 git_platform:
     type: str

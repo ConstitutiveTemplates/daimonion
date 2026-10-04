@@ -17,7 +17,7 @@ use_recommended_integrations: false
 use_recommended_security: false
 author_email: kashimiya.exe@gmail.com
 author_name: kashi-x
-description: An expanded https://github.com/kasi-x/python-copier-template to illustrate how it looks with all the options enabled.
+description: An expanded https://github.com/ConstitutiveTemplates/foundry to illustrate how it looks with all the options enabled.
 distribution_name: kasi-x-python-copier-template-example
 docker: true
 github_org: kasi-x

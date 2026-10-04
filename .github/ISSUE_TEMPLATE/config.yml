@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Discussions
-    url: https://github.com/kasi-x/python-copier-template/discussions
+    url: https://github.com/ConstitutiveTemplates/foundry/discussions
     about: Please ask and answer questions here.
   - name: Security
-    url: https://github.com/kasi-x/python-copier-template/security/policy
+    url: https://github.com/ConstitutiveTemplates/foundry/security/policy
     about: Report a security vulnerability privately.

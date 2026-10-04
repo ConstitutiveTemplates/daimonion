@@ -1,0 +1,73 @@
+# HUMAN_TODO: 普及戦略のうち人間が実行する作業
+
+出典: `notes/PLAN-widespread-adoption.md` / `TODO.md` §36-§37（2026-10-04）。
+リポジトリ内で実装可能な項目は済（`task regen`、CLI リモート delegation、
+`presets/mcp-server.yml`、README/CONTRIBUTING 刷新）。以下は権限・判断・
+対外発信が必要な残作業。
+
+## Phase 2: 独立・リブランディング（目安 1週間）
+
+- [x] **フォーク解除**: ✅ 2026-10-04 完了。delete+recreate で実施（API の
+      `fork=leave` は no-op、Support/web UI は非対話不可のため）。注意:
+      push protection（旧履歴のダミー slack webhook）回避のため
+      `test_gitleaks_precommit.py` を履歴から除去した全書き換え — **全コミット
+      SHA とタグ SHA が変わった**。タグ名参照の copier プロジェクトは無影響、
+      SHA ピンのみ壊れる。gh-pages/releases/secrets/topics/Pages/issues は
+      復元済み。push protection は現時点で OFF（履歴に別の疑似値が残る可能性
+      への一時措置；再有効化は要判断）。
+- [x] **固有ブランド名の決定**: ✅ `foundry`（`ConstitutiveTemplates/foundry`
+      として公開済み）。pyproject.toml・README・CITATION.cff・codemeta.json・
+      zensical.toml・workflows・docs・template jinja・tools/ の名称/URL は
+      2026-10-04 に一括統一済み（残る `kasi-x/python-copier-template` 参照は
+      履歴記録と example リポのみ）
+- [x] **NOTICE ファイル新設**: ✅ DiamondLightSource / python3-pip-skeleton /
+      copier の系譜と Apache-2.0 を明記済み（2026-10-04）
+- [ ] **v1.0.0 リリース**: タグ打ち直し、リリースノート確認。
+- [ ] **Scorecard 初回計測 + Branch Protection 再設定**:
+      署名コミット・リニア履歴・CI 必須チェック。
+      Secrets（`EXAMPLE_DEPLOY_KEY`, `PYPI_API_TOKEN`）の再設定。
+- [ ] **`uvx --from git+...` の実ネットワーク検証**:
+      push 後に実コマンドで一度実行し、clone→cache→render が通ることを確認
+      （file:// remote での代替検証は済）。
+- [ ] **PyPI 公開判断**: `uvx foundry`（git+ URL なし）に
+      するかどうか。公開するなら `_pypi.yml` の有効化・トークン設定。
+
+## Phase 3: 対外発信（ローンチ後 2〜4週間）
+
+- [ ] **3大技術記事の執筆・公開**（PLAN §3 ステップ1 に構成案あり）:
+  - [ ] EN: "Why we used an SMT solver (Z3) to verify 234 question
+        combinations" → Show HN + r/Python（PST 火/水 7-8時）
+  - [ ] EN: "Continuous Drift Detection: 5 failure dimensions" →
+        r/programming / DevOps 系
+  - [ ] JA: 『234通りを Z3 で形式検証した話』→ Zenn/Qiita
+- [ ] **Awesome リスト PR**: `vinta/awesome-python`（Project Templates）、
+      `copier-org/awesome-copier`。Astral Discord `#showcase` への投稿。
+- [ ] **ニュースレター推薦**: Python Weekly / PyCoder's Weekly の
+      推薦フォーム、Python Bytes へのトピック提案。
+- [x] **移行ガイド**: ✅ `docs/how-to/migrate-from-hypermodern.md` 新設済み
+      （2026-10-04。toolchain 対比表 + fresh/adopt 2 経路 + 実在の gap 列挙。
+      zensical.toml nav 登録済み）
+- [ ] **`cookiecutter-hypermodern-python` の代替探しスレッドへ案内**:
+      敬意を払い中立な形で後継として言及（元作者のスレッドは慎重に）。
+
+## Phase 4: コミュニティ定着（継続）
+
+- [ ] **demo GIF 作成**: `vhs` (Charmbracelet) で15秒 — 生成→`task check`
+      通過→`AGENTS.md` 配備。README ヘッダへ埋め込み。
+- [ ] **Showcase 開設**: 自分のプロジェクトを本テンプレートで生成し
+      「採用例」を README/Docs に掲載。`built with` バッジの配布。
+- [x] **`good first issue` シード**: ✅ 5 件起票済み（#4 preset 追加、#5
+      プリセット表 docs、#6 `--list-presets`、#7 installation troubleshooting、
+      #8 codex セクション草案 — すべて leaf 空間非接触）
+- [ ] **Issue/PR 初動体制**: 24h 以内応答、`CONTRIBUTORS.md` 記載で
+      リテンション。
+- [x] **marimo 統合の判断**: ✅ 実装済みであることが判明（experiment extra +
+      `task marimo` + docs/how-to/data-science.md。TODO.md §37.3 の記述は
+      「新規統合」だったが現状は既存レイヤー）
+
+## Phase 1 補遺（判断待ち）
+
+- [ ] **質問票第1問のプリセット案内**: 「推奨プリセットから選ぶ」導線を
+      questionnaire に追加するか — `notes/DESIGN-preset-guidance.md` に
+      選択肢（help 追記 / 疑似質問 / docs のみ）と blast radius を整理済み。
+      推奨は `project_type.help` への導線追記（leaf 空間非接触）

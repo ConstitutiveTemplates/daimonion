@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sync a copier fork checkout with upstream master.
-# Usage: cd /path/to/copier && /path/to/python-copier-template/copier-fork/scripts/sync-upstream.sh
+# Usage: cd /path/to/copier && /path/to/foundry/copier-fork/scripts/sync-upstream.sh
 set -euo pipefail
 
 git fetch upstream

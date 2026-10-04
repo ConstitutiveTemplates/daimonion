@@ -625,7 +625,7 @@ def test_mcp_json_registers_the_command_the_how_to_documents() -> None:
     registration and the page that explains it name the same command, and it
     points at a file that exists."""
     config = json.loads((TOP / ".mcp.json").read_text())
-    entry = config["mcpServers"]["python-copier-template"]
+    entry = config["mcpServers"]["foundry"]
     command = " ".join([entry["command"], *entry["args"]])
 
     assert command == "uv run --locked python tools/mcp_server.py", "the stdio command `task mcp` runs"
@@ -763,7 +763,7 @@ def test_allowlist_refuses_a_foreign_host_but_serves_health(allowed_server: tupl
 
     status, body = _request(f"{base}/mcp", host=ALLOWED_HOST, method="POST", body=INITIALIZE, headers=MCP_HEADERS)
     assert status == 200, f"an allowed Host completes the handshake:\n{body}\n{log.read_text()}"
-    assert "python-copier-template" in body, "the handshake reached this server's tool list"
+    assert "foundry" in body, "the handshake reached this server's tool list"
 
 
 def test_allowlist_enforces_the_origin_variable_too(allowed_server: tuple[int, Path]):

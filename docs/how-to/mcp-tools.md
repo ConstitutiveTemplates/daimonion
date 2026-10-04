@@ -26,7 +26,7 @@ runs:
 ```json
 {
   "mcpServers": {
-    "python-copier-template": {
+    "foundry": {
       "command": "uv",
       "args": ["run", "--locked", "python", "tools/mcp_server.py"],
       "env": {}

@@ -102,6 +102,6 @@ repository's `TODO.md`.
 The most useful contribution right now is not a new `project_type` — see
 [Contributing](../how-to/contribute.md) — it's a bug report from an actual
 generated project, or a link to a real repo demonstrating a behavior you
-want changed (per [CONTRIBUTING](https://github.com/kasi-x/python-copier-template/blob/main/.github/CONTRIBUTING.md),
+want changed (per [CONTRIBUTING](https://github.com/ConstitutiveTemplates/foundry/blob/main/.github/CONTRIBUTING.md),
 this template treats "show me the repo where this matters" as the way
 changes get evaluated).

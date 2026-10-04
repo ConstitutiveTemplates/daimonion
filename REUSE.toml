@@ -1,8 +1,8 @@
 version = 1
 
-SPDX-PackageName = "python-copier-template"
+SPDX-PackageName = "foundry"
 SPDX-PackageSupplier = "kasi-x <kashimiya.exe@gmail.com>"
-SPDX-PackageDownloadLocation = "https://github.com/kasi-x/python-copier-template"
+SPDX-PackageDownloadLocation = "https://github.com/ConstitutiveTemplates/foundry"
 
 # Project-wide default: every file inherits the project license and
 # copyright. Individual exceptions (e.g. vendored third-party assets) are

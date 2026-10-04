@@ -125,7 +125,7 @@ def test_answers_are_not_guessed_for_shape_questions(tmp_path: Path):
 
 def test_generated_project_is_update(tmp_path: Path):
     (tmp_path / ".copier-answers.yml").write_text(
-        "_commit: 5.4.0-1-gabcdef\n_src_path: https://github.com/kasi-x/python-copier-template.git\n"
+        "_commit: 5.4.0-1-gabcdef\n_src_path: https://github.com/ConstitutiveTemplates/foundry.git\n"
         "project_type: library\n"
     )
     assert detect.detect(tmp_path).mode == "update"
@@ -149,7 +149,7 @@ def test_other_template_is_foreign(tmp_path: Path):
 
 
 def test_answers_file_refused_for_update(tmp_path: Path):
-    (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/kasi-x/python-copier-template.git\n")
+    (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/ConstitutiveTemplates/foundry.git\n")
     out = tmp_path / "answers.yml"
     assert detect.main([str(tmp_path), "--answers", str(out)]) == 2
     assert not out.exists()

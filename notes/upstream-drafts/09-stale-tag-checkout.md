@@ -9,7 +9,7 @@ Title: Warn when the selected ref is far behind the default branch (tag checkout
 Our repository is a fork that inherited upstream tags; the newest tag (`5.4.0`, tagged by the upstream project) predates every template feature added since the fork:
 
 ```console
-$ copier copy https://github.com/kasi-x/python-copier-template.git ./dest
+$ copier copy https://github.com/ConstitutiveTemplates/foundry.git ./dest
 # ... copies from the 5.4.0 tag content ...
 Copying from template version 5.4.0.post45.dev0+cbb65076
 ```

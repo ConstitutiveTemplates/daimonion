@@ -1,4 +1,4 @@
-# python-copier-template
+# foundry
 
 A Copier template for Python projects.
 

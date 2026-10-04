@@ -80,9 +80,7 @@ def https_get(host: str, path: str, headers: dict[str, str] | None = None, attem
         try:
             conn = http.client.HTTPSConnection(host, timeout=20)
             try:
-                conn.request(
-                    "GET", path, headers={"User-Agent": "python-copier-template-upstream-check", **(headers or {})}
-                )
+                conn.request("GET", path, headers={"User-Agent": "foundry-upstream-check", **(headers or {})})
                 resp = conn.getresponse()
                 body = resp.read().decode("utf-8", "replace")
                 status, ctype = resp.status, resp.getheader("Content-Type", "")

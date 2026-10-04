@@ -887,7 +887,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 #### P2. 導入体験（UX）の極小摩擦化（Zero-Friction Onboarding）
 - **ゼロインストール・ワンライナーの前面化**:
   - `git clone` 前提の手順を即時廃止。README 先頭を `uvx copier copy --trust gh:<org>/<repo> my-project` に刷新。
-  - CLI（`python-copier-template`）の PyPI 公開または `uvx` 配布対応（パッケージ構成を整理し、clone なしで `uvx <name> new my-project --preset library` を可能に）。
+  - CLI（`foundry`）の PyPI 公開または `uvx` 配布対応（パッケージ構成を整理し、clone なしで `uvx <name> new my-project --preset library` を可能に）。
 - **プリセット主導の「3秒スタート」体験**:
   - 質問票の第1問目で「推奨プリセットから選ぶ（Web API / CLI / Data Science / Library / Minimal Bare）」を案内し、1回のリターンキーで即座に走る体験を提供。
 - **既存プロジェクト近代化ツール（Adopt）のワンライナー化**:
@@ -948,7 +948,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 2. **フェーズ 2: 独立とリブランディング（1週間）**
    - リポジトリの detach / 独立公開、固有名称・新リポジトリの確定。
    - v1.0.0 タグの打ち直し、Scorecard 初回計測、Branch Protection 設定。
-   - `python-copier-template` CLI パッケージの整理（PyPI または `uvx` 配布）。
+   - `foundry` CLI パッケージの整理（PyPI または `uvx` 配布）。
 3. **フェーズ 3: 対外発信と認知拡大（ローンチ後 2〜4週間）**
    - 3大技術ブログ（Z3検証、ドリフト検知、AGENTS.md）の同時公開（Hacker News / Reddit / Zenn）。
    - `awesome-python` / `awesome-copier` への PR 提出。
@@ -1000,8 +1000,10 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 - **`presets/mcp-server.yml` の新設**:
   - `project_type: cli`, `include_mcp: true`, `mcp_transport: stdio`, `use_recommended_security: true` 等の構成。
   - `tests/test_presets.py` に `test_preset_renders[mcp-server]` を追加し、sentinel ファイルをアサート。
-- **`marimo` ノートブックの統合**:
-  - `data_science` 向けに `marimo` の設定・タスク・.gitignore 除外を追加（Jupyter/Quarto との選択または併用）。
+- **`marimo` ノートブックの統合**: → **既存レイヤーと判明（2026-10-04）**。
+  `data_science` の `experiment` extra に marimo 同梱済み（`pyproject-deps`
+  macro、`deptry` 許可リスト、`task marimo`＝`_tasks.jinja`、
+  `docs/how-to/data-science.md`「Notebooks: marimo or Jupyter」）。新規作業なし。
 
 ---
 
@@ -1049,7 +1051,43 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 1. **Showcase（採用実績）の構築**:
    - 自分のプロジェクト（MCPサーバー、CLIツール、競プロリポジトリ）を本テンプレートで生成し、`README.md` に「採用例」として掲載。
    - 外部ユーザーのリポジトリに「Adopt」を提案する PR（またはサンプルリポジトリ）を作成し、感謝とともに Showcase への掲載許可を得る。
-   - `[![Built with python-copier-template](https://img.shields.io/badge/built%20with-copier--template-blue)](https://...)]` バッジの配布。
+   - `[![Built with foundry](https://img.shields.io/badge/built%20with-foundry-blue)](https://github.com/ConstitutiveTemplates/foundry)]` バッジの配布。
 2. **初動の Issue / PR 体制と contributor ladder**:
    - 新規スターやフォーク、Issue が立った際は 24時間以内に丁寧に応答。
    - `good first issue`（倫理ドラフトの追加、タイポ修正、ドキュメント改善）に最初の貢献があった場合、即座にレビューして merge し、`CONTRIBUTORS.md` に記載してリテンションを高める。
+
+## §38 展開: 法務エコシステムの ConstitutiveTemplates 組織への分離（2026-10-04）
+
+§37 の拡大戦略に基づき、法律・コンプライアンス層をこのリポジトリから組織レベルの
+専門リポジトリへ分離した。法律自体の「整理（オントロジー化）」は追従不能な
+規模になるため、単独のリポジトリとして育てる。
+
+- **`open-law`（公開済み）**: 世界中の公式立法ソース（uk, jp, eu, kr, bd,
+  np, la）の Polite スクレイパー。`kasi-x/open-law` から
+  `ConstitutiveTemplates/open-law` へ移管・初期公開。Akoma Ntoso 対応の
+  統一 Law モデル + トピック対応表（correspond）。
+- **`law-map`（新規作成）**: 機能的等価（Zweigert & Kötz）に基づく
+  機械可読の「義務グラフ」。条文・判例・ガイダンスを 1 つの義務ノードに
+  束ね、`review_by` による鮮度管理と `law-map check` によるドリフト監視。
+  3 つのシード: PIIログ禁止・SBOM義務・AI学習データ利用。
+- **`good-future-codex`**: 人間・AI向け散文セクション。`law-map` の
+  `related_sections` が逆リンクし、「義務 → 散文 → vendored スナップショット」
+  の上流を形成。
+- **このリポジトリ**: `docs/explanations/ethics-external.md` を更新し、
+  外部リポジトリが「設計メモ」から「実在のパイプライン」になったことを記録。
+  `_shared/ethics/` は引き続き vendored スナップショットとして残る。
+
+### 残作業（このリポジトリ側）— 2026-10-04 全項目着地
+- [x] `_shared/ethics/` → `good-future-codex` への vendor sync ワークフロー:
+  `tools/check_ethics_drift.py` + `.ethics-vendored` marker + 週次
+  `.github/workflows/ethics-sync.yml`（drift で issue 起票）が既に実装済みだった
+- [x] `law-map` の `related_sections` ↔ codex `sections/` 命名規則の一致検査:
+  `<tier>-<slug>` → `sections/<tier>/<slug>.md.jinja` の解約規則を
+  law-map 側に実装（`law-map validate|check --codex <checkout>`、未解決は error。
+  law-map の ci.yml で codex を checkout して検査。law-map README に規則を明記）
+- [x] `law-map check` の `scheduled-check.yml` 組み込み: 週次 job
+  `law-map-review-by` を追加（law-map + good-future-codex を checkout し
+  `uv run law-map check --codex` を実行、期限切れで赤＋issue 起票）。
+  ethics-sync.yml との重複なし — 対象 corpus が異なる（散文 SHA ドリフト vs
+  義務ノードの review_by 鮮度）。`docs/explanations/ethics-external.md` に
+  2 つの契約（vendored SHA / `<tier>-<slug>` 命名規則）を記録

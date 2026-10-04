@@ -96,7 +96,7 @@ Then review the result the way you would any merge:
 ```shell
 git diff          # delete the files you do not want, keep yours
 git status        # untracked additions: CI, hygiene, AGENTS.md, ...
-git add -A && git commit -m "chore: adopt python-copier-template"
+git add -A && git commit -m "chore: adopt foundry"
 ```
 
 Later updates: `copier update --trust` and review the diff (see
@@ -107,14 +107,14 @@ Later updates: `copier update --trust` and review the diff (see
 If you have a python3-pip-skeleton based project then it is best to adopt the *first* release of this template (`6.0.0`, the tag the fork detach creates), then `copier update` to get to the latest. This is because `copier update` will try and merge file changes across renames done between releases, while `copier copy` cannot. This looks like:
 
 ```shell
-uvx copier copy https://github.com/kasi-x/python-copier-template.git --trust --vcs-ref=6.0.0 /path/to/existing-project
+uvx copier copy https://github.com/ConstitutiveTemplates/foundry.git --trust --vcs-ref=6.0.0 /path/to/existing-project
 git diff
 # Examine the changes, put back anything you want to keep
-git commit -m "Adopt python-copier-template 6.0.0"
+git commit -m "Adopt foundry 6.0.0"
 uvx copier update /path/to/existing-project --trust
 git diff
 # Examine the changes, resolve any merge conflicts
-git commit -m "Update to python-copier-template x.x.x"
+git commit -m "Update to foundry x.x.x"
 ```
 
 ## Without the detection tool
@@ -127,10 +127,10 @@ them):
 ```shell
 uvx copier copy --trust --data existing_project=true \
     --skip .github/workflows/ci.yml --skip renovate.json \
-    https://github.com/kasi-x/python-copier-template.git /path/to/existing-project
+    https://github.com/ConstitutiveTemplates/foundry.git /path/to/existing-project
 git diff
 # Examine the changes, put back anything you want to keep
-git commit -m "Adopt python-copier-template x.x.x"
+git commit -m "Adopt foundry x.x.x"
 ```
 
 Without those `--skip` flags copier stops at the first one of those files
@@ -146,9 +146,9 @@ and `.gitignore`, protect them with `--skip`:
 ```shell
 uvx copier copy --trust \
     --skip README.md --skip LICENSE --skip pyproject.toml --skip .gitignore \
-    https://github.com/kasi-x/python-copier-template.git /path/to/existing-project
+    https://github.com/ConstitutiveTemplates/foundry.git /path/to/existing-project
 git diff
-git commit -m "chore: adopt python-copier-template (infra only)"
+git commit -m "chore: adopt foundry (infra only)"
 ```
 
 Your own files are left untouched; everything you do not have yet (CI

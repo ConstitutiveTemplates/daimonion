@@ -16,14 +16,14 @@
   },
   "packageRules": [
     {
-      "description": "Disable python version as that is managed by python-copier-template",
+      "description": "Disable python version as that is managed by foundry",
       "matchManagers": [
         "pyenv"
       ],
       "enabled": false
     },
     {
-      "description": "Core CI actions managed by python-copier-template (checkout, toolchain setup, lint/test helpers)",
+      "description": "Core CI actions managed by foundry (checkout, toolchain setup, lint/test helpers)",
       "matchPackageNames": [
         "actions/checkout",
         "astral-sh/setup-uv",
@@ -41,7 +41,7 @@
       "enabled": false
     },
     {
-      "description": "Hygiene actions managed by python-copier-template (secrets, workflow linting, REUSE, CITATION.cff)",
+      "description": "Hygiene actions managed by foundry (secrets, workflow linting, REUSE, CITATION.cff)",
       "matchPackageNames": [
         "gitleaks/gitleaks-action",
         "rhysd/actionlint",
@@ -54,7 +54,7 @@
       "enabled": false
     },
     {
-      "description": "Release actions managed by python-copier-template (release notes, coverage, changelog)",
+      "description": "Release actions managed by foundry (release notes, coverage, changelog)",
       "matchPackageNames": [
         "softprops/action-gh-release",
         "orhun/git-cliff-action",
@@ -66,7 +66,7 @@
       "enabled": false
     }{% if docker %},
     {
-      "description": "Container actions managed by python-copier-template",
+      "description": "Container actions managed by foundry",
       "matchPackageNames": [
         "docker/setup-buildx-action",
         "docker/login-action",
@@ -79,7 +79,7 @@
       "enabled": false
     }{% endif %}{% if pypi %},
     {
-      "description": "PyPI publish action managed by python-copier-template",
+      "description": "PyPI publish action managed by foundry",
       "matchPackageNames": [
         "pypa/gh-action-pypi-publish"
       ],
@@ -89,7 +89,7 @@
       "enabled": false
     }{% endif %}{% if docs %},
     {
-      "description": "Docs deploy action managed by python-copier-template",
+      "description": "Docs deploy action managed by foundry",
       "matchPackageNames": [
         "peaceiris/actions-gh-pages"
       ],
@@ -99,7 +99,7 @@
       "enabled": false
     }{% endif %}{% if scorecard_effective %},
     {
-      "description": "OpenSSF Scorecard actions managed by python-copier-template",
+      "description": "OpenSSF Scorecard actions managed by foundry",
       "matchPackageNames": [
         "ossf/scorecard-action",
         "github/codeql-action"
@@ -110,7 +110,7 @@
       "enabled": false
     }{% endif %}{% if fair %},
     {
-      "description": "FAIR compliance action managed by python-copier-template",
+      "description": "FAIR compliance action managed by foundry",
       "matchPackageNames": [
         "fair-software/howfairis-github-action"
       ],
@@ -120,7 +120,7 @@
       "enabled": false
     }{% endif %},
     {
-      "description": "Disable Dockerfile base images that are managed by python-copier-template",
+      "description": "Disable Dockerfile base images that are managed by foundry",
       "matchManagers": [
         "dockerfile"
       ],

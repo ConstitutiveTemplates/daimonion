@@ -1,0 +1,16 @@
+Foundry
+Copyright (c) 2026 kasi-x
+
+This project is a fork of and builds on prior work:
+
+- DiamondLightSource/python-copier-template
+  (https://github.com/DiamondLightSource/python-copier-template),
+  licensed under the Apache-2.0 license, which itself descends from
+  the Scientific Python python3-pip-skeleton template.
+
+- copier (https://github.com/copier-org/copier), the templating
+  engine this project is a template for.
+
+See LICENSE for the Apache-2.0 license of this repository's own
+contributions, and REUSE.toml / LICENSES/ for the per-file and
+vendored-license terms.

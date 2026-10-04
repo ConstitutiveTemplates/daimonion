@@ -7,7 +7,7 @@ questionnaire, the witness leaf space, or anyone's render — it
 accumulates as documentation first and is promoted only when a
 distribution bundle forms. Who decides what goes in the generated
 projects is stated in
-[GOVERNANCE.md](https://github.com/kasi-x/python-copier-template/blob/main/GOVERNANCE.md):
+[GOVERNANCE.md](https://github.com/ConstitutiveTemplates/foundry/blob/main/GOVERNANCE.md):
 contributors draft and research; the maintainer owns the defaults and
 the promotions. The mechanics behind this page are explained in
 [Authoring Template Sources](../explanations/template-dev.md)
