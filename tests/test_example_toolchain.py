@@ -30,14 +30,14 @@ def test_template_log_library_loguru(tmp_path: Path):
     copy_project(tmp_path, log_library="loguru")
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert "loguru" in pyproject_toml["project"]["dependencies"]
-    logging_setup = (tmp_path / "src" / "python_copier_template_example" / "logging_setup.py").read_text()
+    logging_setup = (tmp_path / "src" / "foundry_example" / "logging_setup.py").read_text()
     assert "from loguru import logger" in logging_setup
     run = make_venv(tmp_path)
     run("uvx --from go-task-bin task check")
     # logger.bind(...).info(event, **kv) works the same as the structlog default
     run(
         "uv run --locked python -c "
-        '"from python_copier_template_example.logging_setup import logger; '
+        '"from foundry_example.logging_setup import logger; '
         "logger.bind(task_id='T-123').info('job_done', chunks=3)\""
     )
 
@@ -48,7 +48,7 @@ def test_template_log_library_picologging(tmp_path: Path):
     copy_project(tmp_path, log_library="picologging")
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert "picologging" in pyproject_toml["project"]["dependencies"]
-    logging_setup = (tmp_path / "src" / "python_copier_template_example" / "logging_setup.py").read_text()
+    logging_setup = (tmp_path / "src" / "foundry_example" / "logging_setup.py").read_text()
     assert "import picologging as logging" in logging_setup
     run = make_venv(tmp_path)
     run("uvx --from go-task-bin task check")
@@ -61,7 +61,7 @@ def test_template_log_library_stdlib(tmp_path: Path):
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     deps = pyproject_toml["project"]["dependencies"]
     assert not {"structlog", "loguru", "picologging"} & set(deps)
-    logging_setup = (tmp_path / "src" / "python_copier_template_example" / "logging_setup.py").read_text()
+    logging_setup = (tmp_path / "src" / "foundry_example" / "logging_setup.py").read_text()
     assert "import logging" in logging_setup
     run = make_venv(tmp_path)
     run("uvx --from go-task-bin task check")
@@ -82,7 +82,7 @@ def test_template_log_library_gcp_json_fields(tmp_path: Path, log_library: str, 
     monkeypatch.setenv("LOG_FORMAT", "json")
     output = run(
         "uv run --locked python -c "
-        '"from python_copier_template_example.logging_setup import logger; '
+        '"from foundry_example.logging_setup import logger; '
         "logger.bind(task_id='T-123').info('job_done', chunks=3)\""
     )
     payload = json.loads(output)
