@@ -192,9 +192,9 @@ sections:
     superseded_by: null
     why: "FDA's PCCP final guidance (2024-12), Japan's IDATEN and the EU MDR + AI Act stack all converge on one rule: continuous learning is allowed only inside a pre-approved change envelope, with humans deciding. Promoted from draft when the domain_traits multiselect landed: the section was previously unroutable because 'medical' is a purpose, not a layout -- a health-data CLI or an MCP server exposing a clinical tool was in scope by the section's own 適用条件 while no gate could reach it. L1: tools/ethics.py's presence trigger fires on the clinical vocabulary, and invariants.yml's ethics-appendix predicate asserts the section appears exactly where the answer selects it."
 
-  - id: baseline-cra-obligations
+  - id: region-eu-cra
     file: _shared/ethics/region/eu-cra.md.jinja
-    version: 2026-09-21.1
+    version: 2026-10-04.1
     effective: 2026-09-11
     review_by: 2027-03-31
     sources:
@@ -305,3 +305,38 @@ sections:
     rendered_from: []
     superseded_by: null
     why: "European Accessibility Act applies from 2025-06-28 to consumer-facing UI (e-commerce, banking, e-books): EN 301 549 / WCAG 2.1 AA becomes a legal duty, with narrow microenterprise and legacy-contract carve-outs."
+
+  - id: baseline-deprecated-crypto
+    file: _shared/ethics/baseline/deprecated-crypto.md.jinja
+    version: 2026-10-04.1
+    effective: 2019-10-01
+    review_by: 2027-03-31
+    sources:
+      - https://csrc.nist.gov/pubs/sp/800/131/a/r2/final
+      - https://www.cryptrec.go.jp/english/index.html
+    scope: {jurisdiction: [], sector: [], category: [crypto]}
+    scale: global
+    audience: [library, cli, web]
+    enforcement: L0
+    status: draft
+    rendered_from: []
+    superseded_by: null
+    why: "NIST SP 800-131A Rev.2 sunset SHA-1 signatures (2013) and disallowed 3DES (2023); RFC 8996 deprecated TLS 1.0/1.1 and CRYPTREC dropped MD5/SHA-1/RC4 from the e-government list. New code must not introduce MD5/SHA-1 signatures, DES/3DES/RC4, TLS <=1.1, or RSA<2048. Drafted in the 2026-10-04 codex sync; promotion needs its gate + audience wiring like any other baseline row."
+
+  - id: baseline-vdp
+    file: _shared/ethics/baseline/vdp.md.jinja
+    version: 2026-10-04.1
+    effective: 2020-09-02
+    review_by: 2027-01-31
+    sources:
+      - https://www.cisa.gov/coordinated-vulnerability-disclosure-process
+      - https://www.rfc-editor.org/rfc/rfc9116
+      - https://www.ipa.go.jp/security/todokede/vuln/uketsuke.html
+    scope: {jurisdiction: [], sector: [], category: [supply-chain-security]}
+    scale: global
+    audience: [library, cli, script, web, data-science, kaggle, mcp, online-judge, iot]
+    enforcement: L0
+    status: draft
+    rendered_from: []
+    superseded_by: null
+    why: "CISA BOD 20-01 + CVD guidance, RFC 9116 security.txt, IPA's early-warning partnership, and EU CRA art. 14 (vulnerability reporting duty live since 2026-09-11) converge on one rule: anything distributed or public-facing needs a declared reporting channel with handling deadlines. Drafted in the 2026-10-04 codex sync; the generated template already ships SECURITY.md, so promotion wiring is smaller than most rows."
