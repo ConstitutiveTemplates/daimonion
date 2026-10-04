@@ -51,8 +51,11 @@
         r/programming / DevOps 系 `notes/outreach/drift-detection-article.md`
   - [ ] JA: 『272通りを Z3 で形式検証した話』→ Zenn/Qiita
         `notes/outreach/zenn-z3-template.md`
-- [ ] **Awesome リスト PR**: `vinta/awesome-python`（Project Templates）、
-      `copier-org/awesome-copier`。Astral Discord `#showcase` への投稿。
+- [ ] **Awesome リスト PR**: `vinta/awesome-python`（Project Scaffolding）、
+      `donhui/awesome-uv`、copier Discussions / Astral Discord。
+      **訂正（2026-10-05）**: `copier-org/awesome-copier` は存在しない —
+      公式経路は topic `copier-template`（設定済み=掲載済み）。
+      文面素案は `notes/outreach/awesome-list-entries.md` に起票済み。
 - [ ] **ニュースレター推薦**: Python Weekly / PyCoder's Weekly の
       推薦フォーム、Python Bytes へのトピック提案。
 - [x] **移行ガイド**: ✅ `docs/how-to/migrate-from-hypermodern.md` 新設済み
