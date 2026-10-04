@@ -27,8 +27,10 @@
 - [ ] **Secrets 再設定（3種）**: org 再作成で旧リポの secret が消滅。
       `GITLEAKS_LICENSE`（なしだと hygiene の gitleaks がエラー死・2026-10-04
       実測）、`EXAMPLE_DEPLOY_KEY`（example 連携の deploy key。
-      org リポは設定で deploy key 無効のため _example.yml の publish 経路を
-      見直す必要あり）、`PYPI_API_TOKEN`。
+      **deploy key 方式で継続決定（2026-10-05）**: org Settings →
+      Member privileges で deploy keys を有効化したうえで、
+      ConstitutiveTemplates/foundry-example に deploy key を登録し
+      `EXAMPLE_DEPLOY_KEY` secret を再設定）、`PYPI_API_TOKEN`。
 - [x] **`uvx --from git+...` の実ネットワーク検証**: ✅ 2026-10-04。
       `uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git
       foundry new . --preset bare` が clone→cache→render（61 files）まで
