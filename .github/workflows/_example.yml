@@ -61,7 +61,7 @@ jobs:
         with:
           deploy_key: ${{ secrets.EXAMPLE_DEPLOY_KEY }}
           publish_dir: /tmp/example
-          external_repository: ${{ github.repository_owner }}/python-copier-template-example
+          external_repository: ${{ github.repository_owner }}/foundry-example
           publish_branch: main
           enable_jekyll: true  # don't put a .nojekyll
           exclude_assets: ''  # default would exclude .github

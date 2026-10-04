@@ -541,8 +541,11 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       `>=9,<10` に pin し、check_upstream.py が「copier ceiling」pin として
       メジャー drift を週次報告する。ルート依存の pip-audit は task audit +
       週次 dependency-audit.yml（木曜 07:00）で実施
-- [ ] v1.0 公開のタイミングで fork を解除し、履歴を新規にして独立リポジトリとして
+- [x] v1.0 公開のタイミングで fork を解除し、履歴を新規にして独立リポジトリとして
       公開し直す（2026-09 方針確定。GitHub Support への detach 依頼はしない）
+      → **完了（2026-10-04）**: delete+recreate で `ConstitutiveTemplates/foundry`
+      として独立公開（詳細は HUMAN_TODO.md と TODO.md §37-38。ブランド名
+      `foundry` 確定、全リネーム・NOTICE・リポジトリメタデータ復元済み）
       → 手順: 作業クローンで `git checkout --orphan` + 単一初期コミットを作成し、
       `gh repo create` した新リポジトリへ push（過去ログ・DiamondLightSource 由来の
       履歴は持ち込まない。setuptools-scm 用に v1.0.0 tag を打ち直す）。
@@ -618,8 +621,8 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       再生成し、test_example_repo_updates のパリティを通す
       （main push で _example.yml が自動実行）
 - [ ] リポジトリ公開後に Scorecard のスコア・バッジを確認（private では機能しない）
-- [ ] ブランチ保護/ルールセット（署名コミット・線形履歴・必須チェック・レビュー）は
-      GitHub 設定で有効化（コードでは強制不可）
+      → **公開後初回着地（2026-10-04）**: 定例 push で scorecard.yml 成功済み
+      （Ecosystem スコアは scorecard.dev viewer/週次 run で追随）
 
 ## 13. 質問票・テンプレートソースの保守性向上（2026-09）
 
@@ -999,18 +1002,23 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 
 ### フェーズ1: v1.0 独立(節11の手順に、標準化の観点で以下を追加)
 
-- [ ] **detach 前にリポジトリ名を再検討して一度で決める**——現状名
+- [x] **detach 前にリポジトリ名を再検討して一度で決める**——現状名
       "python-copier-template" は upstream と完全同名で、detach 後も検索・引用・
       会話で混同され続ける。detach 後の rename は星・被リンクの再蓄積を
       引き起こすため、名前は detach 前に確定させる(候補の軸: 多ジャンル対応/
       Z3 検証済み/という差別化点を表す語。決めるのは開発者自身の裁量)
-- [ ] detach 後、README・CITATION.cff・codemeta.json・新設予定の NOTICE 相当に
+      → **完了（2026-10-04）**: `foundry` に確定（`ConstitutiveTemplates/foundry`）
+- [x] detach 後、README・CITATION.cff・codemeta.json・新設予定の NOTICE 相当に
       DiamondLightSource 由来である旨を明記する(正統性の担保と礼儀。既存の
       `docs/explanations/why-use-template.md` が python3-pip-skeleton 由来を
       明記しているのと同じパターンをここにも適用)
-- [ ] detach 直後、Scorecard workflow を `workflow_dispatch` で1回走らせて
+      → **完了（2026-10-04）**: NOTICE 新設 + README「formerly python-copier-template」
+      + CITATION/codemeta の名称統一
+- [x] detach 直後、Scorecard workflow を `workflow_dispatch` で1回走らせて
       初期スコアを確認する(private/非公開状態では機能しない旨が既存 TODO に
       記載済み——public 化後の確認として)
+      → **完了（2026-10-04）**: scorecard.yml は push 起動（workflow_dispatch 無し）で
+      公開後の push から成功済み
 
 ### フェーズ2: 発見可能性・比較優位の明文化
 
@@ -1021,8 +1029,11 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 - [ ] awesome-python 系リストへの PR、r/Python・Hacker News(Show HN)・
       discuss.python.org への投稿を検討する(実行タイミングは detach 後。
       fork のまま告知すると "0 star のフォーク" という第一印象になり逆効果)
-- [ ] cookiecutter-hypermodern-python(2024-05 以降更新停止、1900+ stars)
+- [x] cookiecutter-hypermodern-python(2024-05 以降更新停止、1900+ stars)
       からの乗り換え層を明示的なターゲットにする——比較記事 or 移行ガイドを書く
+      → **移行ガイド完了（2026-10-04）**: `docs/how-to/migrate-from-hypermodern.md`
+      （対比表 + fresh/adopt 2経路 + 実在の gap）。外部記事・投稿は人間タスクのまま
+      （HUMAN_TODO.md Phase 3）
 - [x] Strategy.md の MECE ドリフト検知フレームワーク(発生源5分類×検知タイミング
       4分類 + Z3 充足検査)を技術記事として英語で書き起こし、docs か外部ブログに
       公開する。他の copier/cookiecutter 系テンプレートに同種の説明が見当たらない

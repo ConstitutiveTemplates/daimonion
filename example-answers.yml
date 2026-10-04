@@ -18,16 +18,16 @@ use_recommended_security: false
 author_email: kashimiya.exe@gmail.com
 author_name: kashi-x
 description: An expanded https://github.com/ConstitutiveTemplates/foundry to illustrate how it looks with all the options enabled.
-distribution_name: kasi-x-python-copier-template-example
+distribution_name: ConstitutiveTemplates-foundry-example
 docker: true
-github_org: kasi-x
+github_org: ConstitutiveTemplates
 gitlab_group: mygroup
-package_name: python_copier_template_example
+package_name: foundry_example
 package_manager: uv
 task_runner: task
 allow_japanese: true
 project_type: data_science
-repo_name: python-copier-template-example
+repo_name: foundry-example
 pypi: true
 license: Apache-2.0
 fair: true

@@ -48,7 +48,7 @@ question, and the [support tiers reference](docs/reference/support.md) says
 which combinations CI executes end to end. For the comparison with the upstream
 template and the alternatives, see
 [Vision & Positioning](docs/explanations/vision.md); the template in action is
-the [example project](https://github.com/kasi-x/python-copier-template-example).
+the [example project](https://github.com/ConstitutiveTemplates/foundry-example).
 
 ## Create a new project
 
