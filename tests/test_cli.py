@@ -1,4 +1,4 @@
-"""The shipped entry point's dispatch: `python-copier-template new <dir>`.
+"""The shipped entry point's dispatch: `foundry new <dir>`.
 
 `tools/cli.py` is the console script this template publishes (pyproject.toml
 `[project.scripts]`), and it is a *dispatcher*: the mode `tools/detect.py`
@@ -262,3 +262,124 @@ def test_main_parses_the_new_subcommand(tmp_path: Path, monkeypatch: pytest.Monk
 
     assert cli.main(["new", str(tmp_path), "--preset", "library", "--ref", "HEAD", "--dry-run"]) == cli.OK
     assert seen == {"target": tmp_path, "preset": "library", "ref": "HEAD", "dry_run": True}
+
+
+# Installed-mode delegation: `main` re-dispatches to the cached clone when TOP
+# carries no copier.yml. The git runner and the child process are faked; what
+# is pinned is the observable contract -- one delegation, the child's exit
+# code, the recursion guard, the URL in errors, the stale-clone fallback.
+
+
+def test_main_delegates_to_the_cached_checkout_and_propagates_the_exit_code(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An install without a checkout next to it runs the cached clone's CLI once."""
+    calls: list[tuple[list[str], dict[str, str]]] = []
+    cache = tmp_path / "cache" / "repo"
+    (cache / "tools").mkdir(parents=True)
+    (cache / "tools" / "cli.py").write_text("")
+    monkeypatch.setattr(cli, "TOP", tmp_path / "no-checkout")  # no copier.yml: installed mode
+    monkeypatch.setattr(cli, "_cache_dir", lambda: cache)
+    monkeypatch.setattr(cli, "_refresh_checkout", lambda _cache: None)  # the clone already exists
+
+    def fake_call(argv: list[str], env: dict[str, str]) -> int:
+        calls.append((argv, env))
+        return 7  # an arbitrary child exit code, propagated as-is
+
+    monkeypatch.setattr(cli.subprocess, "call", fake_call)
+
+    assert cli.main(["new", "proj", "--preset", "library"]) == 7
+    assert len(calls) == 1  # one delegation, never a second
+    argv, env = calls[0]
+    assert argv == [sys.executable, str(cache / "tools" / "cli.py"), "new", "proj", "--preset", "library"]
+    assert env[cli.DELEGATED_ENV] == "1"
+
+
+def test_delegation_sentinel_fails_without_a_second_subprocess(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    """A delegated clone that is still not a checkout errors instead of recursing."""
+    monkeypatch.setattr(cli, "TOP", tmp_path / "no-checkout")
+    monkeypatch.setattr(cli, "_cache_dir", lambda: tmp_path / "cache" / "repo")
+    monkeypatch.setenv(cli.DELEGATED_ENV, "1")
+    monkeypatch.setattr(cli.subprocess, "call", lambda *a, **k: pytest.fail("must not delegate again"))
+
+    assert cli.main(["new", "proj"]) == cli.FAILED
+    assert "not a template checkout" in capsys.readouterr().err
+
+
+def test_offline_without_cache_names_the_remote_and_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    """A cold cache that cannot be cloned reports the URL and exits non-zero."""
+    from types import SimpleNamespace
+
+    cache = tmp_path / "cache" / "repo"
+    monkeypatch.setattr(cli, "TOP", tmp_path / "no-checkout")
+    monkeypatch.setattr(cli, "_cache_dir", lambda: cache)
+    monkeypatch.setattr(cli, "_remote_url", lambda: "https://example.invalid/template.git")
+
+    def failed_git(_where: Path, *_args: str) -> SimpleNamespace:
+        return SimpleNamespace(returncode=128, stdout="", stderr="fatal: could not read from remote")
+
+    monkeypatch.setattr(cli, "run_git", failed_git)
+
+    assert cli.main(["new", "proj"]) == cli.FAILED
+    assert "https://example.invalid/template.git" in capsys.readouterr().err
+    assert not cache.exists()  # nothing half-cloned left behind
+
+
+def test_stale_cache_with_failed_fetch_still_delegates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    """A refresh failure warns and the stale clone is used, not a hard error."""
+    from types import SimpleNamespace
+
+    calls: list[list[str]] = []
+    cache = tmp_path / "cache" / "repo"
+    (cache / "tools").mkdir(parents=True)
+    (cache / "tools" / "cli.py").write_text("")
+    monkeypatch.setattr(cli, "TOP", tmp_path / "no-checkout")
+    monkeypatch.setattr(cli, "_cache_dir", lambda: cache)
+
+    def failed_fetch(_where: Path, *_args: str) -> SimpleNamespace:
+        return SimpleNamespace(returncode=128, stdout="", stderr="fatal: unable to access")
+
+    monkeypatch.setattr(cli, "run_git", failed_fetch)
+    monkeypatch.setattr(cli.subprocess, "call", lambda argv, env: calls.append(argv) or cli.OK)
+
+    assert cli.main(["new", "proj"]) == cli.OK
+    assert "stale" in capsys.readouterr().err
+    assert calls and calls[0][:2] == [sys.executable, str(cache / "tools" / "cli.py")]
+
+
+def test_clone_losing_the_rename_race_keeps_the_existing_clone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """`_clone_checkout` against an already-published cache keeps the winner's clone."""
+    from types import SimpleNamespace
+
+    cache = tmp_path / "cache" / "repo"
+    cache.mkdir(parents=True)
+    (cache / "winner.txt").write_text("mine")
+
+    def ok_clone(_where: Path, *_args: str) -> SimpleNamespace:
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(cli, "run_git", ok_clone)
+
+    assert cli._clone_checkout(cache) == cli.OK  # noqa: SLF001  WHYNOT: atomic publish has no public entry point; the test pins its contract.
+    assert (cache / "winner.txt").read_text() == "mine"  # the loser must not replace it
+    assert [p.name for p in cache.parent.iterdir()] == [cache.name]  # the loser's temp dir is gone
+
+
+def test_remote_url_defaults_to_the_shipped_repo(monkeypatch: pytest.MonkeyPatch):
+    """The fallback remote is the canonical template repo, overridable by env."""
+    monkeypatch.delenv(cli.REMOTE_URL_ENV, raising=False)
+    assert cli._remote_url() == "https://github.com/ConstitutiveTemplates/foundry.git"  # noqa: SLF001  WHYNOT: no public entry point; the fallback remote is a contract.
+    monkeypatch.setenv(cli.REMOTE_URL_ENV, "https://example.com/x.git")
+    assert cli._remote_url() == "https://example.com/x.git"  # noqa: SLF001  WHYNOT: same as above.
+
+
+def test_cache_dir_follows_xdg_and_defaults_to_home(monkeypatch: pytest.MonkeyPatch):
+    """The cache lives under $XDG_CACHE_HOME (or ~/.cache) + the template name."""
+    monkeypatch.setenv("XDG_CACHE_HOME", "/tmp/xdg-cache")
+    assert cli._cache_dir() == Path("/tmp/xdg-cache") / "foundry" / "repo"  # noqa: SLF001  WHYNOT: no public entry point; the documented cache location is a contract.

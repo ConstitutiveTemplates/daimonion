@@ -1,17 +1,18 @@
-[![CI](https://github.com/kasi-x/python-copier-template/actions/workflows/ci.yml/badge.svg)](https://github.com/kasi-x/python-copier-template/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/kasi-x/python-copier-template/badge)](https://scorecard.dev/viewer/?uri=github.com/kasi-x/python-copier-template) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![CI](https://github.com/ConstitutiveTemplates/foundry/actions/workflows/ci.yml/badge.svg)](https://github.com/ConstitutiveTemplates/foundry/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ConstitutiveTemplates/foundry/badge)](https://scorecard.dev/viewer/?uri=github.com/ConstitutiveTemplates/foundry) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-# python-copier-template
+# foundry
 
 ## TL;DR
-Prerequisites: [uv](https://docs.astral.sh/uv) (its `uvx` shim runs copier) and [git](https://git-scm.com). Both commands below expand this fork's **newest release tag**, so no revision flag is needed:
+Prerequisites: [uv](https://docs.astral.sh/uv) (its `uvx` shim runs everything below) and [git](https://git-scm.com). No clone of this repository is needed; every command expands this fork's **newest release tag**:
 ```shell
-python-copier-template new my-project --preset library   # the shipped CLI, from a clone of this repo: picks the release, renders, records the answers
-uvx copier copy --trust https://github.com/kasi-x/python-copier-template.git my-project   # or drive copier directly
+uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git foundry new my-project --preset library   # shipped CLI: picks the release, renders, records the answers (clones+caches the template on first use)
+uvx copier copy --trust https://github.com/ConstitutiveTemplates/foundry.git my-project   # or drive copier directly
 ```
 
-An opinionated [copier](https://copier.readthedocs.io) template for Python
-projects: create a new project from it, update existing projects in line with
-it, and keep them in sync as it changes. One questionnaire covers libraries,
+**foundry** (formerly *python-copier-template*) is an opinionated
+[copier](https://copier.readthedocs.io) template for Python projects: create a
+new project from it, update existing projects in line with it, and keep them
+in sync as it changes. One questionnaire covers libraries,
 web APIs, CLIs, data-science pipelines, competitive programming, ROS 2 packages
 and MicroPython firmware — and its logic is machine-verified (Z3 satisfiability
 over every question path) rather than only documented.
@@ -51,18 +52,19 @@ the [example project](https://github.com/kasi-x/python-copier-template-example).
 
 ## Create a new project
 
-The shipped CLI is the recommended path. It runs from a clone of this
-repository, picks the release to expand, decides between creating a project and
-adopting an existing one, and reports the files the target already has:
+The shipped CLI is the recommended path. It picks the release to expand,
+decides between creating a project and adopting an existing one, and reports
+the files the target already has. Installed via `uvx` it clones and caches
+the template repo on first use, so no checkout of this repository is needed:
 
 ```shell
-git clone https://github.com/kasi-x/python-copier-template.git
-uv run --project python-copier-template python-copier-template new my-project --preset library
+uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git \
+    foundry new my-project --preset library
 ```
 
 `--preset library` answers the one question that defines the project family
-(`cli`, `web-api`, `data-science`, `ros2`, `micropython` and
-`online-judge-atcoder` also exist; `bare` is `library` minus the optional
+(`cli`, `web-api`, `data-science`, `ros2`, `micropython`, `online-judge-atcoder`
+and `mcp-server` also exist; `bare` is `library` minus the optional
 infrastructure extras — no devcontainer, `.vscode`, renovate, secrets/lint
 config, security workflow, or issue/PR templates); drop it and copier asks the
 [whole questionnaire](docs/reference/questionnaire.md) instead, which needs a
@@ -75,10 +77,20 @@ without it copier generates nothing and exits with status 4:
 
 ```shell
 git init --initial-branch=main /path/to/my-project
-uvx copier copy --trust https://github.com/kasi-x/python-copier-template.git /path/to/my-project
+uvx copier copy --trust https://github.com/ConstitutiveTemplates/foundry.git /path/to/my-project
 ```
 
-Both paths expand this fork's newest release tag;
+Both paths expand this fork's newest release tag. Pointing `new` at an
+*existing* project runs the same one-liner in adopt mode instead — it adds
+the missing infrastructure (CI, quality tooling, `AGENTS.md`) and verifies
+the files you already have stay byte-identical
+([adopt this template](docs/tutorials/adopt-existing.md)):
+
+```shell
+cd /path/to/existing-project
+uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git foundry new .
+```
+
 [Create a new project](docs/tutorials/create-new.md) covers the flags, the
 presets, adoption and pinning an exact release, and
 [generating a project non-interactively](docs/reference/non-interactive.md)
@@ -108,7 +120,7 @@ task check       # lint + type-check + test
 
 ## Where to go next
 
-- **[Documentation site](https://kasi-x.github.io/python-copier-template)** — the full docs, in
+- **[Documentation site](https://constitutivetemplates.github.io/foundry)** — the full docs, in
   [tutorials](docs/tutorials.md), [how-to guides](docs/how-to.md),
   [explanations](docs/explanations.md) and [reference](docs/reference.md),
   starting from the [docs index](docs/index.md).
@@ -124,9 +136,9 @@ task check       # lint + type-check + test
 ## License, contributing and releases
 
 Licensed under [Apache-2.0](LICENSE). This repository is the template's own
-source (not a generated project): [source](https://github.com/kasi-x/python-copier-template) ·
-[docs site](https://kasi-x.github.io/python-copier-template) ·
-[releases](https://github.com/kasi-x/python-copier-template/releases), whose
+source (not a generated project): [source](https://github.com/ConstitutiveTemplates/foundry) ·
+[docs site](https://constitutivetemplates.github.io/foundry) ·
+[releases](https://github.com/ConstitutiveTemplates/foundry/releases), whose
 notes are generated by [git-cliff](https://git-cliff.org) from the tag's
 conventional commits ([CHANGELOG.md](CHANGELOG.md)). Contributions are welcome
 — see [CONTRIBUTING.md](.github/CONTRIBUTING.md), the

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One command to create a project from this template.
 
-`python-copier-template new <dir>` asks `tools/detect.py` what the target is
+`foundry new <dir>` asks `tools/detect.py` what the target is
 and dispatches to the tool that does the right thing for it:
 
 What it does is decided by the mode `tools/detect.py` reports:
@@ -27,17 +27,29 @@ The CLI never edits a file the target already has: an adoption runs with the
 merge step off (use `tools/adopt.py --merge` when you want the template's
 dependencies and runner recipes added to your own files).
 
+The command works both from a clone of the template repo and installed
+(`uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git
+foundry`, or a pip wheel): when TOP (this file's parent's
+parent) carries no copier.yml, there is no checkout next to the package, and
+`main` delegates to a cached clone of the template repo under
+`~/.cache/foundry` (or `$XDG_CACHE_HOME`), so every TOP-
+relative path -- tools/, presets/, copier.yml -- resolves in a checkout
+version-matched to the template ref it renders.
+
 Usage::
 
     python -m tools.cli new my-project --preset library
-    python-copier-template new /path/to/existing-project --dry-run
+    foundry new /path/to/existing-project --dry-run
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +64,7 @@ if str(TOP) not in sys.path:
 from tools import adopt  # noqa: E402
 from tools import batch  # noqa: E402
 from tools import detect  # noqa: E402
+from tools.git import run as run_git  # noqa: E402
 
 PRESETS = TOP / "presets"
 
@@ -239,7 +252,7 @@ def new(target: Path, *, preset: str | None, ref: str | None, dry_run: bool) -> 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="python-copier-template",
+        prog="foundry",
         description="Create a project from this template: detect the mode, then render or adopt.",
     )
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -257,8 +270,135 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+# --- installed (non-checkout) operation: delegate to the cached clone --------
+#
+# An installed `foundry` (uvx --from git+..., pip wheel) has no
+# checkout next to it: TOP is the install's site-packages, so every TOP-
+# relative path (tools/, presets/, copier.yml) resolves to nothing. The cached
+# clone below is the checkout those tools expect, and re-running this CLI from
+# it keeps every TOP-relative resolution version-matched to the template ref
+# it renders.
+
+DEFAULT_REMOTE = "https://github.com/ConstitutiveTemplates/foundry.git"
+REMOTE_URL_ENV = "FOUNDRY_TEMPLATE_URL"  # override for mirrors / local test clones
+DELEGATED_ENV = "FOUNDRY_DELEGATED"  # recursion guard for the delegated run
+
+
+def _remote_url() -> str:
+    """The template repo to clone when this install is not a checkout."""
+    return os.environ.get(REMOTE_URL_ENV, DEFAULT_REMOTE)
+
+
+def _cache_dir() -> Path:
+    """Where the cached checkout of the template repo lives."""
+    base = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
+    return base / "foundry" / "repo"
+
+
+def _clone_checkout(cache: Path) -> int:
+    """Blobless-clone the remote and atomically publish it as `cache`.
+
+    Two processes racing a cold cache both clone into their own unique temp
+    dir; `os.rename` publishes the winner (atomic on POSIX), and the loser --
+    whose rename fails against the now-existing directory -- removes its temp
+    dir, so a half-cloned cache is never visible. A failed clone (offline)
+    names the URL and leaves nothing behind.
+    """
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    tmp = Path(tempfile.mkdtemp(prefix=f"{cache.name}.", dir=cache.parent))
+    try:
+        clone = run_git(cache.parent, "clone", "--filter=blob:none", _remote_url(), str(tmp))
+        if clone.returncode != 0:
+            print(
+                f"cannot clone the template repo {_remote_url()}: {clone.stderr.strip()}\n"
+                "(the template is fetched on first use; is this machine offline?)",
+                file=sys.stderr,
+            )
+            return FAILED
+        try:
+            Path(tmp).rename(cache)  # atomic: readers see the whole clone or none
+        except OSError:
+            shutil.rmtree(tmp, ignore_errors=True)  # lost the race: the winner's clone is used
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)  # a failed clone must not litter
+    return OK
+
+
+def _refresh_checkout(cache: Path) -> None:
+    """Re-fetch the cached clone and fast-forward its default branch.
+
+    `tools/adopt.py:resolve_ref` reads `git describe --tags`, so the clone
+    must stay current with the release tags -- a stale local branch would not
+    see the newest one. A failed fetch is not fatal: the stale clone still
+    renders, so we warn and keep going (and a garbled fetch cannot corrupt,
+    because checkout only ever moves the branch forward to origin's).
+    """
+    fetched = run_git(cache, "fetch", "--tags", "origin")
+    if fetched.returncode != 0:
+        print(
+            f"warning: could not refresh the cached template ({fetched.stderr.strip()}); using the stale clone",
+            file=sys.stderr,
+        )
+        return
+    head = run_git(cache, "rev-parse", "--abbrev-ref", "origin/HEAD")
+    if head.returncode != 0:
+        return  # no origin/HEAD: an odd clone, keep whatever is checked out
+    branch = head.stdout.strip().removeprefix("origin/")
+    if not branch:
+        return
+    checked = run_git(cache, "checkout", branch)
+    if checked.returncode != 0:
+        run_git(cache, "checkout", "-B", branch, f"origin/{branch}")  # no local branch yet
+    else:
+        run_git(cache, "merge", "--ff-only", f"origin/{branch}")
+
+
+def _delegate(argv: list[str]) -> int:
+    """Run the same CLI from the cached checkout of the template repo.
+
+    The cached clone is a real checkout, so every TOP-relative path resolves
+    there; running *its* tools/cli.py also makes the tools themselves
+    version-matched to the template ref they render. The child inherits stdio
+    and carries the recursion guard: if even the clone has no copier.yml (a
+    broken cache), it must fail loudly instead of delegating again.
+    """
+    cache = _cache_dir()
+    if os.environ.get(DELEGATED_ENV):
+        print(
+            f"the delegated clone at {cache} is not a template checkout (no copier.yml); "
+            "delete it and rerun so it can be re-cloned",
+            file=sys.stderr,
+        )
+        return FAILED
+    try:
+        if cache.exists():
+            _refresh_checkout(cache)
+        else:
+            status = _clone_checkout(cache)
+            if status != OK:
+                return status
+    except OSError as exc:
+        print(f"cannot prepare the cached template clone at {cache}: {exc}", file=sys.stderr)
+        return FAILED
+    script = cache / "tools" / "cli.py"
+    if not script.is_file():
+        print(f"{script} is missing; delete {cache} and rerun", file=sys.stderr)
+        return FAILED
+    return subprocess.call(  # noqa: S603  WHYNOT: a list argv never touches a shell; the child is this same CLI.
+        [sys.executable, str(script), *argv], env={**os.environ, DELEGATED_ENV: "1"}
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
-    """Entry point: dispatch on the mode `tools/detect.py` reports."""
+    """Entry point: dispatch on the mode `tools/detect.py` reports.
+
+    From a clone of the template repo TOP carries copier.yml and everything
+    runs in place. Installed (uvx --from git+..., pip wheel) there is no
+    checkout next to the package: `_delegate` runs the same CLI from the
+    cached clone of the template repo instead.
+    """
+    if not (TOP / "copier.yml").is_file():
+        return _delegate(argv if argv is not None else sys.argv[1:])
     args = _parse_args(argv)
     return new(args.dir, preset=args.preset, ref=args.ref, dry_run=args.dry_run)
 

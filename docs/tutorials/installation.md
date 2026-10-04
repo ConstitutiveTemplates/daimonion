@@ -19,18 +19,17 @@ If you run `uvx copier --version` then `copier` will be downloaded, installed, a
 
 ## Get the template's CLI
 
-The repository also ships a one-command wrapper, `python-copier-template new`, which picks the
+The repository also ships a one-command wrapper, `foundry new`, which picks the
 release tag to expand, decides between creating a project and adopting an existing one, and warns
 about — or protects — the files the target already has. No `--vcs-ref` or other copier flag is
 needed:
 
 ```shell
-git clone https://github.com/kasi-x/python-copier-template.git
-uv run --project python-copier-template python-copier-template --help
+uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git foundry --help
 ```
 
-`uv` installs the CLI's dependencies into the checkout's environment on the first run. Inside the
-checkout the equivalent forms are `uv run python-copier-template …` and
+The installed CLI clones and caches the template repo on first use. Inside a
+checkout the equivalent forms are `uv run foundry …` and
 `uv run python -m tools.cli …`; add `--preset <name>` for a fully non-interactive run (see
 [Create a New Project](./create-new.md)).
 

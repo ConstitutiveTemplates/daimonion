@@ -122,6 +122,21 @@ tasks:
       - uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
       - uv run --locked python tools/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
 
+  regen:
+    desc: >-
+      One-command definition-of-done pipeline after a questionnaire change: witness
+      leaves -> batch verdicts -> tier ledger -> ethics appendix -> generated docs ->
+      predicate report (JOBS=N, CLI_ARGS=...)
+    vars:
+      JOBS: '{{ .JOBS | default numCPU }}'
+    cmds:
+      - uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
+      - uv run --locked python tools/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
+      - UPDATE_TIERS=1 uv run --locked pytest -q -m meta
+      - uv run --locked python tools/gen_ethics_appendix.py
+      - uv run --locked python tools/gen_docs.py --write
+      - uv run --locked python tools/predicates.py --json
+
   predicates:
     desc: >-
       Classify every condition site (question whens, internals, template body/filename ifs,
