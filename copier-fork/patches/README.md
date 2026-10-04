@@ -12,6 +12,7 @@ ready-to-file patches live in `notes/upstream-drafts/patches/` (see
 | `notes/.../answers-file-error-hint.patch`                    | `errors.py`, `tests/test_cli.py`             | Ready (frozen) |
 | `cli-missing-answers-batch.patch` (this directory, F3) | `copier/_main.py`, `tests/test_copy.py` | Implemented 2026-10-04 on `kasi-x/copier` branch `f3-missing-batch` (pushed, PR unfiled per AI_POLICY — file manually). Upstream tests green: `test_copy` + `test_cli` + `test_config` + `test_answersfile` (323 passed). |
 | `vcs-stale-tag-warning.patch` (this directory, F5) | `copier/_vcs.py`, `_template.py`, `errors.py`, `tests/test_vcs.py` | Implemented 2026-10-05 on `kasi-x/copier` branch `f5-stale-tag-warning` (pushed, PR unfiled per AI_POLICY). Emits `StaleTagWarning` on the implicit latest-tag resolution when the tag is behind the default branch; silent on explicit `--vcs-ref`. Tests: `test_vcs` + `test_copy` green (229+205). |
+| `cli-trust-discoverability.patch` (this directory, F6 docs+message half) | `copier/errors.py`, `docs/generating.md` | Implemented 2026-10-05 on `kasi-x/copier` branch `f6-trust-discoverability` (pushed, PR unfiled per AI_POLICY). The `settings trust add` CLI sketch from FEATURES F6 remains unfounded — deliberately split: this patch is the docs+refusal-message half, the CLI subcommand is a separate upstream conversation. |
 
 ## Naming
 
