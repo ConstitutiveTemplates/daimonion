@@ -2,8 +2,9 @@
 
 出典: `notes/PLAN-widespread-adoption.md` / `TODO.md` §36-§37（2026-10-04）。
 リポジトリ内で実装可能な項目は済（`task regen`、CLI リモート delegation、
-`presets/mcp-server.yml`、README/CONTRIBUTING 刷新）。以下は権限・判断・
-対外発信が必要な残作業。
+`presets/mcp-server.yml`、README/CONTRIBUTING 刷新、foundry リネーム統一、
+移行ガイド、good first issue 5件、§38 law-map 連携、実 `uvx` 検証）。
+以下は権限・判断・対外発信が必要な残作業。
 
 ## Phase 2: 独立・リブランディング（目安 1週間）
 
