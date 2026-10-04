@@ -67,3 +67,11 @@ micropython/online-judge-{atcoder,codeforces,kattis}。非対話なら
 1. `project_type.help` へのプリセット導線追記を採用するか（A）。
 2. 採用する場合、プリセット名と help の一致を構造テストで強制するか。
 3. C（生成ドキュメントへのプリセット表）を併せて入れるか。
+
+## 決定（2026-10-05）
+
+**A + 構造テスト、採用済み**（C は未着手 — 生成側に実装が要るため別途）。
+`project_type.help` に全 11 プリセット名の列挙と `foundry new --preset`
+導線を追加し、`test_every_preset_is_named_in_project_type_help`
+（tests/test_presets.py）でプリセット名 ↔ help の一致を機械化した。
+leaf 空間非接触を確認済み。
