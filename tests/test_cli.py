@@ -286,7 +286,7 @@ def test_main_delegates_to_the_cached_checkout_and_propagates_the_exit_code(
         calls.append((argv, env))
         return 7  # an arbitrary child exit code, propagated as-is
 
-    monkeypatch.setattr(cli.subprocess, "call", fake_call)
+    monkeypatch.setattr(cli.subprocess, "call", fake_call)  # pyright: ignore[reportPrivateLocalImportUsage]  WHYNOT: patching the module's own import is the point.
 
     assert cli.main(["new", "proj", "--preset", "library"]) == 7
     assert len(calls) == 1  # one delegation, never a second
@@ -302,7 +302,7 @@ def test_delegation_sentinel_fails_without_a_second_subprocess(
     monkeypatch.setattr(cli, "TOP", tmp_path / "no-checkout")
     monkeypatch.setattr(cli, "_cache_dir", lambda: tmp_path / "cache" / "repo")
     monkeypatch.setenv(cli.DELEGATED_ENV, "1")
-    monkeypatch.setattr(cli.subprocess, "call", lambda *a, **k: pytest.fail("must not delegate again"))
+    monkeypatch.setattr(cli.subprocess, "call", lambda *a, **k: pytest.fail("must not delegate again"))  # pyright: ignore[reportPrivateLocalImportUsage]  WHYNOT: same as above.
 
     assert cli.main(["new", "proj"]) == cli.FAILED
     assert "not a template checkout" in capsys.readouterr().err
@@ -346,7 +346,7 @@ def test_stale_cache_with_failed_fetch_still_delegates(
         return SimpleNamespace(returncode=128, stdout="", stderr="fatal: unable to access")
 
     monkeypatch.setattr(cli, "run_git", failed_fetch)
-    monkeypatch.setattr(cli.subprocess, "call", lambda argv, env: calls.append(argv) or cli.OK)
+    monkeypatch.setattr(cli.subprocess, "call", lambda argv, env: calls.append(argv) or cli.OK)  # pyright: ignore[reportPrivateLocalImportUsage]  WHYNOT: same as above.
 
     assert cli.main(["new", "proj"]) == cli.OK
     assert "stale" in capsys.readouterr().err
@@ -366,7 +366,7 @@ def test_clone_losing_the_rename_race_keeps_the_existing_clone(tmp_path: Path, m
 
     monkeypatch.setattr(cli, "run_git", ok_clone)
 
-    assert cli._clone_checkout(cache) == cli.OK  # noqa: SLF001  WHYNOT: atomic publish has no public entry point; the test pins its contract.
+    assert cli._clone_checkout(cache) == cli.OK  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: atomic publish has no public entry point; the test pins its contract.
     assert (cache / "winner.txt").read_text() == "mine"  # the loser must not replace it
     assert [p.name for p in cache.parent.iterdir()] == [cache.name]  # the loser's temp dir is gone
 
@@ -374,12 +374,12 @@ def test_clone_losing_the_rename_race_keeps_the_existing_clone(tmp_path: Path, m
 def test_remote_url_defaults_to_the_shipped_repo(monkeypatch: pytest.MonkeyPatch):
     """The fallback remote is the canonical template repo, overridable by env."""
     monkeypatch.delenv(cli.REMOTE_URL_ENV, raising=False)
-    assert cli._remote_url() == "https://github.com/ConstitutiveTemplates/foundry.git"  # noqa: SLF001  WHYNOT: no public entry point; the fallback remote is a contract.
+    assert cli._remote_url() == "https://github.com/ConstitutiveTemplates/foundry.git"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: no public entry point; the fallback remote is a contract.
     monkeypatch.setenv(cli.REMOTE_URL_ENV, "https://example.com/x.git")
-    assert cli._remote_url() == "https://example.com/x.git"  # noqa: SLF001  WHYNOT: same as above.
+    assert cli._remote_url() == "https://example.com/x.git"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: same as above.
 
 
 def test_cache_dir_follows_xdg_and_defaults_to_home(monkeypatch: pytest.MonkeyPatch):
     """The cache lives under $XDG_CACHE_HOME (or ~/.cache) + the template name."""
     monkeypatch.setenv("XDG_CACHE_HOME", "/tmp/xdg-cache")
-    assert cli._cache_dir() == Path("/tmp/xdg-cache") / "foundry" / "repo"  # noqa: SLF001  WHYNOT: no public entry point; the documented cache location is a contract.
+    assert cli._cache_dir() == Path("/tmp/xdg-cache") / "foundry" / "repo"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: no public entry point; the documented cache location is a contract.

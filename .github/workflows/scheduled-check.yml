@@ -73,7 +73,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@f95ec8bf843b4bd3734aef6b8e7bc9ea6dc0e18a # v7.1.4
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
       - name: Check obligation review_by dates
         id: check
