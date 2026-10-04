@@ -1,4 +1,4 @@
-From c2ae21e698f655910b21b4cf31fb2ac2025ae6b5 Mon Sep 17 00:00:00 2001
+From 467ffbb9e3f88833a07422bfe13f43025ec08016 Mon Sep 17 00:00:00 2001
 From: kasi-x <149961262+kasi-x@users.noreply.github.com>
 Date: Sun, 4 Oct 2026 22:18:57 +0900
 Subject: [PATCH] Report all missing required answers at once as
@@ -15,7 +15,7 @@ Provide them with --data/--data-file. as a clean UserMessageError.
  2 files changed, 19 insertions(+), 4 deletions(-)
 
 diff --git a/copier/_main.py b/copier/_main.py
-index 020ea44..7bda2d1 100644
+index 6684f6f..2258db7 100644
 --- a/copier/_main.py
 +++ b/copier/_main.py
 @@ -611,6 +611,7 @@ class Worker:

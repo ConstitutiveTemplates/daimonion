@@ -1,4 +1,4 @@
-From d251d8a3abfa1c7c2d57b1108e47592d0d40062a Mon Sep 17 00:00:00 2001
+From 7b2550a35354d4a409e4f5492978992222c7715f Mon Sep 17 00:00:00 2001
 From: kasi-x <149961262+kasi-x@users.noreply.github.com>
 Date: Mon, 5 Oct 2026 05:05:13 +0900
 Subject: [PATCH] Surface the persistent trust setting in the unsafe-template

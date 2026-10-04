@@ -1,4 +1,4 @@
-From 2800e3fdbcc0a38648bbc0611c10a5b98d9b931c Mon Sep 17 00:00:00 2001
+From 9997dd162fdc85f6ca3543311ae5ff3ec08b7e6c Mon Sep 17 00:00:00 2001
 From: kasi-x <149961262+kasi-x@users.noreply.github.com>
 Date: Mon, 5 Oct 2026 05:02:19 +0900
 Subject: [PATCH] Warn when an implicit latest-tag checkout is behind the
