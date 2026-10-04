@@ -15,6 +15,7 @@ Practical step-by-step guides for the more experienced user.
 - [Static Analysis](how-to/static-analysis.md)
 - [Strict Mode](how-to/strict-mode.md)
 - [Update Template](how-to/update-template.md)
+- [Migrate From Cookiecutter Hypermodern Python](how-to/migrate-from-hypermodern.md)
 - [Lock Requirements](how-to/lock-requirements.md)
 - [Make Release](how-to/make-release.md)
 - [Publishing to PyPI](how-to/pypi.md)

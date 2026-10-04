@@ -1,12 +1,12 @@
 [project]
-site_name = "python-copier-template"
+site_name = "foundry"
 site_description = "A Copier template for Python projects"
 site_author = "kasi-x"
-repo_url = "https://github.com/kasi-x/python-copier-template"
-repo_name = "kasi-x/python-copier-template"
+repo_url = "https://github.com/ConstitutiveTemplates/foundry"
+repo_name = "ConstitutiveTemplates/foundry"
 edit_uri = "edit/main/docs/"
 
-copyright = 'Maintained by <a href="https://github.com/kasi-x/python-copier-template">kasi-x</a>.'
+copyright = 'Maintained by <a href="https://github.com/ConstitutiveTemplates/foundry">kasi-x</a>.'
 
 nav = [
   { "Home" = "index.md" },
@@ -50,6 +50,7 @@ nav = [
       { "Renovate Dependency Updates" = "how-to/renovate.md" },
       { "Add Images to the README" = "how-to/readme-images.md" },
       { "Excalidraw Diagrams" = "how-to/excalidraw.md" },
+      { "Migrate from Hypermodern" = "how-to/migrate-from-hypermodern.md" },
       { "Contribute" = "how-to/contribute.md" },
   ]},
   { "Explanations" = [
