@@ -37,6 +37,7 @@ SENTINEL_PATH: dict[str, str] = {
     "library": "src/recommended_example/__init__.py",
     "bare": "src/recommended_example/__init__.py",
     "cli": "src/recommended_example/__main__.py",
+    "mcp-server": "src/recommended_example/mcp_server.py",
     "web-api": "app/main.py",
     "data-science": "src/recommended_example/__init__.py",
     "micropython": "firmware/main.py",

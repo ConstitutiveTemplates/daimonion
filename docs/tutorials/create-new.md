@@ -7,22 +7,26 @@ is a new project or an existing one, picks the release to expand, warns about
 the files both the target and the template have, and then renders.
 
 ```shell
-git clone https://github.com/kasi-x/python-copier-template.git   # once
-uv run --project python-copier-template python-copier-template new my-project --preset library
+uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git \
+    foundry new my-project --preset library
 ```
+
+The installed CLI clones and caches the template repo on first use, so no
+checkout is needed. Inside a checkout of this repository the same two forms
+are `uv run foundry …` (the console script the package declares) and
+`uv run python -m tools.cli …`.
 
 `--preset library` answers the one question that defines the project family;
 every other question keeps copier's default. Drop `--preset` and copier asks
 the [whole questionnaire](../reference/questionnaire.md) instead, which needs a
-terminal. From inside the checkout the same two forms are
-`uv run python-copier-template …` (the console script the package declares) and
-`uv run python -m tools.cli …`.
+terminal.
 
 | preset | `project_type` | what you get |
 | --- | --- | --- |
 | `library` | `library` | a reusable Python package (src/ layout) |
 | `bare` | `library` | like `library`, minus the optional infra extras — no devcontainer, `.vscode`, `.envrc`, renovate, secrets/lint config, security workflow, or issue/PR templates |
 | `cli` | `cli` | a command-line application |
+| `mcp-server` | `cli` | a Model Context Protocol (MCP) server: the `mcp[cli]` dependency, a typed-tools example at `<pkg>/mcp_server.py` (stdio), and a `mcp-server-<name>` console script |
 | `web-api` | `web_api` | a FastAPI service (Postgres, Alembic, Prometheus, rate limiting, CORS) |
 | `data-science` | `data_science` | notebooks, `data/`, `models/`, `reports/` — see the [data-science how-to](../how-to/data-science.md) |
 | `ros2` | `ros2` | a ROS 2 package (ament_python + rclpy, Humble, apt toolchain) |
@@ -34,7 +38,7 @@ terminal. From inside the checkout the same two forms are
 Each preset is a file under `presets/`: it names only the answers that define
 the family, so adding a preset of your own is a two-line YAML file. For a
 fixture that sets every option instead, copy
-[`example-answers.yml`](https://github.com/kasi-x/python-copier-template/blob/main/example-answers.yml)
+[`example-answers.yml`](https://github.com/ConstitutiveTemplates/foundry/blob/main/example-answers.yml)
 from the template root — it turns every area gate off (so every detailed
 question is answered) on a `data_science` base, it is what the template's own
 CI renders, and it works as a `copier copy --data-file` answers file.
@@ -66,7 +70,7 @@ also drive copier directly:
 git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
 uvx copier copy --trust \
-    https://github.com/kasi-x/python-copier-template.git $_
+    https://github.com/ConstitutiveTemplates/foundry.git $_
 ```
 
 No `--vcs-ref` is needed here either: copier then expands this fork's **newest
@@ -102,7 +106,7 @@ Then [lock the requirements](../how-to/lock-requirements.md) and commit:
 $ cd /path/to/my-project
 $ uv sync          # or your toolchain's install command, from the table above
 $ git add .
-$ git commit -m "Expand from python-copier-template x.x.x"
+$ git commit -m "Expand from foundry x.x.x"
 ```
 
 ## Uploading to GitHub

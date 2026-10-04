@@ -1,0 +1,23 @@
+# A Model Context Protocol (MCP) server: a cli-family package with the mcp
+# dependency (mcp[cli]), a typed-tools example server at <pkg>/mcp_server.py
+# you run over stdio, and a mcp-server-<name> console script an MCP host can
+# launch (and, once published, users can run with uvx).
+#
+# include_mcp's `when` is gated on use_recommended_integrations, so this
+# preset must decline that gate AND answer every question under it with the
+# values the recommended path would have produced (no Docker, no PyPI, no
+# cloud, no Sentry, GitHub CI, structlog) -- otherwise --defaults changes
+# rendered output, not just the answers file. Recorded answers are what
+# `copier update` reuses, which is why the answers are explicit: with the
+# gate declined they land in .copier-answers.yml and keep mcp_server.py (and
+# its test) alive across updates.
+project_type: cli
+use_recommended_integrations: false
+docker: false
+pypi: false
+cloud_provider: none
+include_sentry: false
+include_mcp: true
+ci_provider: github_actions
+log_library: structlog
+cicd_extras: true
