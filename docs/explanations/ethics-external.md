@@ -3,12 +3,24 @@
 The ethics appendix (`_shared/ethics/`, surfaced into generated `AGENTS.md`)
 is the one part of this template whose content has its own review cadence —
 OWASP revisions, FIPS finalization, Let's Encrypt chain ceremonies, regional
-law — independent of the template's release cycle. That makes it the natural
-candidate to split into its own repository — **`good-future-codex`**, the
-canonical section texts of the Good-future charter — so other templates and
-projects can consume the same reviewed text. This page records the design
-for that split: what moves, what stays, and why the sync happens at vendor
-time and never at render time. It is a design note, not yet implemented.
+law — independent of the template's release cycle. It now lives upstream as
+its own repository — **`good-future-codex`**, the canonical section texts of
+the Good-future charter — so other templates and projects can consume the
+same reviewed text. This page records the design for that split: what moves,
+what stays, and why the sync happens at vendor time and never at render time.
+
+The codex is itself one layer of a larger legal pipeline:
+
+```text
+open-law            law-map                 good-future-codex      this repo
+world legislation   obligation graph         reviewed prose         vendored
+-> unified corpus -> jurisdiction groundings -> AGENTS.md sections -> snapshot
+```
+
+`open-law` fetches statutes, `law-map` organizes them as machine-readable
+technical obligations (statute, precedent, and guidance share one
+functional-equivalence node), and `good-future-codex` renders the human-
+and-agent-facing prose this repo vendors.
 
 ## Why not fetch at render time
 
@@ -57,7 +69,7 @@ external SHA is vendored, so the check only fires on genuinely new upstream
 work — the permanent-red trap the fork check escaped.
 
 ```text
-ethics-sections (source of truth)      python-copier-template
+ethics-sections (source of truth)      foundry
 ┌──────────────────────────┐         ┌────────────────────────────┐
 │ sections/*.md.jinja       │  sync   │ _shared/ethics/ (vendored) │
 │  flag-agnostic prose      │ ──────► │ REGISTRY.yml (flag gating) │
@@ -77,12 +89,30 @@ tags shows the ethics diff as part of the template diff, reviewable like any
 other change. Bumping the vendored SHA is a deliberate act (the sync PR),
 which is what keeps a surprise upstream edit out of a user's `copier update`.
 
-## When this is worth doing
+## Status
 
-The split pays for itself only when a second consumer exists — another
-template, a sibling project, an organization wanting the same reviewed
-sections. For a single consumer the vendor machinery is cost without
-benefit: `_shared/ethics/` is already a clean content/wiring split inside
-this repo, and the registry already isolates flag knowledge. The trigger to
-implement this page is the first external consumer asking for the sections,
-not before.
+The split is done: `good-future-codex` is live under the
+[ConstitutiveTemplates](https://github.com/ConstitutiveTemplates)
+organization alongside `open-law` (legislation scraping) and `law-map`
+(the obligation graph). For a single consumer the vendor machinery would be
+cost without benefit; the codex now has two consumers (this template and
+`law-map`'s section references), so it pays for itself.
+
+Two contracts hold the pipeline together:
+
+- **Vendored snapshot**: `_shared/ethics/` is pinned to a codex SHA in
+  `.ethics-vendored`; the weekly `ethics-sync.yml` workflow runs
+  `tools/check_ethics_drift.py` and opens an issue when codex `main` moves
+  ahead of the marker.
+- **Section ids**: `law-map` obligations link prose via `related_sections`
+  ids of the form `<tier>-<slug>`, which resolve to
+  `sections/<tier>/<slug>.md.jinja` in the codex (e.g.
+  `baseline-personal-data` → `sections/baseline/personal-data.md.jinja`).
+  `law-map check --codex <checkout>` fails on an unresolvable id, and
+  `law-map export` emits skeletons in that same shape.
+
+The weekly `scheduled-check.yml` job `law-map-review-by` runs
+`law-map check --codex` against fresh checkouts of both repos and fails when
+a grounding's `review_by` has expired — a different corpus than the vendored
+drift check (prose SHA vs. obligation freshness), so a red run names exactly
+one thing to fix.

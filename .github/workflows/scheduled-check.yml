@@ -40,6 +40,66 @@ jobs:
     permissions:
       contents: write
 
+
+  law-map-review-by:
+    name: law-map review_by drift
+    # Obligation-graph freshness, not toolchain drift: every grounding in
+    # ConstitutiveTemplates/law-map carries a review_by date, and an expired
+    # one means the statute/citation needs human re-review. Different corpus
+    # from ethics-sync.yml (which diffs the vendored prose SHA against
+    # good-future-codex) and from check-upstream*.yml (upstream template
+    # commits), so a failure here names exactly one thing to fix.
+    # --codex also validates related_sections ids resolve inside
+    # good-future-codex (sections/<tier>-<slug>.md.jinja); structural corpus
+    # validation itself is law-map's own ci.yml.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Checkout law-map
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ConstitutiveTemplates/law-map
+          path: law-map
+          persist-credentials: false
+
+      - name: Checkout good-future-codex
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ConstitutiveTemplates/good-future-codex
+          path: good-future-codex
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@f95ec8bf843b4bd3734aef6b8e7bc9ea6dc0e18a # v7.1.4
+
+      - name: Check obligation review_by dates
+        id: check
+        working-directory: law-map
+        run: uv run law-map check --codex ../good-future-codex
+        # Exits 1 only on EXPIRED groundings (due-within-horizon is a report,
+        # not a failure) or on an unresolved related_sections id.
+
+      - name: Open drift issue
+        if: failure() && steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          existing=$(gh issue list --search "law-map review_by expired" \
+            --state open --json number --jq 'length')
+          if [ "$existing" -eq 0 ]; then
+            gh issue create \
+              --title "law-map review_by expired (scheduled check)" \
+              --body "The weekly obligation-freshness check found expired review_by groundings in ConstitutiveTemplates/law-map (or an unresolved related_sections id). Re-review the cited statute/guidance and bump review_by. See: $RUN_URL" \
+              --label "documentation"
+          else
+            echo "An issue for this drift is already open; skipping."
+          fi
+
   open-drift-issue:
     name: Open issue on drift
     needs: [lint, test, docs]
