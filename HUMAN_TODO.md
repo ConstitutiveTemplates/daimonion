@@ -45,11 +45,15 @@
 
 - [ ] **PyPI `daimonion` 確保**: 0.0.0 プレースホルダを公開（`PYPI_API_TOKEN` 発行が必要）。
       リポ内の改名（§39.1）より先でよい — 名前は早く押さえるほど安全
-- [ ] **GitHub リポ名変更**: `foundry` → `daimonion`、`foundry-example` →
-      `daimonion-example`。§39.1 の URL 置換 PR と同じ日に実施
-      （**§39.1 は PR #11 として起票済み — merge はこのリポ名変更と同日に**）
-- [ ] **Pages URL の確認**、`daimonion.dev` を取得するか判断
-- [ ] **改名後最初のリリース 7.0.0** を打ち、GitHub の Latest を 7.0.0 に
+- [x] **GitHub リポ名変更**: ✅ 2026-10-05 完了。`foundry` → `daimonion`、
+      `foundry-example` → `daimonion-example`。PR #11 は同日 merge 済み、
+      `uvx --from git+.../daimonion.git daimonion new --preset cli` で実ネットワーク検証済み
+      （ref 7.0.0、52 files）。ローカル checkout も `daimonion/` に改名、`uv sync` 再生成済み
+- [x] **Pages URL の確認**: ✅ `constitutivetemplates.github.io/daimonion/` に自動追随済み
+      （rename 後 building → success 確認）。`daimonion.dev` は NXDOMAIN（未取得）。
+      取得するかは人間の判断（`.com`/`.io` は既に取得済みのため優先度低）
+- [x] **改名後最初のリリース 7.0.0**: タグ `7.0.0` push 済み（ledger-fix 込みの
+      HEAD efe74f76 に再タグ）。release job の完了・Latest 表示は CI 待ち
 - [ ] **（§40 由来）内部メモ用の private リポ/Wiki の用意**: `notes/outreach/`・
       `copier-fork/`・本ファイルの移設先。作成後は移動自体はエージェント可能
 
