@@ -100,6 +100,9 @@ jobs:
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Org repos need a license for gitleaks-action v3; the secret is
+          # empty on personal accounts, where the check is license-free.
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Lint GitHub Actions workflows (actionlint)
         uses: docker://rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 # latest

@@ -270,14 +270,24 @@ def test_update_from_the_released_ref_to_head(
         f"scaffold from {released_rev}",
     )
 
-    run_update(
-        dst_path=project,
-        vcs_ref="HEAD",
-        defaults=True,
-        unsafe=True,
-        overwrite=True,
-        skip_tasks=True,
-    )
+    for attempt in (1, 2):
+        try:
+            run_update(
+                dst_path=project,
+                vcs_ref="HEAD",
+                defaults=True,
+                unsafe=True,
+                overwrite=True,
+                skip_tasks=True,
+            )
+            break
+        except OSError:
+            # copier's update renders into a TemporaryDirectory whose cleanup
+            # races git's own .git writes ("Directory not empty").
+            # tools/update_rehearsal.py::_rehearse_job applies the same
+            # retry-once rule to this known-transient race.
+            if attempt == 2:
+                raise
 
     # (a) copier's merge left no unresolved hunk behind.
     residue = _conflict_residue(project)
