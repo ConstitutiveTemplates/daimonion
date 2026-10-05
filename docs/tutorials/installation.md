@@ -33,6 +33,15 @@ checkout the equivalent forms are `uv run daimonion …` and
 `uv run python -m tools.cli …`; add `--preset <name>` for a fully non-interactive run (see
 [Create a New Project](./create-new.md)).
 
+!!! note "Public interface"
+
+    `daimonion new`, the adopt path it auto-selects inside an existing
+    project, and the `copier update` contract on generated projects are the
+    public interface and follow semver. The questionnaire itself — question
+    names, order, `when:` gates — is *not* part of that interface and may
+    change between minor versions; stable entry points and answer-file
+    compatibility are what a release commits to.
+
 ## Conclusion
 
 You now have the pre-requisites to allow you to [create a new project](./create-new.md) and [adopt an existing one](./adopt-existing.md).
