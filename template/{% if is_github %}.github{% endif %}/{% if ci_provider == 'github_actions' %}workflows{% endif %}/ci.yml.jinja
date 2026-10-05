@@ -71,6 +71,8 @@ jobs:
 {% raw %}
   hygiene:
     uses: ./.github/workflows/_hygiene.yml
+    secrets:
+      GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 {% endraw %}
 {% raw %}
   test:

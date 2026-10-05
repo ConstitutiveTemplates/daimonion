@@ -1,6 +1,10 @@
 on:
   workflow_call:
-
+    secrets:
+      GITLEAKS_LICENSE:
+        # Optional: generated projects on personal accounts don't need a
+        # gitleaks license; organization repos (this one) pass the secret in.
+        required: false
 permissions:
   contents: read
 
