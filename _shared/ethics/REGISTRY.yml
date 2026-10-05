@@ -155,13 +155,13 @@ sections:
 
   - id: domain-face-recognition
     file: _shared/ethics/domain/face-recognition.md.jinja
-    version: 2026-09-21.3
+    version: 2026-10-06.1
     effective: 2025-02-02
     review_by: 2027-03-31
     sources:
       - https://nvlpubs.nist.gov/nistpubs/ir/2019/NIST.IR.8280.pdf
       - https://eur-lex.europa.eu/eli/reg/2024/1689/oj
-      - https://www.ilga.gov/legislation/ilcs/ilcs3.asp?ActID=3004
+      - https://web.archive.org/web/20250630192313/https://www.ilga.gov/legislation/ilcs/ilcs3.asp?ActID=3004
       - https://eur-lex.europa.eu/eli/reg/2016/679/oj
     scope: {jurisdiction: [], sector: [], category: [biometrics]}
     scale: global
@@ -308,12 +308,12 @@ sections:
 
   - id: baseline-deprecated-crypto
     file: _shared/ethics/baseline/deprecated-crypto.md.jinja
-    version: 2026-10-04.1
+    version: 2026-10-06.1
     effective: 2019-10-01
     review_by: 2027-03-31
     sources:
       - https://csrc.nist.gov/pubs/sp/800/131/a/r2/final
-      - https://www.cryptrec.go.jp/english/index.html
+      - https://www.cryptrec.go.jp/en/index.html
     scope: {jurisdiction: [], sector: [], category: [crypto]}
     scale: global
     audience: [library, cli, web]
@@ -325,12 +325,12 @@ sections:
 
   - id: baseline-vdp
     file: _shared/ethics/baseline/vdp.md.jinja
-    version: 2026-10-04.1
+    version: 2026-10-06.2
     effective: 2020-09-02
     review_by: 2027-01-31
     sources:
-      - https://www.cisa.gov/coordinated-vulnerability-disclosure-process
-      - https://www.rfc-editor.org/rfc/rfc9116
+      - https://www.cisa.gov/resources-tools/programs/coordinated-vulnerability-disclosure-cvd-program
+      - https://www.rfc-editor.org/rfc/rfc9116.html
       - https://www.ipa.go.jp/security/todokede/vuln/uketsuke.html
     scope: {jurisdiction: [], sector: [], category: [supply-chain-security]}
     scale: global
