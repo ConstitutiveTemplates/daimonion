@@ -1096,3 +1096,102 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
   ethics-sync.yml との重複なし — 対象 corpus が異なる（散文 SHA ドリフト vs
   義務ノードの review_by 鮮度）。`docs/explanations/ethics-external.md` に
   2 つの契約（vendored SHA / `<tier>-<slug>` 命名規則）を記録
+
+## §39 実行: `foundry` → `daimonion` への改名（2026-10-05 決定）
+
+**決定**: プロジェクト名を `daimonion` に変更する。`foundry` は PyPI で取得済み
+（`uvx foundry` 不可）、かつ Ethereum の Foundry / Palantir Foundry と検索衝突するため。
+org 名 `ConstitutiveTemplates` は変えない。
+
+**由来（README / vision.md に書く物語）**: ソクラテスの daimonion は「何をせよ」とは
+言わず、過ちの手前で「やめよ」とだけ告げる内なる声。ethics セクションの警告・
+対象外構成の abort・Z3 検証による不正状態の拒否・AGENTS.md の禁止事項と対応する。
+Unix の *daemon*（常駐して見張る CI）の語源でもある。
+キャッチコピー案: *Like Socrates' daimonion, it never tells you what to build — only when to stop.*
+
+**空き状況（2026-10-05 実測）**: PyPI `daimonion` 空き、npm 空き、GitHub 同名は
+★0 の無関係リポのみ（約 10 件）、`daimonion.dev` は DNS 応答なし（未取得の可能性）。
+`.com` / `.io` / `.org` は取得済み。商標調査は未実施。
+
+却下した候補と理由（再検討を防ぐため）: `underpin`（PyPI 取得済み・2023 で放置、
+PEP 541 要）、`uphold`（同名の暗号資産企業 Uphold が GitHub org で SDK 公開・商標）、
+`halo`（PyPI のスピナー lib ★3k・halo-dev ★40k・Microsoft 商標）、`monty`
+（PyPI 取得済み・pydantic/monty ★8.5k）、`monthy`（monthly/monty の誤字に見える）、
+`trueup`（同思想の TS ツールあり）、`buttress` / `preshaved` / `gloriole`（空きだが不採用）。
+
+### 39.1 エージェント作業（リポジトリ内。push 前に `task check` 緑を確認）
+
+- [x] 識別子の改名: `pyproject.toml` の `name` / `[project.scripts]` のコマンド名
+      （`daimonion = "tools.cli:main"`）/ deptry の `DEP003=foundry`、
+      `tools/cli.py` の `prog=` と docstring、`uv.lock` 再生成（`uv lock`）
+- [x] CLI キャッシュディレクトリ `~/.cache/foundry` → `~/.cache/daimonion`
+      （旧ディレクトリは読まずに放置でよい。再 clone で済む。決定を cli.py の
+      コメントに残す）
+- [x] URL の置換: `ConstitutiveTemplates/foundry` → `ConstitutiveTemplates/daimonion`、
+      `constitutivetemplates.github.io/foundry` → `.../daimonion`、
+      `foundry-example` → `daimonion-example`。対象（`git grep -il foundry` で
+      74 ファイル / 266 箇所、2026-10-05 時点）: README.md, zensical.toml,
+      CITATION.cff, codemeta.json, NOTICE, SECURITY.md, REUSE.toml, support.yml,
+      renovate.json, .mcp.json, example-answers.yml, copier.yml, questions/,
+      .github/（ISSUE_TEMPLATE / workflows）, template/（生成物に入る URL・
+      バッジ — **生成プロジェクトに出る文字列なので render テストの期待値も更新**）,
+      docs/, tools/, tests/, copier-fork/scripts/
+- [x] 残すもの（置換しない）: CHANGELOG.md・`notes/archive/`・`notes/upstream-drafts/`
+      ・TODO.md の過去節など**履歴記録**の `foundry` / `python-copier-template`。
+      README と NOTICE に "formerly *foundry*, originally *python-copier-template*" を明記
+- [x] `notes/outreach/` の下書き（記事・ニュースレター・demo.tape・awesome リスト文面）
+      を新名称で書き直し、由来の一文を足す
+- [x] `docs/explanations/vision.md` に名前の由来節を追加（上の物語）
+- [x] 検証: `task check`、`task regen`（生成 docs / 葉に名前が入る場合）、
+      `git grep -i foundry` の残りがすべて「残すもの」に該当することを目視確認
+
+### 39.2 人間作業（HUMAN_TODO.md に転記済み）
+
+- PyPI `daimonion` の確保（0.0.0 プレースホルダ。`PYPI_API_TOKEN` 未設定）
+- GitHub リポ名変更 `foundry` → `daimonion`、`foundry-example` → `daimonion-example`
+  （GitHub が旧 URL をリダイレクトするので既存 copier プロジェクトは即死しないが、
+  39.1 の URL 置換は 39.2 のリネームと同じ日に merge する）
+- Pages の URL 変更確認、`daimonion.dev` 取得判断
+
+### 39.3 リリース番号の注意（改名リリースと同時に処理）
+
+copier は **PEP 440 で最大のタグ**を採用する。既存タグ `6.1.0` が残る限り
+`v1.0.0` は永久に選ばれない（HUMAN_TODO の「v1.0.0 リリース」はこの点で破綻）。
+旧タグ削除は既存プロジェクトの `copier update`（`_commit`）を壊すので不可。
+→ 改名後の最初のリリースは **`7.0.0`**（"first release as daimonion"）とし、
+GitHub の "Latest" 表示も 7.0.0 にする（2026-10-05 時点で Latest は 6.0.0、
+6.1.0 は現行質問票を含まず `uvx copier copy` が古い内容を展開している）。
+`docs/explanations/vision.md` の「pre-1.0」表記も 7.x と矛盾しないよう直す。
+
+## §40 検討: 「多くの人にメンテされる基本ツール」への改善点（2026-10-05 レビュー）
+
+§37 / `notes/PLAN-widespread-adoption.md` と重複しない指摘のみ。優先順。
+
+- [ ] **main CI を緑に戻す**(secrets は人間作業: #1 コメントで pyjwt/urllib3 の bump 方針を、#2 に secrets 不足の診断を記録済み): `hygiene`（`GITLEAKS_LICENSE` 未設定）と
+      `example / update`（`EXAMPLE_DEPLOY_KEY` 未設定）が赤。README 先頭の
+      CI バッジが失敗を表示している。issue #1（pip-audit: pyjwt / urllib3）と
+      #2（scheduled check 失敗）も新規訪問者に見える — 解消して close
+- [x] **初の外部 PR #9（AK-Lmn）を最優先でレビュー**: 内容検証済み・レビューコメント投稿(2026-10-05)。CI 実行承認と merge は人間: 初回コントリビューターの
+      CI 承認待ちで check 未実行の可能性。対応速度が 2 人目以降を決める
+- [x] **設計原則とロードマップを英語化し GitHub 上へ** → `docs/explanations/design-principles.md` 新設 + GOVERNANCE の参照を差し替え(2026-10-05)。残作業の Issues/Milestones 移行は人間: GOVERNANCE.md の
+      メンテナ条件が日本語の TODO.md「設計原則」を参照しており、海外の人が
+      メンテナになる経路が実質閉じている。設計原則 →
+      `docs/explanations/design-principles.md`（英語）、残作業 → Issues /
+      Milestones / Projects、TODO.md は履歴アーカイブへ
+- [x] **レイヤー単位のオーナー制**: CODEOWNERS 層分割 + GOVERNANCE にオーナー不在→experimental 降格規則と昇格パスを追記(2026-10-05): CODEOWNERS をレイヤー（ros2 / micropython /
+      online_judge / bot / ctf / ethics …）単位に分け `docs/reference/support.md`
+      のティアと連動。**オーナー不在のレイヤーは `experimental` に降格**する
+      規則と、triager → レイヤーオーナー → コアメンテナの昇格パスを GOVERNANCE に明記
+- [ ] **内部メモを公開リポから分離**(移設先の private リポ/Wiki 作成が人間作業): `notes/outreach/`（推薦文・元作者スレッドへの
+      返信草案は、読まれる相手が見られる場所にあると逆効果）、`copier-fork/`、
+      `HUMAN_TODO.md` を private リポか Wiki へ
+- [ ] **変更速度を追える速さに**: 定期リリース（例: 月 1）、リリース前の凍結期間、
+      main 直 push をやめ PR 経由に
+- [x] **CLI を製品の中心に**: `docs/tutorials/installation.md` に new/adopt/update を semver 保証の公開インターフェースと明記(2026-10-05): `daimonion new / adopt / update` を semver で守る
+      公開インターフェースと宣言し、内部の質問票は自由に変えられるようにする
+- [x] **update 成功率を公開指標に**: `update-rehearsal` の結果を docs 上の（2026-10-05 実装: --json → step summary + artifact + `auto/update-rehearsal` 自動PR、`support.md` に generated rehearsal 節 + README バッジ）
+      ダッシュボードとして出す（例: 「全 272 葉でタグ間 update 成功率 100%」）。
+      Z3 の技術記事より利用者に効く信頼の証拠
+- [ ] **ethics 層を独立コミュニティとして育てる**: §38 の分離をさらに進め、
+      法規制コンテンツの正誤責任と更新負担をテンプレート本体から切り離す
+- [ ] **copier upstream への貢献を信頼獲得の経路に**(パッチ 4 本 + discussion 草案 2 本は push 済み。PR/Discussion の投稿は upstream AI_POLICY により人間作業): F1–F7 パッチの upstream 化
