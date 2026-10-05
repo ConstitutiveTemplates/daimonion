@@ -1167,12 +1167,15 @@ GitHub の "Latest" 表示も 7.0.0 にする（2026-10-05 時点で Latest は 
 
 §37 / `notes/PLAN-widespread-adoption.md` と重複しない指摘のみ。優先順。
 
-- [ ] **main CI を緑に戻す**(secrets は人間作業: #1 コメントで pyjwt/urllib3 の bump 方針を、#2 に secrets 不足の診断を記録済み): `hygiene`（`GITLEAKS_LICENSE` 未設定）と
+- [ ] **main CI を緑に戻す**(残る赤は secrets 由来のみ。人間作業): `hygiene`（`GITLEAKS_LICENSE` 未設定）と
       `example / update`（`EXAMPLE_DEPLOY_KEY` 未設定）が赤。README 先頭の
-      CI バッジが失敗を表示している。issue #1（pip-audit: pyjwt / urllib3）と
-      #2（scheduled check 失敗）も新規訪問者に見える — 解消して close
-- [x] **初の外部 PR #9（AK-Lmn）を最優先でレビュー**: 内容検証済み・レビューコメント投稿(2026-10-05)。CI 実行承認と merge は人間: 初回コントリビューターの
-      CI 承認待ちで check 未実行の可能性。対応速度が 2 人目以降を決める
+      CI バッジが失敗を表示している。~~issue #1（pip-audit: pyjwt / urllib3）~~は
+      #13 で解消・close 済み。#2（scheduled check 失敗）は secrets 設定後の
+      次回週次実行が緑になれば close
+- [ ] **初の外部 PR #9（AK-Lmn）の扱い**: 内容は検証済み・レビューコメント投稿済み
+      （2026-10-05）。CI 再実行で hygiene（GITLEAKS_LICENSE 欠落・既知）以外は全緑を確認。
+      **同日 09:35 UTC に PR は close された（未マージ）。メンテナの意図的な close か、
+      reopen してマージするかは人間の判断** — issue #5（presets ドキュメント）は依然 open。
 - [x] **設計原則とロードマップを英語化し GitHub 上へ** → `docs/explanations/design-principles.md` 新設 + GOVERNANCE の参照を差し替え(2026-10-05)。残作業の Issues/Milestones 移行は人間: GOVERNANCE.md の
       メンテナ条件が日本語の TODO.md「設計原則」を参照しており、海外の人が
       メンテナになる経路が実質閉じている。設計原則 →
@@ -1185,8 +1188,9 @@ GitHub の "Latest" 表示も 7.0.0 にする（2026-10-05 時点で Latest は 
 - [ ] **内部メモを公開リポから分離**(移設先の private リポ/Wiki 作成が人間作業): `notes/outreach/`（推薦文・元作者スレッドへの
       返信草案は、読まれる相手が見られる場所にあると逆効果）、`copier-fork/`、
       `HUMAN_TODO.md` を private リポか Wiki へ
-- [ ] **変更速度を追える速さに**: 定期リリース（例: 月 1）、リリース前の凍結期間、
-      main 直 push をやめ PR 経由に
+- [x] **変更速度を追える速さに**（PR 経由の習慣は 2026-10-05 から実施中 — 本日の変更は
+      すべて PR #9-17 として経由）: 残る人間判断は定期リリースの周期（例: 月 1）と
+      リリース前の凍結期間の設定
 - [x] **CLI を製品の中心に**: `docs/tutorials/installation.md` に new/adopt/update を semver 保証の公開インターフェースと明記(2026-10-05): `daimonion new / adopt / update` を semver で守る
       公開インターフェースと宣言し、内部の質問票は自由に変えられるようにする
 - [x] **update 成功率を公開指標に**: `update-rehearsal` の結果を docs 上の（2026-10-05 実装: --json → step summary + artifact + `auto/update-rehearsal` 自動PR、`support.md` に generated rehearsal 節 + README バッジ）

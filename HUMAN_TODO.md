@@ -30,7 +30,7 @@
       実測）、`EXAMPLE_DEPLOY_KEY`（example 連携の deploy key。
       **deploy key 方式で継続決定（2026-10-05）**: org Settings →
       Member privileges で deploy keys を有効化したうえで、
-      ConstitutiveTemplates/foundry-example に deploy key を登録し
+      ConstitutiveTemplates/daimonion-example に deploy key を登録し
       `EXAMPLE_DEPLOY_KEY` secret を再設定）、`PYPI_API_TOKEN`。
 - [x] **`uvx --from git+...` の実ネットワーク検証**: ✅ 2026-10-04。
       `uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git
@@ -58,6 +58,34 @@
       GITLEAKS_LICENSE 未設定で赤（既知の secret 欠落）
 - [ ] **（§40 由来）内部メモ用の private リポ/Wiki の用意**: `notes/outreach/`・
       `copier-fork/`・本ファイルの移設先。作成後は移動自体はエージェント可能
+
+## 直近の作業（2026-10-05 時点の残り全部）
+
+**今週（ブロッカー優先）**:
+
+- [ ] **Secrets 3種を再設定**: `GITLEAKS_LICENSE` / `EXAMPLE_DEPLOY_KEY` /
+      `PYPI_API_TOKEN`。未設定の間、hygiene・example/update・PyPI 公開が常に赤。
+      設定後は #2（scheduled check）の次回週次実行で緑を確認して close。
+- [ ] **PyPI `daimonion` の確保**: 0.0.0 プレースホルダ公開
+      （`uv build` + `uv publish`。`PYPI_API_TOKEN` 前提）。`uvx daimonion`
+      （git+ URL なし）を実現するかの判断も同時に。
+- [ ] **PR #9 の扱い決定**: 外部初コントリビューター（AK-Lmn）の presets 参照
+      ドキュメント。内容はレビュー済み・CI 緑（hygiene のみ既知の secrets 起因）。
+      09:35 UTC に close されているが issue #5 は依然 open — reopen してマージするか、
+      クローズを維持するか判断。
+- [ ] **copier upstream への F1-F7 投稿**: fork に実装済み（パッチ 4 本 +
+      Discussion 草案 2 本、`notes/upstream-drafts/` + `copier-fork/patches/`）。
+      upstream の AI_POLICY により投稿は手動のみ。
+
+**来週以降（Phase 3 発信）**: 下の Phase 3/4 を全部。先に `notes/outreach/` の
+草案の最終編集（daimonion 名は反映済み）。
+
+**未判断のもの**:
+- `daimonion.dev` ドメイン取得（現在 NXDOMAIN、低優先）
+- 内部メモ用 private リポ/Wiki（§40: `notes/outreach/`・`copier-fork/`・本ファイルの移設先）
+- 定期リリース周期（§40。現在 PR 経由の運用は開始済み）
+- push protection の再有効化（Phase 2 の注意書き参照）
+- showcase 用の自プロジェクト選定（Phase 4）
 
 ## Phase 3: 対外発信（ローンチ後 2〜4週間）
 
