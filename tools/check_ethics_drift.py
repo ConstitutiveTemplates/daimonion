@@ -89,9 +89,10 @@ def main() -> int:
         print("Vendored _shared/ethics/ differs from the recorded snapshot:")
         for path in dirty:
             print(f"  {path}")
+        excludes = " ".join(f"--exclude {name}" for name in sorted(CONSUMER_OWNED))
         print(
             "\nEither restore the vendored copy or re-vendor: "
-            f"rsync -a --delete <codex>/sections/ _shared/ethics/ && "
+            f"rsync -a --delete {excludes} <codex>/sections/ _shared/ethics/ && "
             f"echo <sha> > {MARKER.name}"
         )
     if ahead:

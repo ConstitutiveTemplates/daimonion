@@ -511,11 +511,12 @@ existing answer set: the dependency list is pinned by
 
 Field rules (a retired public NTP, a telecom secrecy duty, a regional
 backbone's quiet hours) arrive one at a time and must not each move the
-questionnaire, the leaf space, or the witness matrix. Write each as a
-section under `_shared/ethics/` (`baseline/`, `sector/`, `region/`,
-`domain/`; `lang/` is reserved for the translation dictionaries), register
-it in `_shared/ethics/REGISTRY.yml`, and leave it `draft` until a bundle
-forms:
+questionnaire, the leaf space, or the witness matrix. Each is written as a
+section in [good-future-codex](https://github.com/ConstitutiveTemplates/good-future-codex)
+(`baseline/`, `sector/`, `region/`, `domain/`; `lang/` is reserved for
+the translation dictionaries) and vendored into `_shared/ethics/` (see
+[External ethics sections](ethics-external.md)); this repo registers it in
+`_shared/ethics/REGISTRY.yml` and leaves it `draft` until a bundle forms:
 
 - The registry row is the single source: id, file, `YYYY-MM-DD.rev`
   version, `effective` / `review_by` dates, primary-source URLs (no
