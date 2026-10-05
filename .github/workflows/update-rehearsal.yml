@@ -7,6 +7,12 @@ name: Update rehearsal
 # -- exactly the failure that otherwise only surfaces in a user's project
 # after a release.
 #
+# Each run's JSON report (`--json`) is the published metric: appended to the
+# run's step summary, uploaded as an artifact, and on a schedule committed
+# through the auto PR below so `docs/data/update-rehearsal.json` -- the
+# "Update rehearsal" section of docs/reference/support.md -- tracks it.
+# Results land as a PR, never as a push to main (TODO.md: no direct pushes).
+#
 # Weekly (the render-at-tag cache makes later runs cheap; the first run of a
 # new tag re-renders all leaves). Staggered from the other scheduled
 # workflows (ci.yml SUN 03:00, witness.yml 04:00, check-upstream MON 06:00,
@@ -26,6 +32,12 @@ jobs:
     name: Update rehearsal (every witness leaf)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Job-level grant above the workflow's `contents: read` default: the
+    # publish step below pushes the report and opens its PR, and both of
+    # its scopes must be granted where that step runs.
+    permissions:
+      contents: write  # push docs/data/update-rehearsal.json to auto/update-rehearsal; read-only token → 403 without it
+      pull-requests: write  # gh pr create for the results PR; 403 without it
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -45,4 +57,114 @@ jobs:
           enable-cache: true
 
       - name: Rehearse copier update for every witness leaf
-        run: uv run --locked python tools/update_rehearsal.py --jobs 4
+        id: rehearsal
+        # --json puts the machine report on stdout (tee keeps a copy in the
+        # log as well as the file the steps below read). continue-on-error:
+        # a failed rehearsal must still publish its own numbers -- failures
+        # are what the metric exists to show -- and the last step below
+        # turns the recorded outcome back into a red job, so the "red run =
+        # the update path broke" signal in the header survives.
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          uv run --locked python tools/update_rehearsal.py --jobs 4 --json | tee update-rehearsal.json
+
+      - name: Append the rehearsal summary to the run
+        # The counts on the run's front page, without downloading the
+        # artifact; a run that died before writing a report says so there
+        # instead of silently appending nothing.
+        run: |
+          set -euo pipefail
+          python3 - update-rehearsal.json >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          print("### Update rehearsal")
+          try:
+              report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+              failures = len(report["failures"])
+              skipped = len(report["skipped"])
+          except Exception as exc:  # the crash is itself what the summary must show
+              print(f"No report reached the summary: {exc.__class__.__name__}: {exc}")
+          else:
+              print("| Rehearsed | Failed | Skipped |")
+              print("|---|---|---|")
+              print(f"| {report['rehearsed']} | {failures} | {skipped} |")
+              print()
+              print(f"{report['base']} ({report['base_rev'][:10]}) -> "
+                    f"{report['target']} ({report['target_rev'][:10]})")
+          PY
+
+      - name: Upload the rehearsal report artifact
+        # The JSON behind the published metric: a failed run's numbers must
+        # stay fetchable after the log ages out.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: update-rehearsal
+          path: update-rehearsal.json
+
+      - name: Open the results PR
+        # Schedule only: a dispatch run is somebody's experiment and must
+        # not rewrite the committed metric or churn open result PRs.
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          # A run that crashed before writing a report has no metric to
+          # publish: committing an empty file would render "no rehearsal
+          # recorded yet" over a report that really was attempted.
+          if [ ! -s update-rehearsal.json ] || ! python3 -c 'import json, sys; json.load(open(sys.argv[1], encoding="utf-8"))' update-rehearsal.json 2>/dev/null; then
+            echo "No usable rehearsal report; nothing to publish."
+            exit 0
+          fi
+          mkdir -p docs/data
+          cp update-rehearsal.json docs/data/update-rehearsal.json
+          # The support page's generated section renders the report, so the
+          # PR carries the regenerated page too -- without it gen_docs
+          # --check would go red on main the moment the report merged.
+          uv run --locked python tools/gen_docs.py --write
+          git add docs/data/update-rehearsal.json docs/reference/support.md
+          # "Differs from HEAD" is what makes this a no-op when the report
+          # already merged (or a re-run produced the identical payload).
+          if git diff --cached --quiet; then
+            echo "The committed rehearsal report is already current."
+            exit 0
+          fi
+          if [ "$(gh pr list --head auto/update-rehearsal --state open --json number --jq 'length')" -ne 0 ]; then
+            echo "A results PR on auto/update-rehearsal is already open; it keeps the metric current."
+            exit 0
+          fi
+          # checkout keeps no credentials (persist-credentials: false above),
+          # so let gh install its credential helper from GH_TOKEN rather
+          # than embedding the token in the remote URL where a git error
+          # would echo it back into the log.
+          gh auth setup-git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c auto/update-rehearsal
+          git commit -m "chore(docs): update rehearsal results"
+          # The checkout only fetched main, so --force-with-lease would
+          # compare against "the branch does not exist" and reject the push
+          # that follows a merged (possibly squash-merged) previous results
+          # PR as "stale info". Fetching first gives the lease the remote's
+          # real state, still refusing the push if it moves in between.
+          # Reaches here only with no open PR, so nothing under review moves.
+          git fetch origin auto/update-rehearsal || true
+          git push --force-with-lease origin auto/update-rehearsal
+          gh pr create \
+            --title "chore(docs): update rehearsal results" \
+            --head auto/update-rehearsal \
+            --body "Automated update of the update-rehearsal metric ($RUN_URL)."
+
+      - name: Keep the rehearsal's verdict
+        # continue-on-error above let the summary, artifact and PR steps run
+        # on a failure; this step turns the recorded outcome back into a red
+        # job, or the header's failure signal would silently turn green.
+        if: steps.rehearsal.outcome == 'failure'
+        run: |
+          echo "At least one witness leaf failed its update rehearsal (see the report above)."
+          exit 1

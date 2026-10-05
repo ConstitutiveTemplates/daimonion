@@ -81,6 +81,50 @@ def test_support_doc_is_exactly_the_generator_output():
     assert gen_docs.check(gen_docs.Model.load(), [target]) == []
 
 
+def rehearsal_report(tmp_path: Path, *, failures: dict[str, list[str]] | None = None) -> Path:
+    """A fixture report in `tools/update_rehearsal.py --json`'s payload shape."""
+    report = tmp_path / "update-rehearsal.json"
+    payload = {
+        "base": "6.0.0",
+        "base_rev": "0123456789abcdef0123456789abcdef01234567",
+        "target": "HEAD",
+        "target_rev": "abcdefabcdefabcdefabcdefabcdefabcdefabcd",
+        "rehearsed": 278,
+        "skipped": {
+            "library/oj/other": "choice 'other' postdates 6.0.0",
+            "cli/scraping": "choice 'scraping' postdates 6.0.0",
+        },
+        "failures": failures or {},
+        "convergence": {},
+        "renders": {"cached": 10, "fresh": 5, "reused": 15},
+    }
+    report.write_text(json.dumps(payload, indent=1, sort_keys=True), encoding="utf-8")
+    return report
+
+
+def test_support_doc_rehearsal_section_renders_the_committed_report(tmp_path: Path):
+    """The page's trailing section is the committed JSON, made readable."""
+    report = rehearsal_report(tmp_path)
+    section = support_ledger.render_update_rehearsal(report)
+    assert section.startswith("## Update rehearsal")
+    assert "| `6.0.0` (0123456789) | `HEAD` (abcdefabcd) | 278 | 0 — every leaf updated cleanly | 2 |" in section
+    assert "weekly via update-rehearsal.yml; latest committed run" in section
+    # The section closes the page the generator writes, not a side panel.
+    assert support_ledger.render_support_doc(support(), rehearsal=report).endswith(section)
+
+    # A red run reports its failures as a count, not the clean-run phrase.
+    red = rehearsal_report(tmp_path, failures={"library/gate=recommended": ["conflict residue: ['x']"]})
+    assert "| `6.0.0` (0123456789) | `HEAD` (abcdefabcd) | 278 | 1 | 2 |" in support_ledger.render_update_rehearsal(red)
+
+
+def test_support_doc_rehearsal_section_without_a_report(tmp_path: Path):
+    """Before the first scheduled run commits a report, the page says so."""
+    absent = tmp_path / "update-rehearsal.json"
+    section = support_ledger.render_update_rehearsal(absent)
+    assert section == "## Update rehearsal\n\nNo rehearsal has been recorded yet."
+    assert support_ledger.render_support_doc(support(), rehearsal=absent).endswith(section)
+
+
 def test_ledger_none_entries_carry_a_reason():
     """The `tier: none` hook cannot exclude a leaf without naming why."""
     unreasoned = [

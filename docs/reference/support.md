@@ -57,4 +57,8 @@ today because every declared leaf has a recorded fast-tier run.
 | `project_type=*/.../domain=* (domain_traits variants)` | `fast` | a domain trait adds an ethics section (and for face-recognition a dependency) and no artifact: its presence is the ethics-appendix predicate's business, which render + ruff-check already exercises. The co-occurrence leaf is what the additivity check compares against the solo ones |
 | `project_type=*/.../distribution=* (distribution variants)` | `fast` | the distribution answer adds one ethics section (the EU CRA duties on `commercial`) and no artifact; render + ruff-check exercises it, and the additivity check pins that `oss` alone ships nothing (art. 24's non-commercial exemption) |
 | `(reserved) no class today` | `none` | every declared witness leaf has a recorded fast-tier run; tests/matrix/witnesses.json keeps the tier:none + reason hook as the future exclusion mechanism |
+
+## Update rehearsal
+
+No rehearsal has been recorded yet.
 <!-- END GENERATED: support-matrix -->

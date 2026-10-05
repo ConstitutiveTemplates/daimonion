@@ -9,12 +9,19 @@ full `docs/reference/support.md` from it) and the MCP server (the
 `template://support` resource). tests/test_support_matrix.py keeps the
 declaration honest against the witness ledger.
 
+The full support page also renders the committed update-rehearsal report
+(`docs/data/update-rehearsal.json`, written by tools/update_rehearsal.py
+--json and committed by .github/workflows/update-rehearsal.yml): the
+"Update rehearsal" section at the end of the page is that JSON made
+readable, and its reader lives here beside the other doc renderer.
+
 This is a foundations-layer module by the tests/test_tool_layers.py table:
-one file in, markdown text out -- no template tree, no subprocess.
+data files in, markdown text out -- no template tree, no subprocess.
 """
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -30,6 +37,20 @@ SUPPORT_YML = TOP / "support.yml"
 
 SUPPORT_DOC = TOP / "docs" / "reference" / "support.md"
 """The generated full-matrix reference page."""
+
+REHEARSAL_JSON = TOP / "docs" / "data" / "update-rehearsal.json"
+"""The committed update-rehearsal report the support page renders.
+
+update-rehearsal.yml writes `tools/update_rehearsal.py --json` here after
+each scheduled run, alongside the regenerated page, via the auto PR. Absent
+(before the first such run) the page renders "no rehearsal recorded yet".
+"""
+
+REHEARSAL_KEYS = frozenset({"base", "base_rev", "target", "target_rev", "rehearsed", "skipped", "failures"})
+"""The report keys the section renders; the payload's full shape is its own.
+
+(`convergence` and `renders` are per-run detail the tool prints but the
+section does not show, so they are not required here.)"""
 
 SECTIONS = ("supported", "best_effort", "tier_policy")
 """The sections a full rendering needs, in page order."""
@@ -130,8 +151,57 @@ def render_support_table(support: dict[str, Any], *, full_link: str) -> str:
     return "\n".join(blocks)
 
 
-def render_support_doc(support: dict[str, Any]) -> str:
-    """`docs/reference/support.md`: the full support matrix, prose included."""
+def render_update_rehearsal(report: Path = REHEARSAL_JSON) -> str:
+    """The `## Update rehearsal` section at the end of `docs/reference/support.md`.
+
+    Renders the JSON `tools/update_rehearsal.py --json` writes, which
+    update-rehearsal.yml commits next to the regenerated page: the section is
+    the public record that `copier update` still lands cleanly in a user's
+    project (TODO.md §40). A repository with no committed report yet renders
+    one line saying so, so the section exists before the first scheduled run
+    after this lands; a report that exists but is not the tool's payload
+    raises instead -- silently rendering "nothing recorded" over a real file
+    would hide the drift rather than surface it.
+    """
+    head = ["## Update rehearsal", ""]
+    if not report.is_file():
+        return "\n".join([*head, "No rehearsal has been recorded yet."])
+    try:
+        payload = json.loads(report.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        msg = f"{report}: not a JSON rehearsal report: {exc}"
+        raise SupportLedgerError(msg) from exc
+    if not isinstance(payload, dict):
+        msg = f"{report}: the rehearsal report must be a JSON object"
+        raise SupportLedgerError(msg)
+    missing = sorted(REHEARSAL_KEYS - payload.keys())
+    if missing:
+        msg = f"{report}: rehearsal report lacks {', '.join(missing)}"
+        raise SupportLedgerError(msg)
+    failures = len(payload["failures"])
+    skipped = len(payload["skipped"])
+    base = cell(f"`{payload['base']}` ({str(payload['base_rev'])[:10]})")
+    target = cell(f"`{payload['target']}` ({str(payload['target_rev'])[:10]})")
+    failed = cell(str(failures)) if failures else "0 — every leaf updated cleanly"
+    row = f"| {base} | {target} | {cell(str(payload['rehearsed']))} | {failed} | {cell(str(skipped))} |"
+    return "\n".join(
+        [
+            *head,
+            "| Base | Target | Rehearsed | Failures | Skipped |",
+            "|---|---|---|---|---|",
+            row,
+            "",
+            "weekly via update-rehearsal.yml; latest committed run",
+        ]
+    )
+
+
+def render_support_doc(support: dict[str, Any], *, rehearsal: Path = REHEARSAL_JSON) -> str:
+    """`docs/reference/support.md`: the full support matrix, prose included.
+
+    `rehearsal` is the report the trailing "Update rehearsal" section reads
+    (the committed one by default; a fixture path in tests).
+    """
     sections = {key: support_section(support, key) for key in SECTIONS}
     lines = [
         "Every combination this template keeps working, the tier that guarantees",
@@ -162,5 +232,10 @@ def render_support_doc(support: dict[str, Any]) -> str:
         "today because every declared leaf has a recorded fast-tier run.",
         "",
         matrix_rows(sections["tier_policy"], plain=("why",)),
+        "",
+        # The update rehearsal closes the page: the tiers above promise the
+        # update path keeps working, and this section is the run that proves
+        # it for the configuration set those tiers cover.
+        render_update_rehearsal(rehearsal),
     ]
     return "\n".join(lines)
