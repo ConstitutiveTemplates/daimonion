@@ -3,7 +3,7 @@ title: "Show HN: We mathematically verified a Python project template's 272 path
 venue: Hacker News (Show HN) and r/Python
 status: DRAFT — human edits before posting
 date: 2026-10-05
-source: ConstitutiveTemplates/foundry (verified against repo at 3e2678ae)
+source: ConstitutiveTemplates/daimonion (verified against repo at 3e2678ae)
 ---
 
 Show HN: We mathematically verified a Python project template's 272 paths with Z3
@@ -21,8 +21,12 @@ Push CI renders the happy path, the maintainer's own project, and the template
 "works" — until a user picks the one combination nobody tested.
 
 We got tired of this and built the fix into the template itself:
-[foundry](https://github.com/ConstitutiveTemplates/foundry), an opinionated
+[daimonion](https://github.com/ConstitutiveTemplates/daimonion), an opinionated
 [copier](https://copier.readthedocs.io) template for Python projects.
+
+The name is Socrates' daimonion — the inner voice that never says what to
+do, only when to stop — matching the template's warning/abort/refusal
+posture (and the etymology of Unix *daemon*).
 
 **The core idea: treat the questionnaire's `when:` logic as a constraint
 problem, not as prose.** `tools/when_model.py` parses every `when:`
@@ -77,21 +81,21 @@ What you get when the branch check passes:
   digests; a drift detector (`tools/check_upstream.py`) checks the pins
   renovate can't track (MicroPython tags, CUDA indexes, ROS distro EOL dates,
   Python floors) against upstream weekly and opens an issue on drift.
-- **Safe adoption** — `foundry new .` inside an existing repo adds the
+- **Safe adoption** — `daimonion new .` inside an existing repo adds the
   missing infrastructure (CI, quality tooling, AGENTS.md) transactionally and
   verifies the files you already have stay byte-identical.
 
 One line to try it:
 
 ```shell
-uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git \
-    foundry new my-project --preset library
+uvx --from git+https://github.com/ConstitutiveTemplates/daimonion.git \
+    daimonion new my-project --preset library
 ```
 
 or drive copier directly (`--trust` runs the post-generation tasks):
 
 ```shell
-uvx copier copy --trust https://github.com/ConstitutiveTemplates/foundry.git my-project
+uvx copier copy --trust https://github.com/ConstitutiveTemplates/daimonion.git my-project
 ```
 
 Everything a template *is* is data: the questions, the conditions, the

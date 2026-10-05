@@ -652,7 +652,7 @@ wheels = [
 ]
 
 [[package]]
-name = "foundry"
+name = "daimonion"
 source = { editable = "." }
 dependencies = [
     { name = "copier" },

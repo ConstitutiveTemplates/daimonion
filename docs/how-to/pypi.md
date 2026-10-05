@@ -7,10 +7,10 @@ To publish your package on PyPI requires a PyPI account and for PyPI to be setup
 You will need the following information:
 
 - Owner: The GitHub org that the repo is contained in, e.g. `kasi-x`
-- Repository name: The GitHub repository name, e.g. `foundry-example`
-- PyPI Project Name: The distribution name on PyPI, e.g. `kasi-x-foundry-example`
-- Workflow name: The workflow that does publishing, `_pypi.yml` for `foundry` projects
-- Environment name: The GitHub environment that publishing is done with, `release` for `foundry` projects
+- Repository name: The GitHub repository name, e.g. `daimonion-example`
+- PyPI Project Name: The distribution name on PyPI, e.g. `kasi-x-daimonion-example`
+- Workflow name: The workflow that does publishing, `_pypi.yml` for `daimonion` projects
+- Environment name: The GitHub environment that publishing is done with, `release` for `daimonion` projects
 
 ## Publishing to PyPI
 

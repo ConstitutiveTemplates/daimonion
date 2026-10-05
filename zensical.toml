@@ -1,12 +1,12 @@
 [project]
-site_name = "foundry"
+site_name = "daimonion"
 site_description = "A Copier template for Python projects"
 site_author = "kasi-x"
-repo_url = "https://github.com/ConstitutiveTemplates/foundry"
-repo_name = "ConstitutiveTemplates/foundry"
+repo_url = "https://github.com/ConstitutiveTemplates/daimonion"
+repo_name = "ConstitutiveTemplates/daimonion"
 edit_uri = "edit/main/docs/"
 
-copyright = 'Maintained by <a href="https://github.com/ConstitutiveTemplates/foundry">kasi-x</a>.'
+copyright = 'Maintained by <a href="https://github.com/ConstitutiveTemplates/daimonion">kasi-x</a>.'
 
 nav = [
   { "Home" = "index.md" },

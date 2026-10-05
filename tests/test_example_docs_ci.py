@@ -48,11 +48,11 @@ def test_template_with_extra_code_and_api_docs(tmp_path: Path):
     copy_project(tmp_path, docs_type="sphinx", project_type="library")
     run = make_venv(tmp_path)
     # add some code
-    init = tmp_path / "src" / "foundry_example" / "__init__.py"
+    init = tmp_path / "src" / "daimonion_example" / "__init__.py"
     init.write_text(
         init.read_text().replace(
             'from ._version import __version__\n\n__all__ = ["__version__"]',
-            '''from foundry_example import extra_pkg
+            '''from daimonion_example import extra_pkg
 
 from ._version import __version__
 
@@ -64,7 +64,7 @@ class TopCls:
 __all__ = ["TopCls", "__version__", "extra_pkg"]''',
         )
     )
-    extra_pkg = tmp_path / "src" / "foundry_example" / "extra_pkg"
+    extra_pkg = tmp_path / "src" / "daimonion_example" / "extra_pkg"
     extra_pkg.mkdir()
     (extra_pkg / "__init__.py").write_text('"""Extra Package."""\n')
     code = '''"""A module."""
@@ -80,17 +80,17 @@ class Thing:
     run("uvx --from go-task-bin task docs")
     # Check it generates the right output
     api_dir = tmp_path / "build" / "html" / "_api"
-    top_html = api_dir / "foundry_example.html"
+    top_html = api_dir / "daimonion_example.html"
     assert "extra_pkg" in top_html.read_text()
     assert "Extra Package." in top_html.read_text()
     assert "TopCls" in top_html.read_text()
     assert "A top level class." in top_html.read_text()
     assert "__version__" in top_html.read_text()
     assert "setuptools_scm" in top_html.read_text()
-    package_html = api_dir / "foundry_example.extra_pkg.html"
+    package_html = api_dir / "daimonion_example.extra_pkg.html"
     assert "extra_module" in package_html.read_text()
     assert "A module." in package_html.read_text()
-    module_html = api_dir / "foundry_example.extra_pkg.extra_module.html"
+    module_html = api_dir / "daimonion_example.extra_pkg.extra_module.html"
     assert "Thing" in module_html.read_text()
     assert "A docstring." in module_html.read_text()
 
@@ -162,7 +162,7 @@ def test_template_library_sphinx_version_command(tmp_path: Path):
     """Non-web_api types keep the CLI --version check, named exactly."""
     copy_project(tmp_path, docs_type="README")
     ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
-    assert "version-command: python -m foundry_example --version" in ci
+    assert "version-command: python -m daimonion_example --version" in ci
     # The guess-based fallback stays only as the reusable workflow's default.
     dist = (tmp_path / ".github" / "workflows" / "_dist.yml").read_text()
     assert "version-command" in dist
@@ -366,8 +366,8 @@ def test_template_fair_metadata(tmp_path: Path):
     )
     cff = (tmp_path / "CITATION.cff").read_text()
     assert "cff-version: 1.2.0" in cff
-    assert 'title: "foundry-example"' in cff
-    assert 'repository-code: "https://github.com/ConstitutiveTemplates/foundry-example"' in cff
+    assert 'title: "daimonion-example"' in cff
+    assert 'repository-code: "https://github.com/ConstitutiveTemplates/daimonion-example"' in cff
     assert 'license: "Apache-2.0"' in cff
     assert 'orcid: "https://orcid.org/0000-0002-1825-0099"' in cff
     reuse_toml = (tmp_path / "REUSE.toml").read_text()
@@ -468,7 +468,7 @@ def test_template_scorecard_opt_in(tmp_path: Path):
     assert (tmp_path / "SECURITY.md").exists()
     assert (tmp_path / ".github" / "workflows" / "scorecard.yml").exists()
     readme = (tmp_path / "README.md").read_text()
-    assert "api.scorecard.dev/projects/github.com/ConstitutiveTemplates/foundry-example/badge" in readme
+    assert "api.scorecard.dev/projects/github.com/ConstitutiveTemplates/daimonion-example/badge" in readme
 
 
 def test_template_readme_badges(tmp_path: Path):
@@ -516,7 +516,7 @@ print(obj._bar)
     run("ruff check")
 
     # Private member access should not be allowed in src
-    src_file = tmp_path / "src" / "foundry_example" / "private_access.py"
+    src_file = tmp_path / "src" / "daimonion_example" / "private_access.py"
     with src_file.open("w") as stream:
         stream.write(code)
     with pytest.raises(AssertionError, match=r"private-member-access: Private member accessed: `_bar`"):
@@ -533,7 +533,7 @@ myVariable = "foo"
     copy_project(tmp_path)
     run = make_venv(tmp_path)
 
-    src_file = tmp_path / "src" / "foundry_example" / "bad_example.py"
+    src_file = tmp_path / "src" / "daimonion_example" / "bad_example.py"
     with src_file.open("w") as stream:
         stream.write(code)
     with pytest.raises(AssertionError, match=r"mixed-case-variable-in-global-scope.*"):
@@ -574,7 +574,7 @@ def test_basedpyright_works_with_external_deps(tmp_path: Path):
     assert n == 1, "could not find dependencies array in generated pyproject.toml"
     pyproject_toml.write_text(text)
     # And some code that uses it
-    src_file = tmp_path / "src" / "foundry_example" / "example.py"
+    src_file = tmp_path / "src" / "daimonion_example" / "example.py"
     src_file.write_text("""
 import numpy as np
 

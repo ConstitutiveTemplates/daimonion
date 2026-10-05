@@ -137,8 +137,8 @@ git init --initial-branch=main /path/to/existing-project   # 既存 repo の場�
 cd /path/to/existing-project
 uvx copier copy --trust --vcs-ref=main \
   --skip README.md --skip LICENSE --skip pyproject.toml --skip .gitignore \
-  https://github.com/ConstitutiveTemplates/foundry.git .
-git add -A && git commit -m "chore: adopt foundry (infra only)"
+  https://github.com/ConstitutiveTemplates/daimonion.git .
+git add -A && git commit -m "chore: adopt daimonion (infra only)"
 ```
 
 ### フェーズ1 — `existing_project: true`(推奨フロー)
@@ -146,7 +146,7 @@ git add -A && git commit -m "chore: adopt foundry (infra only)"
 ```sh
 uvx copier copy --trust --vcs-ref=main \
   --data existing_project=true \
-  https://github.com/ConstitutiveTemplates/foundry.git /path/to/existing-project
+  https://github.com/ConstitutiveTemplates/daimonion.git /path/to/existing-project
 ```
 
 ### 採用後の更新
