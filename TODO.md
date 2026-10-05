@@ -1096,6 +1096,13 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
   ethics-sync.yml との重複なし — 対象 corpus が異なる（散文 SHA ドリフト vs
   義務ノードの review_by 鮮度）。`docs/explanations/ethics-external.md` に
   2 つの契約（vendored SHA / `<tier>-<slug>` 命名規則）を記録
+- [x] **初回 drift report の解消（2026-10-06）**: law-map#2（8 URL フラグ）と
+  good-future-codex#1（ilga.gov exit 60）を修正・close。ilga.gov はデータセンター
+  egress を TLS reset するため Wayback スナップショットへ、soumu 外部送信規律・
+  CISA CVD・cryptrec・dsgvo-gesetz（TTDSG→TDDDG 改称）・PCI・RFC 9116 は
+  移転先/正規 URL へ、fsfe.org の Sitecom 判決ページ（404）は ifrOSS の英訳 PDF へ。
+  `law-map check --sources` 34 probes / 0 flagged、codex `--drift` all live。
+  codex @42008c58 の vendor sync は PR #20（ヘッダのみ・本文 byte 同一）
 
 ## §39 実行: `foundry` → `daimonion` への改名（2026-10-05 決定）
 
