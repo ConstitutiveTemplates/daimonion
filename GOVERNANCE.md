@@ -57,6 +57,40 @@ that layer's PRs.
 3. *Core maintainer*: a layer owner who additionally meets the "Adding
    maintainers" criteria above and reviews outside their layer.
 
+## Scope and support commitments
+
+A proposal for a new project type, layer, or supported toolchain path must
+state:
+
+1. who needs it and what existing path does not cover;
+2. who will own ongoing updates and failures;
+3. the support tier it is expected to meet, and the verification needed for
+   that tier.
+
+If there is no owner, the option must remain experimental or the proposal
+must be declined. Do not treat a passing render, a larger witness matrix, or
+the presence of generated files as proof that a path is fully supported.
+Keep support claims aligned with the evidence in
+[the support matrix](docs/reference/support.md). Prefer strengthening
+existing paths over expanding the questionnaire; remove or narrow paths when
+their maintenance cost is no longer justified.
+
+## Release discipline
+
+`daimonion new`, `daimonion adopt`, and `daimonion update` are the public
+interface and follow the compatibility policy documented in the installation
+tutorial. A release must validate the revision users will actually resolve
+from the template source, not only an untagged working tree. Required CI must
+be green; any job blocked by external credentials must be classified and
+resolved or explicitly accepted before release, never silently counted as a
+pass.
+
+Before release, review the support matrix and update-rehearsal result against
+the candidate revision. Generated-project claims must not exceed what those
+checks executed. When coverage or rehearsal is incomplete, document the gap
+and keep the affected path at its existing support tier rather than implying
+confidence the evidence does not provide.
+
 ## How contributions are reviewed
 
 - **Big changes start as an issue first** (also stated in
