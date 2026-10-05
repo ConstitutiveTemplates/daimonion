@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1093,
+      "collected": 1095,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -51,7 +51,7 @@
         "tests/test_render_delta.py": 9,
         "tests/test_render_invariants.py": 41,
         "tests/test_structured_answers.py": 11,
-        "tests/test_support_matrix.py": 5,
+        "tests/test_support_matrix.py": 7,
         "tests/test_task_runners.py": 10,
         "tests/test_tool_layers.py": 3,
         "tests/test_update_path.py": 2,
@@ -60,7 +60,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "ffa555fe6a545a6f482152ac42bbb05ce1cd61bbd05162e1a1b0fa88bb02e9df",
+      "ids_sha256": "f5e0aea5a434063de63b9921c3ca006a9e6c3e110fb776b42109ba2bbd7e7336",
       "wall_seconds": 18.6,
       "measured": "2026-09-20",
       "budget_seconds": 30,
@@ -123,7 +123,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 1160,
+      "collected": 1162,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -172,7 +172,7 @@
         "tests/test_render_delta.py": 10,
         "tests/test_render_invariants.py": 41,
         "tests/test_structured_answers.py": 11,
-        "tests/test_support_matrix.py": 5,
+        "tests/test_support_matrix.py": 7,
         "tests/test_task_runners.py": 18,
         "tests/test_tool_layers.py": 3,
         "tests/test_update_path.py": 6,
@@ -181,7 +181,7 @@
         "tests/test_witness_matrix.py": 287,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "29618c2a8957a33cdea4a94c2c44456547d708ad4bf355248b01bafd9d1c922e",
+      "ids_sha256": "6bf0c6fbf800da48615eae3ae58e207e95bc33a06e655edbcbcaed9c15626d46",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -190,7 +190,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1093,
+      "collected": 1095,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -237,7 +237,7 @@
         "tests/test_render_delta.py": 9,
         "tests/test_render_invariants.py": 41,
         "tests/test_structured_answers.py": 11,
-        "tests/test_support_matrix.py": 5,
+        "tests/test_support_matrix.py": 7,
         "tests/test_task_runners.py": 10,
         "tests/test_tool_layers.py": 3,
         "tests/test_update_path.py": 2,
@@ -246,7 +246,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "ffa555fe6a545a6f482152ac42bbb05ce1cd61bbd05162e1a1b0fa88bb02e9df",
+      "ids_sha256": "f5e0aea5a434063de63b9921c3ca006a9e6c3e110fb776b42109ba2bbd7e7336",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",
