@@ -52,8 +52,10 @@
 - [x] **Pages URL の確認**: ✅ `constitutivetemplates.github.io/daimonion/` に自動追随済み
       （rename 後 building → success 確認）。`daimonion.dev` は NXDOMAIN（未取得）。
       取得するかは人間の判断（`.com`/`.io` は既に取得済みのため優先度低）
-- [x] **改名後最初のリリース 7.0.0**: タグ `7.0.0` push 済み（ledger-fix 込みの
-      HEAD efe74f76 に再タグ）。release job の完了・Latest 表示は CI 待ち
+- [x] **改名後最初のリリース 7.0.0**: ✅ 2026-10-05 公開済み。タグ `7.0.0`
+      （ledger-fix 込みの HEAD 84f2ab44 に再タグ）、GitHub Latest = 7.0.0、
+      git-cliff ノート生成済み。test/test-meta/docs/lint 緑、hygiene のみ
+      GITLEAKS_LICENSE 未設定で赤（既知の secret 欠落）
 - [ ] **（§40 由来）内部メモ用の private リポ/Wiki の用意**: `notes/outreach/`・
       `copier-fork/`・本ファイルの移設先。作成後は移動自体はエージェント可能
 
