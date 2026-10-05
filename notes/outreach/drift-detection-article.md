@@ -10,13 +10,17 @@ license changes underneath you. Upstream fixes a bug you never saw. A formatter
 release reflows a file you hand-wrote. The template keeps rendering exactly as
 confidently as before — while the world it renders against has moved.
 
-foundry is an opinionated [copier](https://copier.readthedocs.io) template for Python
+daimonion is an opinionated [copier](https://copier.readthedocs.io) template for Python
 projects. Its questionnaire is verified with an SMT solver (Z3) across 272 enumerated
 witness leaves, but that only proves the *input space* is reachable; it says nothing
 about whether the generated output is still correct next Tuesday. So the repo treats
 drift detection as a first-class problem with **five dimensions**, each a dedicated
 scheduled workflow, each with a real incident behind it. The design notes live in
 `docs/explanations/drift-detection.md`; the mechanisms below are what actually runs.
+
+The name *daimonion* is Socrates' inner voice — it never tells you what to
+do, only when to stop — matching the template's warning/abort/refusal posture
+(and the etymology of Unix *daemon*).
 
 ## 1. Upstream copier drift — hardcoded pins
 

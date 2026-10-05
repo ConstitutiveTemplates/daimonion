@@ -23,7 +23,8 @@
       履歴記録と example リポのみ）
 - [x] **NOTICE ファイル新設**: ✅ DiamondLightSource / python3-pip-skeleton /
       copier の系譜と Apache-2.0 を明記済み（2026-10-04）
-- [ ] **v1.0.0 リリース**: タグ打ち直し、リリースノート確認。
+- [ ] ~~**v1.0.0 リリース**~~ → **7.0.0 に変更（2026-10-05）**: copier は最大タグを
+      採用するため 6.1.0 がある限り v1.0.0 は選ばれない。詳細 TODO.md §39.3。
 - [ ] **Secrets 再設定（3種）**: org 再作成で旧リポの secret が消滅。
       `GITLEAKS_LICENSE`（なしだと hygiene の gitleaks がエラー死・2026-10-04
       実測）、`EXAMPLE_DEPLOY_KEY`（example 連携の deploy key。
@@ -37,7 +38,20 @@
       完走（cold cache、実 GitHub 経由）。tag 6.1.0 が最新 questionnaire を
       持たないため ref は main にフォールバック（v1.0.0 タグで解消）
 - [ ] **PyPI 公開判断**: `uvx foundry`（git+ URL なし）に
-      するかどうか。公開するなら `_pypi.yml` の有効化・トークン設定。
+      するかどうか → **daimonion 改名で前提が消滅（`foundry` は PyPI 取得済み）。
+      `uvx daimonion` にするかの判断に置き換わる。Phase 2.5 の PyPI 確保を参照。**
+
+## Phase 2.5: `daimonion` への改名（2026-10-05 決定。TODO.md §39）
+
+- [ ] **PyPI `daimonion` 確保**: 0.0.0 プレースホルダを公開（`PYPI_API_TOKEN` 発行が必要）。
+      リポ内の改名（§39.1）より先でよい — 名前は早く押さえるほど安全
+- [ ] **GitHub リポ名変更**: `foundry` → `daimonion`、`foundry-example` →
+      `daimonion-example`。§39.1 の URL 置換 PR と同じ日に実施
+      （**§39.1 は PR #11 として起票済み — merge はこのリポ名変更と同日に**）
+- [ ] **Pages URL の確認**、`daimonion.dev` を取得するか判断
+- [ ] **改名後最初のリリース 7.0.0** を打ち、GitHub の Latest を 7.0.0 に
+- [ ] **（§40 由来）内部メモ用の private リポ/Wiki の用意**: `notes/outreach/`・
+      `copier-fork/`・本ファイルの移設先。作成後は移動自体はエージェント可能
 
 ## Phase 3: 対外発信（ローンチ後 2〜4週間）
 

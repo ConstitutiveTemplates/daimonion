@@ -21,7 +21,6 @@ import sys
 from pathlib import Path
 
 import pytest
-import yaml
 
 TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:  # tests/test_cli.py does the same to reach tools/

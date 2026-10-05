@@ -57,10 +57,10 @@ library shape:
 ```shell
 uvx copier copy --trust --defaults \
     --data-file presets/library.yml \
-    https://github.com/ConstitutiveTemplates/foundry.git scratch/
+    https://github.com/ConstitutiveTemplates/daimonion.git scratch/
 ```
 
-(or the shipped CLI: `foundry new scratch --preset library`). This answers
+(or the shipped CLI: `daimonion new scratch --preset library`). This answers
 every question with the preset plus the recommended defaults, so it never
 prompts; drop `--preset` to answer the questionnaire yourself.
 
@@ -99,9 +99,9 @@ protecting the files you already have:
 uvx copier copy --trust \
     --data existing_project=true \
     --skip .github/workflows/ci.yml --skip renovate.json \
-    https://github.com/ConstitutiveTemplates/foundry.git .
+    https://github.com/ConstitutiveTemplates/daimonion.git .
 git diff        # delete what you do not want, keep your files
-git commit -m "chore: adopt foundry"
+git commit -m "chore: adopt daimonion"
 ```
 
 By default adoption protects your `README.md`, `LICENSE`, `pyproject.toml`,

@@ -3,7 +3,7 @@ title: 234通りを Z3 で形式検証した話
 intended-venue: Zenn / Qiita（技術ブログ）
 status: DRAFT — human edits before posting
 date: 2026-10-05
-author: ConstitutiveTemplates/foundry メンテナ
+author: ConstitutiveTemplates/daimonion メンテナ
 note-to-editor: |
   タイトルは HUMAN_TODO / PLAN-widespread-adoption の『234通りを Z3 で形式検証した話』を
   採用。ただし本文の数字はリポジトリ現状（2026-10-05）に合わせてある:
@@ -17,11 +17,11 @@ note-to-editor: |
 
 ## はじめに
 
-私は Copier ベースの Python プロジェクトテンプレート **foundry**（https://github.com/ConstitutiveTemplates/foundry）のメンテナです。このテンプレートには、プロジェクトの種類（CLI・ライブラリ・Web API・ROS2・競プロ向けなど）や推奨統合の取捨（bot・Docker・MCP・データサイエンス等）を選ぶ質問票がついており、組み合わせは単純に数えれば天文学的なオーダーになります。「全組み合わせをテストする」のは不可能に見えます。しかし今、foundry は**質問票の全分岐を Z3 で充足可能性証明し、その全「葉」を実レンダで検証する**仕組みを回しています。どうやって可能にしたのか、という話です。
+私は Copier ベースの Python プロジェクトテンプレート **daimonion**（https://github.com/ConstitutiveTemplates/daimonion）のメンテナです。名前はソクラテスの内なる声（daimonion）——何をすべきかは決して言わず、止まるべき時だけを知らせる——に由来し、このテンプレートの「警告・中止・拒否」という姿勢（そして Unix の *daemon* の語源）にも重なります。このテンプレートには、プロジェクトの種類（CLI・ライブラリ・Web API・ROS2・競プロ向けなど）や推奨統合の取捨（bot・Docker・MCP・データサイエンス等）を選ぶ質問票がついており、組み合わせは単純に数えれば天文学的なオーダーになります。「全組み合わせをテストする」のは不可能に見えます。しかし今、daimonion は**質問票の全分岐を Z3 で充足可能性証明し、その全「葉」を実レンダで検証する**仕組みを回しています。どうやって可能にしたのか、という話です。
 
 ## 質問票は Boolean 式の森である
 
-Copier の各質問には `when:` 条件が書けます。たとえば「`use_recommended_bot` を選んだときだけ `bot_platform` を聞く」といった具合です。foundry の質問票（`copier.yml` + `questions/` の断片）ではこうした条件が積み重なり、質問同士が依存し合うグラフを形成しています。
+Copier の各質問には `when:` 条件が書けます。たとえば「`use_recommended_bot` を選んだときだけ `bot_platform` を聞く」といった具合です。daimonion の質問票（`copier.yml` + `questions/` の断片）ではこうした条件が積み重なり、質問同士が依存し合うグラフを形成しています。
 
 この性質はテスト設計を根本から難しくします。`when:` は Jinja で書かれ、`==`・`!=`・`in`・`not in` と `and`/`or`/`not` が混ざるため、**「どの回答の組み合わせが実際に到達可能か」は手計算では追えません。** 到達不可能な組み合わせをテストしても無駄で、到達可能な組み合わせを見落とせば、その分岐は未検証のままリリースされます。
 
@@ -61,7 +61,7 @@ Copier の各質問には `when:` 条件が書けます。たとえば「`use_re
 
 ## まとめ
 
-foundry の主張を要約すると、こうです。
+daimonion の主張を要約すると、こうです。
 
 1. 質問票の `when:` 条件を Z3 の式としてモデル化する（タイポやデッドブランチは unsat として機械的に検出）
 2. 全充足モデル = 証人葉を列挙する（現在 272 枚）
@@ -72,7 +72,7 @@ foundry の主張を要約すると、こうです。
 試してみたい方はこちらから:
 
 ```shell
-uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git foundry new my-project --preset library
+uvx --from git+https://github.com/ConstitutiveTemplates/daimonion.git daimonion new my-project --preset library
 ```
 
 `--preset` には `bare` / `cli` / `data-science` / `library` / `mcp-server` / `micropython` / `online-judge-*` / `ros2` / `web-api` があります。ソースコード（`tools/z3_witnesses.py`・`tools/when_model.py`・`tests/matrix/witnesses.json`）はすべて公開中です。「Z3 でテンプレートを検証する」のは聞いたことがない、という方は、ぜひ実装を眺めてみてください。

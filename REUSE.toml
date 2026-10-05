@@ -1,8 +1,8 @@
 version = 1
 
-SPDX-PackageName = "foundry"
+SPDX-PackageName = "daimonion"
 SPDX-PackageSupplier = "kasi-x <kashimiya.exe@gmail.com>"
-SPDX-PackageDownloadLocation = "https://github.com/ConstitutiveTemplates/foundry"
+SPDX-PackageDownloadLocation = "https://github.com/ConstitutiveTemplates/daimonion"
 
 # Project-wide default: every file inherits the project license and
 # copyright. Individual exceptions (e.g. vendored third-party assets) are

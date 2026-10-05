@@ -36,6 +36,17 @@ to *prove* correct rather than merely test by example:
 - Generated CI is SHA-pinned, zizmor-audited, and Scorecard-tracked from the
   first commit, not bolted on after an incident.
 
+## Name origin
+
+The name is Socrates' daimonion — the inner voice that, by his own account,
+never told him what to do, only when to stop. That is exactly this template's
+posture: it never tells you *what* to build (the questionnaire is yours to
+answer); it only refuses, aborts, and warns when a render path would be
+unsound. The word also underlies the Unix *daemon* — a background helper that
+quietly keeps watch without being asked to steer.
+
+*Like Socrates' daimonion, it never tells you what to build — only when to stop.*
+
 ## Where this fits among the alternatives
 
 No template is strictly better than the others — they're optimizing for
@@ -43,7 +54,7 @@ different things. As of 2026-09:
 
 | | Project-type coverage | Update mechanism | Correctness approach | Backing |
 |---|---|---|---|---|
-| **This template** | library / cli / web_api / data_science / online_judge (5 kinds) / script / ros2 / micropython, combinable via layers | `copier update` | Z3 satisfiability proof + scheduled drift detection across 5 sources | Solo maintainer, pre-1.0 |
+| **This template** | library / cli / web_api / data_science / online_judge (5 kinds) / script / ros2 / micropython, combinable via layers | `copier update` | Z3 satisfiability proof + scheduled drift detection across 5 sources | Solo maintainer, 7.0.0 upcoming |
 | [copier-uv](https://github.com/pawamoy/copier-uv) | Library, deliberately narrow | `copier update` | Example-based tests, mature and widely used | Solo maintainer (pawamoy), well-established |
 | [scientific-python/cookie](https://github.com/scientific-python/cookie) | Scientific libraries specifically | `copier update` | Example-based tests | Scientific Python community (NumFOCUS-adjacent), institutional |
 | [cookiecutter-hypermodern-python](https://github.com/cjolowicz/cookiecutter-hypermodern-python) | Library | None (cookiecutter, one-shot) | Example-based tests | Unmaintained since 2024-05 |
@@ -89,7 +100,7 @@ tell you so at generation time rather than generate something half-working.
 
 ## Current status and how to help
 
-This is a young, pre-1.0, solo-maintained project (recently forked from and
+This is a young, solo-maintained project (recently forked from and
 still diverging fast past
 [DiamondLightSource/python-copier-template](https://github.com/DiamondLightSource/python-copier-template),
 to which it owes its original structure and CI backbone). It does not yet
@@ -102,6 +113,6 @@ repository's `TODO.md`.
 The most useful contribution right now is not a new `project_type` — see
 [Contributing](../how-to/contribute.md) — it's a bug report from an actual
 generated project, or a link to a real repo demonstrating a behavior you
-want changed (per [CONTRIBUTING](https://github.com/ConstitutiveTemplates/foundry/blob/main/.github/CONTRIBUTING.md),
+want changed (per [CONTRIBUTING](https://github.com/ConstitutiveTemplates/daimonion/blob/main/.github/CONTRIBUTING.md),
 this template treats "show me the repo where this matters" as the way
 changes get evaluated).

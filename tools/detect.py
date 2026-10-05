@@ -417,7 +417,7 @@ def _src_is_ours(src: str) -> bool:
         origin = _git(path, "remote", "get-url", "origin")
         if origin and _normalised_template_ref(origin) in _own_identities():
             return True
-    return "foundry" in normalised
+    return "daimonion" in normalised
 
 
 def answers_owner(target: Path) -> tuple[str | None, str | None]:

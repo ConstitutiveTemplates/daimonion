@@ -1,4 +1,7 @@
 # This repository is maintained by kasi-x.
+# Layer rows name the files each questionnaire layer owns; every row's owner
+# is also a reviewer for the shared tests that leaf's render depends on.
+# The ownerless-layer rule is in GOVERNANCE.md ("Layer ownership").
 * @kasi-x
 
 # Security-sensitive paths: changes require review by the maintainer.
@@ -8,3 +11,16 @@
 /renovate.json @kasi-x
 SECURITY.md @kasi-x
 copier.yml @kasi-x
+
+# Questionnaire fragments: each layer's questions + template files + presets
+# + per-layer tests. Add a row when a layer gains a distinct owner.
+/questions/ros2.yml /presets/ros2.yml /tests/test_example_ros2.py /template/*ros2*/ @kasi-x
+/questions/micropython.yml /presets/micropython.yml /tests/test_example_micropython.py /tests/test_micropython_maintenance.py /template/*micropython*/ @kasi-x
+/questions/online_judge.yml /presets/online-judge-*.yml /tests/test_example_oj.py /template/*ctf*/ @kasi-x
+/questions/data_science.yml /presets/data-science.yml /tests/test_example_data_science.py /template/*data_science*/ /template/*data_science_layout*/ @kasi-x
+/questions/web_api.yml /presets/web-api.yml /tests/test_example_web_api.py /template/*web_api*/ @kasi-x
+
+# Cross-cutting layers (ethics appendix, scraping, bot, mcp) share the
+# questionnaire fragments; ownership stays with the maintainer until a
+# second maintainer exists.
+/_shared/ethics/ /docs/explanations/ethics-external.md /docs/how-to/ethics-section.md @kasi-x

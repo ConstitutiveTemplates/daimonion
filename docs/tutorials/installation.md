@@ -19,19 +19,28 @@ If you run `uvx copier --version` then `copier` will be downloaded, installed, a
 
 ## Get the template's CLI
 
-The repository also ships a one-command wrapper, `foundry new`, which picks the
+The repository also ships a one-command wrapper, `daimonion new`, which picks the
 release tag to expand, decides between creating a project and adopting an existing one, and warns
 about — or protects — the files the target already has. No `--vcs-ref` or other copier flag is
 needed:
 
 ```shell
-uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git foundry --help
+uvx --from git+https://github.com/ConstitutiveTemplates/daimonion.git daimonion --help
 ```
 
 The installed CLI clones and caches the template repo on first use. Inside a
-checkout the equivalent forms are `uv run foundry …` and
+checkout the equivalent forms are `uv run daimonion …` and
 `uv run python -m tools.cli …`; add `--preset <name>` for a fully non-interactive run (see
 [Create a New Project](./create-new.md)).
+
+!!! note "Public interface"
+
+    `daimonion new`, the adopt path it auto-selects inside an existing
+    project, and the `copier update` contract on generated projects are the
+    public interface and follow semver. The questionnaire itself — question
+    names, order, `when:` gates — is *not* part of that interface and may
+    change between minor versions; stable entry points and answer-file
+    compatibility are what a release commits to.
 
 ## Conclusion
 

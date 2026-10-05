@@ -69,7 +69,7 @@ external SHA is vendored, so the check only fires on genuinely new upstream
 work — the permanent-red trap the fork check escaped.
 
 ```text
-ethics-sections (source of truth)      foundry
+ethics-sections (source of truth)      daimonion
 ┌──────────────────────────┐         ┌────────────────────────────┐
 │ sections/*.md.jinja       │  sync   │ _shared/ethics/ (vendored) │
 │  flag-agnostic prose      │ ──────► │ REGISTRY.yml (flag gating) │

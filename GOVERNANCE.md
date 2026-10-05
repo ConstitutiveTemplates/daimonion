@@ -24,13 +24,38 @@ A second maintainer will be added when someone has:
 
 1. a track record here — several merged, non-trivial PRs, or substantial
    reviewed feedback on the questionnaire/design surfaces;
-2. demonstrated agreement with the design principles (TODO.md, section
-   "設計原則" / design principles) — in particular the reluctance to add a
-   new `project_type` or option without a "what existing layer does this
-   sit on?" answer;
+2. demonstrated agreement with the design principles
+   ([docs/explanations/design-principles.md](docs/explanations/design-principles.md))
+   — in particular the reluctance to add a new `project_type` or option
+   without a "what existing layer does this sit on?" answer;
 3. time to review, not only to build.
 
 The invitation is made by the current maintainer, publicly in an issue.
+
+## Layer ownership
+
+The questionnaire's layers are listed in [.github/CODEOWNERS](.github/CODEOWNERS)
+by path (question fragment, template files, preset, per-layer tests). Each
+layer may have a distinct owner once contributors exist.
+
+**Ownerless-layer rule**: a layer whose row lists no owner besides the
+maintainer is *supported* but not *staffed*. When the maintainer stops
+reviewing a layer's area, that layer's leaves drop to the `experimental`
+tier in [docs/reference/support.md](docs/reference/support.md) — they keep
+rendering, but the support matrix says so honestly rather than implying a
+reviewer exists. Regaining `supported` requires a named owner who reviews
+that layer's PRs.
+
+**Promotion path** (triager → layer owner → core maintainer):
+
+1. *Triager*: anyone may triage issues and review PRs informally; sustained,
+   accurate triage is the visible track record.
+2. *Layer owner*: a contributor with several merged non-trivial PRs inside
+   one layer is added to that layer's CODEOWNERS row by the maintainer.
+   Layer owners review changes in their area; merges still go through the
+   maintainer.
+3. *Core maintainer*: a layer owner who additionally meets the "Adding
+   maintainers" criteria above and reviews outside their layer.
 
 ## How contributions are reviewed
 

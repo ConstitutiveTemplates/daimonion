@@ -1,4 +1,4 @@
-# foundry
+# daimonion
 
 A Copier template for Python projects.
 

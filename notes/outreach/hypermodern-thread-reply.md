@@ -4,6 +4,10 @@
 スレッドのみ。元作者 cjolowicz のスレッド・当該リポジトリの Issue では
 絶対に勧誘しない（自薦は傍若無人に見える; Phase 3 の方針どおり中立性最優先）。
 
+「daimonion」という名前はソクラテスの内なる声——何をすべきかは決して言わず、
+止まるべき時だけを知らせる——に由来し、このテンプレートの警告・中止・拒否の
+姿勢（そして Unix の *daemon* の語源）にも重なります。
+
 ## 方針
 
 - 単にリンクを置かない。「何が違うか」を先に述べ、テンプレートを
@@ -16,7 +20,7 @@
 ## 返信文案（EN）
 
 > If you're still looking for a maintained successor shape, we maintain
-> `foundry` — a Copier template in a similar spirit (uv + ruff + pytest +
+> `daimonion` — a Copier template in a similar spirit (uv + ruff + pytest +
 > basedpyright + generated CI, plus a generated `AGENTS.md` ethics appendix).
 > The questionnaire is Z3-verified across 272 rendered leaves, and there's an
 > adopt-mode for existing repos. A migration how-to with the full feature
@@ -37,4 +41,4 @@
 
 - [ ] 対象スレッドが「代替を探している」文脈であること（質問・募集形）
 - [ ] 直前 30 日に同スレッドへの自己宣伝がないこと
-- [ ] 文面に `foundry` のリンク 1 本 + migration how-to のみ（3 連リンク不可）
+- [ ] 文面に `daimonion` のリンク 1 本 + migration how-to のみ（3 連リンク不可）

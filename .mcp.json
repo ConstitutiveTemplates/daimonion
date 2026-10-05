@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "foundry": {
+    "daimonion": {
       "command": "uv",
       "args": ["run", "--locked", "python", "tools/mcp_server.py"],
       "env": {}

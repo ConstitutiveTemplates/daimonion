@@ -16,7 +16,7 @@
   },
   "packageRules": [
     {
-      "description": "Disable python version as that is managed by foundry",
+      "description": "Disable python version as that is managed by daimonion",
       "matchManagers": [
         "pyenv"
       ],
