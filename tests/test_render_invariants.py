@@ -1039,7 +1039,7 @@ def test_distribution_contributions_are_additive(tmp_path: Path, render_cache: R
             f"adding `oss` must not change the appendix (art. 24 exempts non-commercial free software, "
             f"not commercial free software)"
         )
-    cra = ETHICS_SECTIONS["baseline-cra-obligations"][0]
+    cra = ETHICS_SECTIONS["region-eu-cra"][0]
     if cra in _section_titles(rendered["oss"]):
         problems.append(
             f"selecting oss alone ships the {cra!r} section, but the CRA exempts free software while it is "
