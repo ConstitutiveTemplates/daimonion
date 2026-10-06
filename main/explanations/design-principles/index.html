@@ -1883,6 +1883,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scope-follows-maintenance-capacity" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scope follows maintenance capacity
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#claims-match-verification-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Claims match verification evidence
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#change-classification-blast-radius" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2482,6 +2504,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scope-follows-maintenance-capacity" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scope follows maintenance capacity
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#claims-match-verification-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Claims match verification evidence
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#change-classification-blast-radius" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2559,6 +2603,26 @@ swept by Z3 witnesses (<code>tests/matrix/witnesses.json</code>, 272 leaves). A 
 that adds a question or a gate changes the leaf space and therefore must
 run <code>task regen</code> — witness regeneration, tier ledger, docs — as its
 definition of done.</p>
+<h2 id="scope-follows-maintenance-capacity">Scope follows maintenance capacity<a class="headerlink" href="#scope-follows-maintenance-capacity" title="Permanent link">&para;</a></h2>
+<p>Support is a promise, not just a successful render. Before adding a project
+type, layer, package-manager path, or other supported variant, a proposal must
+name its users, the maintainer responsible for it, and the support tier it can
+meet. If nobody can own its updates and failures, keep it experimental or
+decline it; do not imply the same support as a staffed path.</p>
+<p>Prefer improving the reliability and usability of existing paths over adding
+another option. Remove or narrow a path when its maintenance cost exceeds its
+demonstrated value. A larger questionnaire or witness count is not, by itself,
+evidence of a better template.</p>
+<h2 id="claims-match-verification-evidence">Claims match verification evidence<a class="headerlink" href="#claims-match-verification-evidence" title="Permanent link">&para;</a></h2>
+<p>The support matrix is the source of truth for what is actually exercised.
+Rendering and linting prove that files can be generated and checked; they do
+not prove that every generated project can be installed, tested, or updated.
+Describe those paths as best-effort unless the corresponding execution tier
+proves more. Do not claim full coverage from representative witnesses: state
+the sampled paths and the gaps.</p>
+<p>Release confidence also depends on the published revision, not only the
+working tree. Validate the revision users will resolve, and keep release
+claims, CI status, support tiers, and update-rehearsal results consistent.</p>
 <h2 id="change-classification-blast-radius">Change classification (blast radius)<a class="headerlink" href="#change-classification-blast-radius" title="Permanent link">&para;</a></h2>
 <p>Contributors classify their change before choosing a verification path:</p>
 <table>
@@ -2587,8 +2651,7 @@ definition of done.</p>
 </tr>
 </tbody>
 </table>
-<p>See <a href="../../../.github/CONTRIBUTING/">.github/CONTRIBUTING.md</a> for the
-per-class commands.</p>
+<p>See the <a href="../../how-to/test-loop/">test-loop guide</a> for verification commands.</p>
 
 
 
