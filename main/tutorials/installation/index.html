@@ -467,10 +467,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#conclusion" class="md-nav__link">
+  <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Conclusion
+        Troubleshooting
       </span>
     </span>
   </a>
@@ -2438,10 +2438,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#conclusion" class="md-nav__link">
+  <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Conclusion
+        Troubleshooting
       </span>
     </span>
   </a>
@@ -2496,7 +2496,70 @@ names, order, <code>when:</code> gates — is <em>not</em> part of that interfac
 change between minor versions; stable entry points and answer-file
 compatibility are what a release commits to.</p>
 </div>
-<h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<p>Every message below is printed by <code>daimonion new</code> itself (<code>tools/cli.py</code>
+writes all of them to stderr). Fix the cause, rerun the same command.</p>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cannot clone the template repo … (the template is fetched on first use; is this machine offline?)</code></td>
+<td>first <code>uvx</code> use with no network, or the remote unreachable</td>
+<td>go online, then rerun; for a mirror set <code>DAIMONION_TEMPLATE_URL</code></td>
+</tr>
+<tr>
+<td><code>warning: could not refresh the cached template …; using the stale clone</code></td>
+<td>offline or fetch failure on a warm <code>~/.cache/daimonion/repo</code></td>
+<td>go online and rerun; the stale clone still renders</td>
+</tr>
+<tr>
+<td><code>the delegated clone at … is not a template checkout (no copier.yml); delete it and rerun</code></td>
+<td>corrupt cache (double delegation guard)</td>
+<td><code>rm -rf ~/.cache/daimonion/repo</code>, then rerun</td>
+</tr>
+<tr>
+<td><code>cannot prepare the cached template clone at …</code></td>
+<td>cache dir not writable</td>
+<td>fix permissions on <code>~/.cache/daimonion</code>, then rerun</td>
+</tr>
+<tr>
+<td><code>…/tools/cli.py is missing; delete … and rerun</code></td>
+<td>partial clone missing the CLI</td>
+<td><code>rm -rf ~/.cache/daimonion/repo</code>, then rerun</td>
+</tr>
+<tr>
+<td><code>unknown preset '…': no presets/….yml. Available presets: …</code></td>
+<td><code>--preset</code> typo</td>
+<td>pick a name from <code>daimonion new &lt;dir&gt; --list-presets</code></td>
+</tr>
+<tr>
+<td><code>… was generated from this template: update it with</code>copier update``</td>
+<td><code>new</code> run inside an already-generated project</td>
+<td>run <code>copier update</code> (or the adopt path) instead of a second copy</td>
+</tr>
+<tr>
+<td><code>cannot inspect …</code></td>
+<td>target unreadable (permissions / broken symlink)</td>
+<td>fix the path's permissions, then rerun</td>
+</tr>
+<tr>
+<td><code>render failed: …</code></td>
+<td>copier raised mid-render (message carries the type and detail)</td>
+<td>read the named error; rerun with <code>--dry-run</code> to see the plan first</td>
+</tr>
+<tr>
+<td><code>…; pass --preset &lt;name&gt; for a non-interactive run</code></td>
+<td>copier asked a question with no terminal attached</td>
+<td>add <code>--preset &lt;name&gt;</code> (or <code>--list-presets</code> to choose one)</td>
+</tr>
+</tbody>
+</table>
 <p>You now have the pre-requisites to allow you to <a href=".././create-new/">create a new project</a> and <a href=".././adopt-existing/">adopt an existing one</a>.</p>
 
 
