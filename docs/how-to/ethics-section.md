@@ -1,46 +1,32 @@
 # How to add an ethics / regional / operational rule
 
 Field rules (a retired NTP server, a licensing drift, a jurisdiction's
-data rules) live as sections under `_shared/ethics/`, registered in its
-`REGISTRY.yml`. The design goal: a new rule must not move the
-questionnaire, the witness leaf space, or anyone's render — it
+data rules) are prose sections owned by
+[good-future-codex](https://github.com/ConstitutiveTemplates/good-future-codex).
+This repo vendors a pinned snapshot of them into `_shared/ethics/` and
+wires each one through a row in `_shared/ethics/REGISTRY.yml`. The split
+is content vs. wiring: the codex is responsible for what a section says
+and whether its sources are still right; this repo decides which
+generated projects carry it. The design goal: a new rule must not move
+the questionnaire, the witness leaf space, or anyone's render — it
 accumulates as documentation first and is promoted only when a
 distribution bundle forms. Who decides what goes in the generated
 projects is stated in
 [GOVERNANCE.md](https://github.com/ConstitutiveTemplates/daimonion/blob/main/GOVERNANCE.md):
 contributors draft and research; the maintainer owns the defaults and
-the promotions. The mechanics behind this page are explained in
-[Authoring Template Sources](../explanations/template-dev.md)
-("Accumulate ethics/regional/operational rules as sections first").
+the promotions. The vendor contract is explained in
+[External ethics sections](../explanations/ethics-external.md).
 
-## Add a rule as a draft
+## Write or correct the section upstream
 
-A draft is documentation only: nothing includes it, no render changes,
-and every guard accepts it without any other file being touched.
-
-1. Copy `_shared/ethics/_template.md.jinja` to the matching bundle
-   directory — `baseline/` (rules any project kind can trip),
-   `region/` (a jurisdiction's rules), `sector/` (an industry's),
-   `domain/` (a purpose the questionnaire's `domain_traits` select) —
-   as `<id>.md.jinja`.
-2. Fill in every field. The section opens with the matching header and a
-   scope blockquote; the first five lines are the LLM/human entry point:
-   if none of the triggers apply, the reader skips the section.
-3. Register one row in `_shared/ethics/REGISTRY.yml` with
-   `status: draft` and `rendered_from: []`. Keep the id, version
-   (`YYYY-MM-DD.rev`), and status in agreement with the file header —
-   the guards check both directions.
-4. Check your work:
-
-   ```shell
-   uv run --locked pytest tests/test_ethics_registry.py
-   ```
-
-   The guards pin: row shape (id, version, dates, primary sources,
-   scope, scale, audience, enforcement), header agreement, the body
-   naming its scale and every audience entry, a documented presence
-   trigger (`設定側トリガー`) that compiles and stays unique across
-   rows, and — for drafts — that no template file includes you.
+Section text — new sections, factual corrections, dead source links —
+goes to good-future-codex as a pull request, following its
+`CONTRIBUTING.md`. Do not edit the files under `_shared/ethics/` here:
+they are a vendored copy, and `tools/check_ethics_drift.py` (run weekly
+by `ethics-sync.yml`) fails when they differ from the snapshot recorded
+in `.ethics-vendored`. Obligation-level changes (which statute requires
+what) go through law-map's
+[Legal RFC](https://github.com/ConstitutiveTemplates/law-map/issues/new?template=legal_rfc.yml).
 
 Write the rule as a one-line summary plus a link to the primary source;
 never paste statutes or license texts verbatim, and keep the
@@ -51,8 +37,38 @@ Keep snippets free of `{{ }}` / `{% %}`: the section file is rendered as
 jinja, so double braces would be evaluated, not printed. And keep
 ` ```python ` examples ruff-format-clean: ruff 0.16+ formats Python code
 blocks inside markdown, so a stylistically-off example fails the
-generated project's `task check` (the registry test catches this before
-any render — a "bad" example is bad semantically, not stylistically).
+generated project's `task check` (the registry test here catches this
+at vendor time, before any render — a "bad" example is bad semantically,
+not stylistically).
+
+## Vendor it and register a draft row
+
+Once the codex change is merged, the weekly drift check reports codex
+`main` ahead of `.ethics-vendored`. The sync PR here then:
+
+1. Re-vendors the snapshot, keeping the two consumer-owned files:
+   `rsync -a --delete --exclude FLAGS.yml --exclude REGISTRY.yml <codex>/sections/ _shared/ethics/`,
+   then writes the codex SHA to `.ethics-vendored`.
+2. For a new section, registers one row in `_shared/ethics/REGISTRY.yml`
+   with `status: draft` and `rendered_from: []`; for an edited one,
+   mirrors the new `version` and `sources`. Keep the id, version
+   (`YYYY-MM-DD.rev`), and status in agreement with the file header —
+   the guards check both directions.
+3. Checks the result:
+
+   ```shell
+   uv run python tools/check_ethics_drift.py
+   uv run --locked pytest tests/test_ethics_registry.py
+   ```
+
+   The guards pin: row shape (id, version, dates, primary sources,
+   scope, scale, audience, enforcement), header agreement, the body
+   naming its scale and every audience entry, a documented presence
+   trigger (`設定側トリガー`) that compiles and stays unique across
+   rows, and — for drafts — that no template file includes you.
+
+A draft is documentation only: nothing includes it, no render changes,
+and every guard accepts it without any other file being touched.
 
 ## Promote a draft to active
 
@@ -60,6 +76,8 @@ A draft promotes only when a bundle forms: three sections sharing one
 distribution condition, or one section needing a distinct code/test gate
 (enforcement L2). A promotion changes generated renders, so it wires the
 verification stack as it goes — each step below has a check that catches
+the omission:
+
 | # | Touchpoint | What catches the omission |
 | --- | --- | --- |
 | 1 | Registry row: bump `version`, set `status: active`, name the parent(s) in `rendered_from`, and write the `gate` expression (the single spelling of "which leaf carries this section") | `test_ethics_registry.py`: a distributed row must name parents and carry a gate; its gate must parse under the allowlisted evaluator and name only leaf-context flags |

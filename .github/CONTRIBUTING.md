@@ -17,12 +17,14 @@ This template is a place to pull together agreed best practices from various sou
 
 ## Ethics / regional / operational rule sections
 
-The `_shared/ethics/` sections are field rules with their own review cadence
-(`review_by` per registry row), governed by
-[GOVERNANCE.md](../GOVERNANCE.md): contributors draft sections and re-check
-primary sources; the maintainer owns defaults and promotions. The runbook
-is [docs/how-to/ethics-section.md](../docs/how-to/ethics-section.md) —
-draft first, promote only when a distribution bundle forms.
+The section texts under `_shared/ethics/` are a vendored snapshot of
+[good-future-codex](https://github.com/ConstitutiveTemplates/good-future-codex),
+which owns their content, sources, and review cadence. New sections and
+corrections are pull requests there, not here; obligation-level changes go
+through [law-map](https://github.com/ConstitutiveTemplates/law-map)'s Legal
+RFC issue. This repo owns only the wiring — `REGISTRY.yml` rows, gates, and
+promotions — governed by [GOVERNANCE.md](../GOVERNANCE.md). The runbook is
+[docs/how-to/ethics-section.md](../docs/how-to/ethics-section.md).
 
 ## Blast radius
 
@@ -39,17 +41,15 @@ blast radius, never the whole suite.
 
 ## Contributing 101
 
-The cheapest real change an outsider can make: add or update an ethics /
-regional / operational rule section under `_shared/ethics/`. The walkthrough
-[how-to/ethics-section.md](../docs/how-to/ethics-section.md) has the full
-steps — in short: draft the section (copy `_shared/ethics/_template.md.jinja`
-to the matching bundle directory, fill every field), register one
-`status: draft` row in `_shared/ethics/REGISTRY.yml`, and check it with
-`uv run --locked pytest tests/test_ethics_registry.py`. A promotion
-(registry row goes `active` with a `gate`) then needs
-`task ethics-appendix` to regenerate the appendix from the registry —
-`task regen` covers that and everything else a questionnaire-facing change
-touches.
+The cheapest real change an outsider can make: add or correct an ethics /
+regional / operational rule section in
+[good-future-codex](https://github.com/ConstitutiveTemplates/good-future-codex)
+(copy its `sections/_template.md.jinja`, fill every field, run its
+`tools/validate.py`). It needs no knowledge of this template's questionnaire,
+and once merged the weekly `ethics-sync.yml` here reports it for vendoring
+(see [how-to/ethics-section.md](../docs/how-to/ethics-section.md)). In this
+repo, the next-cheapest change is a docs fix — see the blast-radius table
+above.
 
 ## Checking your changes before making a PR
 
