@@ -23,15 +23,17 @@
       履歴記録と example リポのみ）
 - [x] **NOTICE ファイル新設**: ✅ DiamondLightSource / python3-pip-skeleton /
       copier の系譜と Apache-2.0 を明記済み（2026-10-04）
-- [ ] ~~**v1.0.0 リリース**~~ → **7.0.0 に変更（2026-10-05）**: copier は最大タグを
+- [x] ~~**v1.0.0 リリース**~~ → **7.0.0 に変更（2026-10-05）**: copier は最大タグを
       採用するため 6.1.0 がある限り v1.0.0 は選ばれない。詳細 TODO.md §39.3。
-- [ ] **Secrets 再設定（3種）**: org 再作成で旧リポの secret が消滅。
-      `GITLEAKS_LICENSE`（なしだと hygiene の gitleaks がエラー死・2026-10-04
-      実測）、`EXAMPLE_DEPLOY_KEY`（example 連携の deploy key。
+      ✅ 7.0.0 は 2026-10-05 公開・Latest 済み
+- [ ] **Secrets 再設定（2026-10-06 時点で `GITLEAKS_LICENSE` の値のみ残り）**: org 再作成で旧リポの secret が消滅。
+      `GITLEAKS_LICENSE` — secret 自体は存在するが action に空で届く。エージェント側の配管（`_hygiene.yml` の `workflow_call` secret 宣言 + env 受け渡し、`ci.yml` 本体・生成物の forward）は PR #19 で修正済み。残りは**保存値が空/不正**の可能性が高く、API では値を確認できない。対処: gitleaks.io で無料 org キーを再取得し `gh secret set GITLEAKS_LICENSE --repo ConstitutiveTemplates/daimonion` で再設定。
+      ~~`EXAMPLE_DEPLOY_KEY`~~ — ✅ 2026-10-06 にエージェントが再設定（`daimonion-example` に write 権限の deploy key を登録 + secret 設定。秘密鍵は破棄済み）。push 後の `example / update` 実走で有効性を最終確認する。
+      `PYPI_API_TOKEN` — 未設定のまま（PyPI 側の発行が必要）。
       **deploy key 方式で継続決定（2026-10-05）**: org Settings →
       Member privileges で deploy keys を有効化したうえで、
       ConstitutiveTemplates/daimonion-example に deploy key を登録し
-      `EXAMPLE_DEPLOY_KEY` secret を再設定）、`PYPI_API_TOKEN`。
+      `EXAMPLE_DEPLOY_KEY` secret を再設定
 - [x] **`uvx --from git+...` の実ネットワーク検証**: ✅ 2026-10-04。
       `uvx --from git+https://github.com/ConstitutiveTemplates/foundry.git
       foundry new . --preset bare` が clone→cache→render（61 files）まで

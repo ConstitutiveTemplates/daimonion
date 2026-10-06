@@ -1096,6 +1096,13 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
   ethics-sync.yml との重複なし — 対象 corpus が異なる（散文 SHA ドリフト vs
   義務ノードの review_by 鮮度）。`docs/explanations/ethics-external.md` に
   2 つの契約（vendored SHA / `<tier>-<slug>` 命名規則）を記録
+- [x] **初回 drift report の解消（2026-10-06）**: law-map#2（8 URL フラグ）と
+  good-future-codex#1（ilga.gov exit 60）を修正・close。ilga.gov はデータセンター
+  egress を TLS reset するため Wayback スナップショットへ、soumu 外部送信規律・
+  CISA CVD・cryptrec・dsgvo-gesetz（TTDSG→TDDDG 改称）・PCI・RFC 9116 は
+  移転先/正規 URL へ、fsfe.org の Sitecom 判決ページ（404）は ifrOSS の英訳 PDF へ。
+  `law-map check --sources` 34 probes / 0 flagged、codex `--drift` all live。
+  codex @42008c58 の vendor sync は PR #20（ヘッダのみ・本文 byte 同一）
 
 ## §39 実行: `foundry` → `daimonion` への改名（2026-10-05 決定）
 
@@ -1167,11 +1174,7 @@ GitHub の "Latest" 表示も 7.0.0 にする（2026-10-05 時点で Latest は 
 
 §37 / `notes/PLAN-widespread-adoption.md` と重複しない指摘のみ。優先順。
 
-- [ ] **main CI を緑に戻す**(残る赤は secrets 由来のみ。人間作業): `hygiene`（`GITLEAKS_LICENSE` 未設定）と
-      `example / update`（`EXAMPLE_DEPLOY_KEY` 未設定）が赤。README 先頭の
-      CI バッジが失敗を表示している。~~issue #1（pip-audit: pyjwt / urllib3）~~は
-      #13 で解消・close 済み。#2（scheduled check 失敗）は secrets 設定後の
-      次回週次実行が緑になれば close
+- [ ] **main CI を緑に戻す**(エージェント側の修正は PR #19 に集約、残りは secrets 値の問題で人間作業。2026-10-06): `hygiene` の trailing-newline 赤（`notes/outreach/` 3 件）は修正済み。`GITLEAKS_LICENSE` は secret 自体は存在するが action に空で届く — `_hygiene.yml` が `workflow_call` で secret 宣言も env 受け渡しもしていなかったのが原因で、`ci.yml`(本体+生成物) からの forward を含めて PR #19 で修正済み。それでも空なので**保存値自体が空/不正**と診断（API では値を確認不可）。対処: gitleaks.io で無料 org キーを再取得し `gh secret set GITLEAKS_LICENSE` で再設定。`EXAMPLE_DEPLOY_KEY` は 2026-10-06 に再設定済み（deploy key を `daimonion-example` に登録 + secret 設定。2026-10-06 の `_example.yml` 手動 dispatch が success し `daimonion-example@1c99dde2` への push を確認 — merge 前でも鍵の有効性は実証済み）。~~issue #1（pip-audit: pyjwt / urllib3）~~は #13 で解消・close 済み。issue #3（upstream drift f566e13、lockfile-only）は 2026-10-06 にレビュー・marker 更新・close 済み。#2（scheduled check 失敗）は次回週次実行が緑になれば close。README 先頭の CI バッジは PR #19 merge + license 再設定後に緑化見込み
 - [ ] **初の外部 PR #9（AK-Lmn）の扱い**: 内容は検証済み・レビューコメント投稿済み
       （2026-10-05）。CI 再実行で hygiene（GITLEAKS_LICENSE 欠落・既知）以外は全緑を確認。
       **同日 09:35 UTC に PR は close された（未マージ）。メンテナの意図的な close か、
