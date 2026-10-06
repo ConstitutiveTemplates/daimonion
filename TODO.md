@@ -1199,6 +1199,9 @@ GitHub の "Latest" 表示も 7.0.0 にする（2026-10-05 時点で Latest は 
 - [x] **update 成功率を公開指標に**: `update-rehearsal` の結果を docs 上の（2026-10-05 実装: --json → step summary + artifact + `auto/update-rehearsal` 自動PR、`support.md` に generated rehearsal 節 + README バッジ）
       ダッシュボードとして出す（例: 「全 272 葉でタグ間 update 成功率 100%」）。
       Z3 の技術記事より利用者に効く信頼の証拠
-- [ ] **ethics 層を独立コミュニティとして育てる**: §38 の分離をさらに進め、
-      法規制コンテンツの正誤責任と更新負担をテンプレート本体から切り離す
+- [x] **ethics 層を独立コミュニティとして育てる**: §38 の分離をさらに進め、
+      法規制コンテンツの正誤責任と更新負担をテンプレート本体から切り離す。
+      ✅ 2026-10-06 に実施（PR #22 + codex/law-map 側の README / CONTRIBUTING 更新）。
+      codex を記事の Source of Truth、law-map を法務 RFC の窓口とし、daimonion は
+      「wiring（どのプロジェクトにどう配るか）」のみに専念する形をドキュメント化。
 - [ ] **copier upstream への貢献を信頼獲得の経路に**(パッチ 4 本 + discussion 草案 2 本は push 済み。PR/Discussion の投稿は upstream AI_POLICY により人間作業): F1–F7 パッチの upstream 化
