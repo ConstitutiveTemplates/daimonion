@@ -1175,10 +1175,9 @@ GitHub の "Latest" 表示も 7.0.0 にする（2026-10-05 時点で Latest は 
 §37 / `notes/PLAN-widespread-adoption.md` と重複しない指摘のみ。優先順。
 
 - [ ] **main CI を緑に戻す**(エージェント側の修正は PR #19 に集約、残りは secrets 値の問題で人間作業。2026-10-06): `hygiene` の trailing-newline 赤（`notes/outreach/` 3 件）は修正済み。`GITLEAKS_LICENSE` は secret 自体は存在するが action に空で届く — `_hygiene.yml` が `workflow_call` で secret 宣言も env 受け渡しもしていなかったのが原因で、`ci.yml`(本体+生成物) からの forward を含めて PR #19 で修正済み。それでも空なので**保存値自体が空/不正**と診断（API では値を確認不可）。対処: gitleaks.io で無料 org キーを再取得し `gh secret set GITLEAKS_LICENSE` で再設定。`EXAMPLE_DEPLOY_KEY` は 2026-10-06 に再設定済み（deploy key を `daimonion-example` に登録 + secret 設定。2026-10-06 の `_example.yml` 手動 dispatch が success し `daimonion-example@1c99dde2` への push を確認 — merge 前でも鍵の有効性は実証済み）。~~issue #1（pip-audit: pyjwt / urllib3）~~は #13 で解消・close 済み。issue #3（upstream drift f566e13、lockfile-only）は 2026-10-06 にレビュー・marker 更新・close 済み。#2（scheduled check 失敗）は次回週次実行が緑になれば close。README 先頭の CI バッジは PR #19 merge + license 再設定後に緑化見込み
-- [ ] **初の外部 PR #9（AK-Lmn）の扱い**: 内容は検証済み・レビューコメント投稿済み
-      （2026-10-05）。CI 再実行で hygiene（GITLEAKS_LICENSE 欠落・既知）以外は全緑を確認。
-      **同日 09:35 UTC に PR は close された（未マージ）。メンテナの意図的な close か、
-      reopen してマージするかは人間の判断** — issue #5（presets ドキュメント）は依然 open。
+- [x] **初の外部 PR #9（AK-Lmn）の扱い**: ✅ 2026-10-06 に解決。fork 削除済みで
+      merge 不可だったため内容を共著クレジット付きで #23 として再作成し merge、
+      #9 は superseded として close、issue #5 も close 済み。
 - [x] **設計原則とロードマップを英語化し GitHub 上へ** → `docs/explanations/design-principles.md` 新設 + GOVERNANCE の参照を差し替え(2026-10-05)。残作業の Issues/Milestones 移行は人間: GOVERNANCE.md の
       メンテナ条件が日本語の TODO.md「設計原則」を参照しており、海外の人が
       メンテナになる経路が実質閉じている。設計原則 →
