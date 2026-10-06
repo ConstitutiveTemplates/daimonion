@@ -49,6 +49,9 @@ which combinations CI executes end to end. For the comparison with the upstream
 template and the alternatives, see
 [Vision & Positioning](docs/explanations/vision.md); the template in action is
 the [example project](https://github.com/ConstitutiveTemplates/daimonion-example).
+Fifteen seconds of it, end to end:
+
+![demo: render the cli preset, then run the generated project's checks](docs/assets/demo.gif)
 
 ## Create a new project
 
