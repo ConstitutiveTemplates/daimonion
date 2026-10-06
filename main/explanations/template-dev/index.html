@@ -3268,11 +3268,12 @@ existing answer set: the dependency list is pinned by
 <h2 id="accumulate-ethicsregionaloperational-rules-as-sections-first">Accumulate ethics/regional/operational rules as sections first<a class="headerlink" href="#accumulate-ethicsregionaloperational-rules-as-sections-first" title="Permanent link">&para;</a></h2>
 <p>Field rules (a retired public NTP, a telecom secrecy duty, a regional
 backbone's quiet hours) arrive one at a time and must not each move the
-questionnaire, the leaf space, or the witness matrix. Write each as a
-section under <code>_shared/ethics/</code> (<code>baseline/</code>, <code>sector/</code>, <code>region/</code>,
-<code>domain/</code>; <code>lang/</code> is reserved for the translation dictionaries), register
-it in <code>_shared/ethics/REGISTRY.yml</code>, and leave it <code>draft</code> until a bundle
-forms:</p>
+questionnaire, the leaf space, or the witness matrix. Each is written as a
+section in <a href="https://github.com/ConstitutiveTemplates/good-future-codex">good-future-codex</a>
+(<code>baseline/</code>, <code>sector/</code>, <code>region/</code>, <code>domain/</code>; <code>lang/</code> is reserved for
+the translation dictionaries) and vendored into <code>_shared/ethics/</code> (see
+<a href="../ethics-external/">External ethics sections</a>); this repo registers it in
+<code>_shared/ethics/REGISTRY.yml</code> and leaves it <code>draft</code> until a bundle forms:</p>
 <ul>
 <li>The registry row is the single source: id, file, <code>YYYY-MM-DD.rev</code>
   version, <code>effective</code> / <code>review_by</code> dates, primary-source URLs (no

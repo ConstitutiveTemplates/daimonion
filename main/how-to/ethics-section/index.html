@@ -1287,10 +1287,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#add-a-rule-as-a-draft" class="md-nav__link">
+  <a href="#write-or-correct-the-section-upstream" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Add a rule as a draft
+        Write or correct the section upstream
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vendor-it-and-register-a-draft-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Vendor it and register a draft row
       </span>
     </span>
   </a>
@@ -2438,10 +2449,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#add-a-rule-as-a-draft" class="md-nav__link">
+  <a href="#write-or-correct-the-section-upstream" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Add a rule as a draft
+        Write or correct the section upstream
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vendor-it-and-register-a-draft-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Vendor it and register a draft row
       </span>
     </span>
   </a>
@@ -2534,42 +2556,30 @@
 
 <h1 id="how-to-add-an-ethics-regional-operational-rule">How to add an ethics / regional / operational rule<a class="headerlink" href="#how-to-add-an-ethics-regional-operational-rule" title="Permanent link">&para;</a></h1>
 <p>Field rules (a retired NTP server, a licensing drift, a jurisdiction's
-data rules) live as sections under <code>_shared/ethics/</code>, registered in its
-<code>REGISTRY.yml</code>. The design goal: a new rule must not move the
-questionnaire, the witness leaf space, or anyone's render — it
+data rules) are prose sections owned by
+<a href="https://github.com/ConstitutiveTemplates/good-future-codex">good-future-codex</a>.
+This repo vendors a pinned snapshot of them into <code>_shared/ethics/</code> and
+wires each one through a row in <code>_shared/ethics/REGISTRY.yml</code>. The split
+is content vs. wiring: the codex is responsible for what a section says
+and whether its sources are still right; this repo decides which
+generated projects carry it. The design goal: a new rule must not move
+the questionnaire, the witness leaf space, or anyone's render — it
 accumulates as documentation first and is promoted only when a
 distribution bundle forms. Who decides what goes in the generated
 projects is stated in
 <a href="https://github.com/ConstitutiveTemplates/daimonion/blob/main/GOVERNANCE.md">GOVERNANCE.md</a>:
 contributors draft and research; the maintainer owns the defaults and
-the promotions. The mechanics behind this page are explained in
-<a href="../../explanations/template-dev/">Authoring Template Sources</a>
-("Accumulate ethics/regional/operational rules as sections first").</p>
-<h2 id="add-a-rule-as-a-draft">Add a rule as a draft<a class="headerlink" href="#add-a-rule-as-a-draft" title="Permanent link">&para;</a></h2>
-<p>A draft is documentation only: nothing includes it, no render changes,
-and every guard accepts it without any other file being touched.</p>
-<ol>
-<li>Copy <code>_shared/ethics/_template.md.jinja</code> to the matching bundle
-   directory — <code>baseline/</code> (rules any project kind can trip),
-   <code>region/</code> (a jurisdiction's rules), <code>sector/</code> (an industry's),
-   <code>domain/</code> (a purpose the questionnaire's <code>domain_traits</code> select) —
-   as <code>&lt;id&gt;.md.jinja</code>.</li>
-<li>Fill in every field. The section opens with the matching header and a
-   scope blockquote; the first five lines are the LLM/human entry point:
-   if none of the triggers apply, the reader skips the section.</li>
-<li>Register one row in <code>_shared/ethics/REGISTRY.yml</code> with
-   <code>status: draft</code> and <code>rendered_from: []</code>. Keep the id, version
-   (<code>YYYY-MM-DD.rev</code>), and status in agreement with the file header —
-   the guards check both directions.</li>
-<li>Check your work:</li>
-</ol>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>pytest<span class="w"> </span>tests/test_ethics_registry.py
-</code></pre></div>
-<p>The guards pin: row shape (id, version, dates, primary sources,
-   scope, scale, audience, enforcement), header agreement, the body
-   naming its scale and every audience entry, a documented presence
-   trigger (<code>設定側トリガー</code>) that compiles and stays unique across
-   rows, and — for drafts — that no template file includes you.</p>
+the promotions. The vendor contract is explained in
+<a href="../../explanations/ethics-external/">External ethics sections</a>.</p>
+<h2 id="write-or-correct-the-section-upstream">Write or correct the section upstream<a class="headerlink" href="#write-or-correct-the-section-upstream" title="Permanent link">&para;</a></h2>
+<p>Section text — new sections, factual corrections, dead source links —
+goes to good-future-codex as a pull request, following its
+<code>CONTRIBUTING.md</code>. Do not edit the files under <code>_shared/ethics/</code> here:
+they are a vendored copy, and <code>tools/check_ethics_drift.py</code> (run weekly
+by <code>ethics-sync.yml</code>) fails when they differ from the snapshot recorded
+in <code>.ethics-vendored</code>. Obligation-level changes (which statute requires
+what) go through law-map's
+<a href="https://github.com/ConstitutiveTemplates/law-map/issues/new?template=legal_rfc.yml">Legal RFC</a>.</p>
 <p>Write the rule as a one-line summary plus a link to the primary source;
 never paste statutes or license texts verbatim, and keep the
 not-legal-advice footer. Name concrete shapes in 禁止パターン and
@@ -2579,20 +2589,75 @@ Keep snippets free of <code>{{ }}</code> / <code>{% %}</code>: the section file 
 jinja, so double braces would be evaluated, not printed. And keep
 <code>```python</code> examples ruff-format-clean: ruff 0.16+ formats Python code
 blocks inside markdown, so a stylistically-off example fails the
-generated project's <code>task check</code> (the registry test catches this before
-any render — a "bad" example is bad semantically, not stylistically).</p>
+generated project's <code>task check</code> (the registry test here catches this
+at vendor time, before any render — a "bad" example is bad semantically,
+not stylistically).</p>
+<h2 id="vendor-it-and-register-a-draft-row">Vendor it and register a draft row<a class="headerlink" href="#vendor-it-and-register-a-draft-row" title="Permanent link">&para;</a></h2>
+<p>Once the codex change is merged, the weekly drift check reports codex
+<code>main</code> ahead of <code>.ethics-vendored</code>. The sync PR here then:</p>
+<ol>
+<li>Re-vendors the snapshot, keeping the two consumer-owned files:
+   <code>rsync -a --delete --exclude FLAGS.yml --exclude REGISTRY.yml &lt;codex&gt;/sections/ _shared/ethics/</code>,
+   then writes the codex SHA to <code>.ethics-vendored</code>.</li>
+<li>For a new section, registers one row in <code>_shared/ethics/REGISTRY.yml</code>
+   with <code>status: draft</code> and <code>rendered_from: []</code>; for an edited one,
+   mirrors the new <code>version</code> and <code>sources</code>. Keep the id, version
+   (<code>YYYY-MM-DD.rev</code>), and status in agreement with the file header —
+   the guards check both directions.</li>
+<li>Checks the result:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>tools/check_ethics_drift.py
+uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>pytest<span class="w"> </span>tests/test_ethics_registry.py
+</code></pre></div>
+<p>The guards pin: row shape (id, version, dates, primary sources,
+   scope, scale, audience, enforcement), header agreement, the body
+   naming its scale and every audience entry, a documented presence
+   trigger (<code>設定側トリガー</code>) that compiles and stays unique across
+   rows, and — for drafts — that no template file includes you.</p>
+<p>A draft is documentation only: nothing includes it, no render changes,
+and every guard accepts it without any other file being touched.</p>
 <h2 id="promote-a-draft-to-active">Promote a draft to active<a class="headerlink" href="#promote-a-draft-to-active" title="Permanent link">&para;</a></h2>
 <p>A draft promotes only when a bundle forms: three sections sharing one
 distribution condition, or one section needing a distinct code/test gate
 (enforcement L2). A promotion changes generated renders, so it wires the
 verification stack as it goes — each step below has a check that catches
-| # | Touchpoint | What catches the omission |
-| --- | --- | --- |
-| 1 | Registry row: bump <code>version</code>, set <code>status: active</code>, name the parent(s) in <code>rendered_from</code>, and write the <code>gate</code> expression (the single spelling of "which leaf carries this section") | <code>test_ethics_registry.py</code>: a distributed row must name parents and carry a gate; its gate must parse under the allowlisted evaluator and name only leaf-context flags |
-| 2 | <code>uv run python tools/gen_ethics_appendix.py</code> — regenerate <code>_shared/ethics-appendix.jinja</code> from the registry | <code>test_the_generated_appendix_matches_the_registry</code> — a stale committed file fails |
-| 3 | The generated include lands in the AGENTS.md appendix automatically — there is no hand-written chain left to edit | the <code>ethics-appendix</code> predicate in <code>tests/test_render_invariants.py</code> evaluates the same gate string per leaf and fails a leaf missing the section <em>or</em> shipping it uninvited |
-| 4 | <code>tests/matrix/invariants.yml</code>: name the <code>ethics-appendix</code> predicate on every row whose leaves select the section (content pairs for section markers are gone — the predicate is the pin) | the predicate registry fails a named row without it |
-| 5 | <code>task witness</code> + the fast tier | the ledger freshness and content checks |</p>
+the omission:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Touchpoint</th>
+<th>What catches the omission</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Registry row: bump <code>version</code>, set <code>status: active</code>, name the parent(s) in <code>rendered_from</code>, and write the <code>gate</code> expression (the single spelling of "which leaf carries this section")</td>
+<td><code>test_ethics_registry.py</code>: a distributed row must name parents and carry a gate; its gate must parse under the allowlisted evaluator and name only leaf-context flags</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>uv run python tools/gen_ethics_appendix.py</code> — regenerate <code>_shared/ethics-appendix.jinja</code> from the registry</td>
+<td><code>test_the_generated_appendix_matches_the_registry</code> — a stale committed file fails</td>
+</tr>
+<tr>
+<td>3</td>
+<td>The generated include lands in the AGENTS.md appendix automatically — there is no hand-written chain left to edit</td>
+<td>the <code>ethics-appendix</code> predicate in <code>tests/test_render_invariants.py</code> evaluates the same gate string per leaf and fails a leaf missing the section <em>or</em> shipping it uninvited</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>tests/matrix/invariants.yml</code>: name the <code>ethics-appendix</code> predicate on every row whose leaves select the section (content pairs for section markers are gone — the predicate is the pin)</td>
+<td>the predicate registry fails a named row without it</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>task witness</code> + the fast tier</td>
+<td>the ledger freshness and content checks</td>
+</tr>
+</tbody>
+</table>
 <p>The audience in the registry row is the human-readable word for the gate
 (<code>iot</code> may map to <code>micropython</code>, as <code>baseline-pki-chain</code> does); the gate
 spells the mapping, the row keeps the word. A draft row may carry its
