@@ -1,0 +1,9 @@
+# A chat-bot project: a cli-family package with the recommended Discord bot
+# layer (discord.py, slash commands, DISCORD_BOT_TOKEN startup check).
+#
+# include_bot's `when` is asked on cli/web_api bases, so no gate needs
+# declining: the preset names project_type + include_bot and lets the
+# recommended bot path (use_recommended_bot's default) pick discord —
+# otherwise --defaults changes rendered output, not just the answers file.
+project_type: cli
+include_bot: true

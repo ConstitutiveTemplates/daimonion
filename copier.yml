@@ -42,7 +42,7 @@ project_type:
           against micropython-<port>-stubs.
 
         Many of these configurations ship as ready-made presets
-        (presets/: bare, cli, data-science, library, mcp-server,
+        (presets/: bare, bot, cli, data-science, library, mcp-server,
         micropython, online-judge-atcoder, online-judge-codeforces,
         online-judge-kattis, ros2, web-api). For a non-interactive run,
         use `daimonion new <name> --preset <preset>` instead of answering

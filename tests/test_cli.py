@@ -254,14 +254,28 @@ def test_main_parses_the_new_subcommand(tmp_path: Path, monkeypatch: pytest.Monk
     """`main` resolves the subcommand, the directory and the flags."""
     seen: dict[str, Any] = {}
 
-    def fake_new(target: Path, *, preset: str | None, ref: str | None, dry_run: bool) -> int:
-        seen.update(target=target, preset=preset, ref=ref, dry_run=dry_run)
+    def fake_new(
+        target: Path, *, preset: str | None, ref: str | None, dry_run: bool, list_presets: bool = False
+    ) -> int:
+        seen.update(target=target, preset=preset, ref=ref, dry_run=dry_run, list_presets=list_presets)
         return cli.OK
 
     monkeypatch.setattr(cli, "new", fake_new)
 
     assert cli.main(["new", str(tmp_path), "--preset", "library", "--ref", "HEAD", "--dry-run"]) == cli.OK
-    assert seen == {"target": tmp_path, "preset": "library", "ref": "HEAD", "dry_run": True}
+    assert seen == {"target": tmp_path, "preset": "library", "ref": "HEAD", "dry_run": True, "list_presets": False}
+
+
+def test_new_list_presets_prints_every_preset_and_skips_detect(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    """`--list-presets` prints each preset with its header description, exiting before detect."""
+    monkeypatch.setattr(detect, "detect", lambda *a, **k: pytest.fail("listing presets must not reach detect"))
+    assert cli.new(tmp_path, preset=None, ref=None, dry_run=False, list_presets=True) == cli.OK
+    out = capsys.readouterr().out
+    for name in cli.available_presets():
+        assert f"{name}:" in out, f"preset {name} missing from --list-presets output"
+    assert "A minimal Python library render" in out  # bare's first comment line
 
 
 # Installed-mode delegation: `main` re-dispatches to the cached clone when TOP

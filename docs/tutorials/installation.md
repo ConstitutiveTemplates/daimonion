@@ -42,6 +42,23 @@ checkout the equivalent forms are `uv run daimonion …` and
     change between minor versions; stable entry points and answer-file
     compatibility are what a release commits to.
 
-## Conclusion
+## Troubleshooting
+
+Every message below is printed by `daimonion new` itself (`tools/cli.py`
+writes all of them to stderr). Fix the cause, rerun the same command.
+
+| Message | Cause | Fix |
+| --- | --- | --- |
+| `cannot clone the template repo … (the template is fetched on first use; is this machine offline?)` | first `uvx` use with no network, or the remote unreachable | go online, then rerun; for a mirror set `DAIMONION_TEMPLATE_URL` |
+| `warning: could not refresh the cached template …; using the stale clone` | offline or fetch failure on a warm `~/.cache/daimonion/repo` | go online and rerun; the stale clone still renders |
+| `the delegated clone at … is not a template checkout (no copier.yml); delete it and rerun` | corrupt cache (double delegation guard) | `rm -rf ~/.cache/daimonion/repo`, then rerun |
+| `cannot prepare the cached template clone at …` | cache dir not writable | fix permissions on `~/.cache/daimonion`, then rerun |
+| `…/tools/cli.py is missing; delete … and rerun` | partial clone missing the CLI | `rm -rf ~/.cache/daimonion/repo`, then rerun |
+| `unknown preset '…': no presets/….yml. Available presets: …` | `--preset` typo | pick a name from `daimonion new <dir> --list-presets` |
+| `… was generated from this template: update it with `copier update`` | `new` run inside an already-generated project | run `copier update` (or the adopt path) instead of a second copy |
+| `cannot inspect …` | target unreadable (permissions / broken symlink) | fix the path's permissions, then rerun |
+| `render failed: …` | copier raised mid-render (message carries the type and detail) | read the named error; rerun with `--dry-run` to see the plan first |
+| `…; pass --preset <name> for a non-interactive run` | copier asked a question with no terminal attached | add `--preset <name>` (or `--list-presets` to choose one) |
+
 
 You now have the pre-requisites to allow you to [create a new project](./create-new.md) and [adopt an existing one](./adopt-existing.md).

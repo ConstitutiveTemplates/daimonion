@@ -88,6 +88,17 @@ def available_presets() -> list[str]:
     return sorted(path.stem for path in PRESETS.glob("*.yml"))
 
 
+def preset_description(name: str) -> str:
+    lines = (PRESETS / f"{name}.yml").read_text(encoding="utf-8").splitlines()
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            text = stripped.lstrip("#").strip()
+            if text:
+                return text
+    return "(no description)"
+
+
 def preset_answers(name: str) -> dict[str, Any]:
     """The answers mapping of `presets/<name>.yml`.
 
@@ -211,8 +222,15 @@ def _adopt(target: Path, answers: dict[str, Any], ref: str | None, *, dry_run: b
     return OK if adoption.ok or adoption.error is None else FAILED
 
 
-def new(target: Path, *, preset: str | None, ref: str | None, dry_run: bool) -> int:
+def new(  # noqa: PLR0911  WHYNOT: one early return per input guard (list-presets, unknown preset, unreadable target, foreign, update) plus the two mode dispatches; a dispatch table would hide the guard order the errors depend on.
+    target: Path, *, preset: str | None, ref: str | None, dry_run: bool, list_presets: bool = False
+) -> int:
     """Create (`fresh`) or adopt into (`adopt`) `target`, and report the mode."""
+    if list_presets:
+        for name in available_presets():
+            print(f"{name}: {preset_description(name)}")
+        return OK
+
     try:
         answers = preset_answers(preset) if preset else {}
     except RequestError as exc:
@@ -262,6 +280,11 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--preset",
         default=None,
         help=f"answers family under presets/ ({', '.join(available_presets())}); implies a non-interactive run",
+    )
+    new_command.add_argument(
+        "--list-presets",
+        action="store_true",
+        help="list preset names with their one-line descriptions, then exit",
     )
     new_command.add_argument(
         "--ref", default=None, help="template revision to expand (default: this fork's newest release tag)"
@@ -402,7 +425,7 @@ def main(argv: list[str] | None = None) -> int:
     if not (TOP / "copier.yml").is_file():
         return _delegate(argv if argv is not None else sys.argv[1:])
     args = _parse_args(argv)
-    return new(args.dir, preset=args.preset, ref=args.ref, dry_run=args.dry_run)
+    return new(args.dir, preset=args.preset, ref=args.ref, dry_run=args.dry_run, list_presets=args.list_presets)
 
 
 if __name__ == "__main__":
