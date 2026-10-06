@@ -65,16 +65,17 @@
 
 **今週（ブロッカー優先）**:
 
-- [ ] **Secrets 3種を再設定**: `GITLEAKS_LICENSE` / `EXAMPLE_DEPLOY_KEY` /
-      `PYPI_API_TOKEN`。未設定の間、hygiene・example/update・PyPI 公開が常に赤。
-      設定後は #2（scheduled check）の次回週次実行で緑を確認して close。
+- [ ] **Secrets 3種を再設定**: `GITLEAKS_LICENSE` / ~~`EXAMPLE_DEPLOY_KEY`~~ /
+      `PYPI_API_TOKEN`。`GITLEAKS_LICENSE` は保存値自体が空/不正の診断で、
+      配管修正は PR #19 で merge 済み（2026-10-06）。再取得した org キーの
+      `gh secret set` が残作業。設定後は #2（scheduled check）の次回週次実行で
+      緑を確認して close。
 - [ ] **PyPI `daimonion` の確保**: 0.0.0 プレースホルダ公開
       （`uv build` + `uv publish`。`PYPI_API_TOKEN` 前提）。`uvx daimonion`
       （git+ URL なし）を実現するかの判断も同時に。
-- [ ] **PR #9 の扱い決定**: 外部初コントリビューター（AK-Lmn）の presets 参照
-      ドキュメント。内容はレビュー済み・CI 緑（hygiene のみ既知の secrets 起因）。
-      09:35 UTC に close されているが issue #5 は依然 open — reopen してマージするか、
-      クローズを維持するか判断。
+- [x] **PR #9 の扱い決定**: ✅ 2026-10-06 に解決。fork 削除済みで
+      merge 不可だったため、内容を共著クレジット付きで #23 として再作成。
+      #9 は superseded として close、#5 は #23 の merge で close。
 - [ ] **copier upstream への F1-F7 投稿**: fork に実装済み（パッチ 4 本 +
       Discussion 草案 2 本、`notes/upstream-drafts/` + `copier-fork/patches/`）。
       upstream の AI_POLICY により投稿は手動のみ。
