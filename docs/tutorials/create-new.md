@@ -36,7 +36,9 @@ terminal.
 | `online-judge-kattis` | `online_judge` | a Kattis workspace driven with `submit.py` + `.kattisrc` |
 
 Each preset is a file under `presets/`: it names only the answers that define
-the family, so adding a preset of your own is a two-line YAML file. For a
+the family, so adding a preset of your own is a two-line YAML file. See the
+[Presets Reference](../reference/presets.md) for the exact questions and answers
+pinned by each preset (and what each declines). For a
 fixture that sets every option instead, copy
 [`example-answers.yml`](https://github.com/ConstitutiveTemplates/daimonion/blob/main/example-answers.yml)
 from the template root — it turns every area gate off (so every detailed
