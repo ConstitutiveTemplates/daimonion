@@ -8,6 +8,7 @@ from pathlib import Path
 
 import yaml
 
+from law_lint.context import derive_context, gate_eval, load_answers
 from law_lint.models import MatchFinding, Rule
 from law_lint.rules import DEFAULT_RULES
 
@@ -60,6 +61,21 @@ class Linter:
                     )
             rules.append(Rule.from_dict(item))
         return cls(rules)
+
+    def for_context(self, context: dict) -> Linter:
+        """Return a new Linter holding only the rules whose gate holds in context."""
+        scoped = []
+        for r in self.rules:
+            if gate_eval(r.gate, context):
+                scoped.append(r)
+        return Linter(rules=scoped)
+
+    @classmethod
+    def for_project(cls, answers_path: str | Path, base_rules: Linter | None = None) -> Linter:
+        """Build a scoped Linter from a project's .copier-answers.yml."""
+        context = derive_context(load_answers(answers_path))
+        linter = base_rules or cls()
+        return linter.for_context(context)
 
     def scan_text(self, text: str, file_path: str = "<stdin>") -> list[MatchFinding]:
         """Scan a string line by line and report matched findings."""

@@ -91,3 +91,78 @@ def test_cli_strict_mode_exit_code():
         assert rc == 1
     finally:
         f_path.unlink()
+
+
+def _write_answers(tmp_path: Path, answers: dict) -> Path:
+    import yaml
+
+    answers_file = tmp_path / ".copier-answers.yml"
+    answers_file.write_text(yaml.safe_dump(answers, allow_unicode=True), encoding="utf-8")
+    return answers_file
+
+
+def test_prepare_scopes_rules_from_copier_answers(tmp_path, capsys):
+    """A web_api + commercial project gets JP transmission/EAA/CRA rules,
+    while cli-scraping copyright stays gated out."""
+    _write_answers(
+        tmp_path,
+        {
+            "project_type": "web_api",
+            "domain_traits": ["personal-data"],
+            "distribution": ["commercial"],
+            "include_mcp": True,
+        },
+    )
+    assert main(["prepare", "--repo", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "project_type: web_api" in out
+    assert "jp-external-transmission" in out
+    assert "eu-eaa-accessibility" in out
+    assert "eu-cra-compliance" in out
+    assert "ai-copyright" in out  # in the gated-out list
+
+
+def test_prepare_write_emits_rules_file(tmp_path, capsys):
+    _write_answers(tmp_path, {"project_type": "cli", "include_scraping": True})
+    assert main(["prepare", "--repo", str(tmp_path), "--write"]) == 0
+    generated = tmp_path / ".law-lint-rules.yml"
+    assert generated.is_file()
+    import yaml
+
+    rules = yaml.safe_load(generated.read_text())["rules"]
+    ids = {r["id"] for r in rules}
+    assert "ai-copyright" in ids  # scraping_effective -> copyright gate on
+    assert "eu-eaa-accessibility" not in ids
+
+
+def test_prepare_without_answers_fails_loudly(tmp_path, capsys):
+    assert main(["prepare", "--repo", str(tmp_path)]) == 2
+    assert "No .copier-answers.yml" in capsys.readouterr().err
+
+
+def test_diff_scopes_via_copier_answers(tmp_path, capsys):
+    """Without --all, a project-derived scope is announced on stderr."""
+    _write_answers(tmp_path, {"project_type": "script"})
+    (tmp_path / "x.py").write_text("print('hi')\n")
+    import subprocess
+
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    rc = main(["diff", "--repo", str(tmp_path)])
+    err = capsys.readouterr().err
+    assert "Scoped to" in err
+    assert rc == 0
+
+
+def test_gate_eval_rejects_hostile_constructs():
+    from law_lint.context import gate_eval
+
+    ctx = {"project_type": "cli", "true": True}
+    assert gate_eval("", ctx) is True
+    assert gate_eval("project_type == 'cli'", ctx) is True
+    assert gate_eval("project_type == 'web_api'", ctx) is False
+    try:
+        gate_eval("__import__('os').system('id')", ctx)
+    except (TypeError, ValueError) as exc:
+        assert "unsupported" in str(exc) or "unbound" in str(exc)
+    else:
+        raise AssertionError("hostile gate was not rejected")

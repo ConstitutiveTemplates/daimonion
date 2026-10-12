@@ -9,6 +9,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "依存追加・更新時に現行ライセンスを確認し、BSL/SSPL等のソース可用ライセンスや強copyleftを不注意に混入させない。",
         "category": "licensing",
         "enforcement": "L2",
+        "gate": "true",
     },
     {
         "id": "deprecated-crypto",
@@ -17,6 +18,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "署名や完全性用途にMD5/SHA-1を用いない。TLSは1.2以上を強制し、レガシー暗号の新規コード混入を避ける。",
         "category": "crypto",
         "enforcement": "L2",
+        "gate": "",
     },
     {
         "id": "pqc-standards",
@@ -25,6 +27,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "FIPS 203/204/205標準名で扱い、KEMと署名の役割を分離し、旧暗号単独の新規採用を避ける。",
         "category": "crypto",
         "enforcement": "L1",
+        "gate": "project_type in ['library', 'cli'] or web_api",
     },
     {
         "id": "pki-trust-chain",
@@ -33,6 +36,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "中間証明書や特定CAチェーンをコード内に固定・同梱しない。OS/システムのtrust storeに従う。",
         "category": "crypto",
         "enforcement": "L1",
+        "gate": "project_type in ['micropython', 'cli'] or web_api",
     },
     {
         "id": "personal-data-privacy",
@@ -41,6 +45,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "個人識別情報を取得・保存する前に必要性を問い、ログへの平文出力や外部API流出を防ぎ、削除経路を確保する。",
         "category": "privacy",
         "enforcement": "L2",
+        "gate": "'personal-data' in domain_traits or 'face-recognition' in domain_traits or 'medtech' in domain_traits",
     },
     {
         "id": "ai-copyright",
@@ -49,6 +54,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "robots.txtやサイト拒否措置を回避しない。表現そのものを無許諾で再出力するRAG設計を避ける。",
         "category": "copyright",
         "enforcement": "L1",
+        "gate": "project_type == 'cli' or data_science_layout",
     },
     {
         "id": "llm-appsec",
@@ -57,6 +63,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "ツール権限は最小CRUDに絞り、破壊的・不可逆操作には人間承認を挟み、LLM出力を直接shellに渡さない。",
         "category": "security",
         "enforcement": "L2",
+        "gate": "mcp_effective",
     },
     {
         "id": "prompt-injection",
@@ -65,6 +72,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "指示と外部データを厳格に分離し、外部テキストをシステム指示として信用しない。",
         "category": "security",
         "enforcement": "L1",
+        "gate": "mcp_effective",
     },
     {
         "id": "eu-cra-compliance",
@@ -73,6 +81,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "能動的悪用を知ったら24時間以内に報告する。SBOMを作成し、依存関係の出所を説明可能にする。",
         "category": "security",
         "enforcement": "L1",
+        "gate": "'commercial' in distribution",
     },
     {
         "id": "eu-eaa-accessibility",
@@ -81,6 +90,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "EU市場向けUI/フロントエンドコンポーネントにおいて、EN 301 549 (WCAG 2.1 AA相当)を満たす設計を行う。",
         "category": "accessibility",
         "enforcement": "L1",
+        "gate": "web_api",
     },
     {
         "id": "jp-external-transmission",
@@ -89,6 +99,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "日本向けWeb/アプリでサードパーティタグやSDKを使用する場合、送信先・情報・目的を平易に事前開示する。",
         "category": "privacy",
         "enforcement": "L1",
+        "gate": "web_api",
     },
     {
         "id": "kyushu-ntp-hygiene",
@@ -97,5 +108,6 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "summary": "単一の教育機関・特定NTPサーバーをコードにハードコードせず、ntp.pool.org等のプールを使用する。",
         "category": "security",
         "enforcement": "L2",
+        "gate": "",
     },
 ]

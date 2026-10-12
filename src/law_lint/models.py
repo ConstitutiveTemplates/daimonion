@@ -14,6 +14,7 @@ class Rule:
     summary: str
     category: str = "general"
     enforcement: str = "L1"
+    gate: str = ""
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Rule:
@@ -24,6 +25,7 @@ class Rule:
             summary=str(data.get("summary", "")),
             category=str(data.get("category", "general")),
             enforcement=str(data.get("enforcement", "L1")),
+            gate=str(data.get("gate", "")),
         )
 
 
