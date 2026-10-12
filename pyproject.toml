@@ -1,0 +1,29 @@
+[project]
+name = "law-lint"
+version = "0.1.0"
+description = "Fast, lightweight linter that matches code and git diffs against legal and ethical triggers"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+law-lint = "law_lint.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.14.0",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
