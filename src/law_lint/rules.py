@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+import re
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from law_lint.models import Rule
+
 # Canonical compliance rules derived from ConstitutiveTemplates ethical and legal baseline
 DEFAULT_RULES: list[dict[str, str]] = [
     {
@@ -111,3 +120,55 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "gate": "",
     },
 ]
+
+
+#: Typed view of :data:`DEFAULT_RULES`; prefer this over re-parsing the raw dicts.
+BUILTIN_RULES: tuple[Rule, ...] = tuple(Rule.from_dict(item) for item in DEFAULT_RULES)
+
+
+def _enrich_from_section_file(item: dict[str, Any], yaml_path: Path) -> None:
+    """Fill a file-referencing entry (e.g. REGISTRY.yml) with triggers/title/summary scraped from its section file."""
+    if "file" not in item or item.get("triggers"):
+        return
+    file_rel = str(item["file"])
+    candidates = (
+        yaml_path.parent / file_rel,
+        yaml_path.parent.parent / file_rel,
+        yaml_path.parent.parent.parent / file_rel,
+    )
+    sec_file = next((c for c in candidates if c.is_file()), None)
+    if sec_file is None:
+        return
+    sec_text = sec_file.read_text(encoding="utf-8")
+    triggers = re.search(r"> Triggers:\s*`([^`]+)`", sec_text)
+    title = re.search(r"^# (.+)$", sec_text, re.MULTILINE)
+    summary = re.search(r"> 要約:\s*(.+?)(?=\n>|\n\n)", sec_text, re.DOTALL)
+    item["triggers"] = triggers.group(1).strip() if triggers else ""
+    item["title"] = title.group(1).strip() if title else item.get("id", "")
+    item["summary"] = summary.group(1).replace("\n> ", " ").strip() if summary else item.get("why", "")
+
+
+def load_rules_from_data(data: Any, *, yaml_path: Path | None = None) -> list[Rule]:
+    """Build rules from parsed YAML: a list, or a mapping holding ``sections``/``rules``."""
+    if isinstance(data, Mapping):
+        rules_data = data.get("sections") or data.get("rules") or data
+    else:
+        rules_data = data
+    if not isinstance(rules_data, list):
+        msg = "Expected YAML list of rules under 'sections', 'rules', or top-level"
+        raise TypeError(msg)
+    rules: list[Rule] = []
+    for item in rules_data:
+        if not isinstance(item, dict):
+            continue
+        if yaml_path is not None:
+            _enrich_from_section_file(item, yaml_path)
+        rules.append(Rule.from_dict(item))
+    return rules
+
+
+def load_rules_from_yaml(path: str | Path) -> list[Rule]:
+    """Load rules from an external YAML file (e.g. from good-future-codex, law-map, or REGISTRY.yml)."""
+    resolved = Path(path)
+    data = yaml.safe_load(resolved.read_text(encoding="utf-8"))
+    return load_rules_from_data(data, yaml_path=resolved)

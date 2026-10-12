@@ -6,18 +6,18 @@ from pathlib import Path
 
 import yaml
 
-from law_lint.context import derive_context, find_answers_file, load_answers
+from law_lint.context import derive_context, describe_context, find_answers_file, load_answers
 from law_lint.engine import Linter
-from law_lint.models import MatchFinding
+from law_lint.models import Finding
 
 
-def format_findings(findings: list[MatchFinding], *, verbose: bool = False) -> str:
+def format_findings(findings: list[Finding], *, verbose: bool = False) -> str:
     """Format findings for terminal output."""
     if not findings:
         return "✨ No legal or compliance triggers matched."
 
     # Group by rule id
-    by_rule: dict[str, list[MatchFinding]] = {}
+    by_rule: dict[str, list[Finding]] = {}
     for f in findings:
         by_rule.setdefault(f.rule.id, []).append(f)
 
@@ -42,30 +42,6 @@ def format_findings(findings: list[MatchFinding], *, verbose: bool = False) -> s
     return "\n".join(lines).strip()
 
 
-def _describe_context(context: dict) -> list[str]:
-    """Human-readable summary of the derived project context."""
-    flags = [
-        k
-        for k in (
-            "web_api",
-            "data_science_layout",
-            "ds_stack",
-            "mcp_effective",
-            "scraping_effective",
-            "oj_code",
-            "oj_ctf",
-        )
-        if context.get(k)
-    ]
-    return [
-        f"project_type: {context.get('project_type') or '(unset)'}",
-        f"oj_kind: {context.get('oj_kind') or '-'}",
-        f"domain_traits: {', '.join(context.get('domain_traits') or []) or '-'}",
-        f"distribution: {', '.join(context.get('distribution') or []) or '-'}",
-        f"flags: {', '.join(flags) or '-'}",
-    ]
-
-
 def prepare(args: argparse.Namespace) -> int:
     """Derive the applicable compliance set from .copier-answers.yml."""
     answers_path = Path(args.answers) if args.answers else find_answers_file(args.repo)
@@ -84,7 +60,7 @@ def prepare(args: argparse.Namespace) -> int:
     skipped = [r for r in base.rules if r not in scoped.rules]
 
     print(f"📋 law-lint prepare — {answers_path}")
-    for line in _describe_context(context):
+    for line in describe_context(context):
         print(f"   {line}")
     print()
     print(f"✅ Applicable rules ({len(scoped.rules)} of {len(base.rules)}):")
@@ -96,20 +72,7 @@ def prepare(args: argparse.Namespace) -> int:
         print(f"⏭️  Gated out for this project ({len(skipped)}): " + ", ".join(r.id for r in skipped))
 
     if args.write:
-        payload = {
-            "rules": [
-                {
-                    "id": r.id,
-                    "title": r.title,
-                    "triggers": r.triggers,
-                    "summary": r.summary,
-                    "category": r.category,
-                    "enforcement": r.enforcement,
-                    "gate": r.gate,
-                }
-                for r in scoped.rules
-            ],
-        }
+        payload = {"rules": [r.to_dict() for r in scoped.rules]}
         out = answers_path.parent / ".law-lint-rules.yml"
         out.write_text(yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), encoding="utf-8")
         print(f"\n📝 Wrote {out}")
@@ -119,7 +82,26 @@ def prepare(args: argparse.Namespace) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def resolve_linter(args: argparse.Namespace) -> Linter:
+    """Select the active rule set: --rules > prepared file > copier-answers scope > all builtins."""
+    repo = Path(getattr(args, "repo", "."))
+    if args.rules:
+        return Linter.from_yaml(args.rules)
+    prepared = repo / ".law-lint-rules.yml"
+    answers = find_answers_file(repo)
+    if prepared.is_file():
+        return Linter.from_yaml(prepared)
+    if answers is not None and not getattr(args, "all", False):
+        scoped = Linter.for_project(answers)
+        print(
+            f"ℹ️  Scoped to {len(scoped.rules)} rules via {answers} (pass --all to scan everything)",
+            file=sys.stderr,
+        )
+        return scoped
+    return Linter()
+
+
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="law-lint",
         description="Fast linter matching source files and git diffs against legal and ethical triggers.",
@@ -160,28 +142,16 @@ def main(argv: list[str] | None = None) -> int:
     p_list.add_argument("--repo", default=".", help="Project root for copier-derived scoping")
     p_list.add_argument("--all", action="store_true", help="List every rule, ignoring the copier-derived project scope")
 
-    args = parser.parse_args(argv)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
 
     if args.subcommand == "prepare":
         return prepare(args)
 
-    # Rule selection precedence:
-    #   --rules > .law-lint-rules.yml (prepare --write output) > copier-answers scope > all
-    repo = Path(getattr(args, "repo", "."))
-    if args.rules:
-        linter = Linter.from_yaml(args.rules)
-    else:
-        prepared = repo / ".law-lint-rules.yml"
-        answers = find_answers_file(repo)
-        if prepared.is_file():
-            linter = Linter.from_yaml(prepared)
-        elif answers is not None and not getattr(args, "all", False):
-            linter = Linter.for_project(answers)
-            print(
-                f"ℹ️  Scoped to {len(linter.rules)} rules via {answers} (pass --all to scan everything)", file=sys.stderr
-            )
-        else:
-            linter = Linter()
+    linter = resolve_linter(args)
 
     if args.subcommand == "list-rules":
         print(f"Active compliance rules ({len(linter.rules)}):")

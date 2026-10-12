@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -17,7 +18,7 @@ class Rule:
     gate: str = ""
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Rule:
+    def from_dict(cls, data: Mapping[str, Any]) -> Rule:
         return cls(
             id=str(data.get("id", "")),
             title=str(data.get("title", "")),
@@ -28,9 +29,21 @@ class Rule:
             gate=str(data.get("gate", "")),
         )
 
+    def to_dict(self) -> dict[str, str]:
+        """Serialize back to the plain-dict shape :meth:`from_dict` consumes."""
+        return {
+            "id": self.id,
+            "title": self.title,
+            "triggers": self.triggers,
+            "summary": self.summary,
+            "category": self.category,
+            "enforcement": self.enforcement,
+            "gate": self.gate,
+        }
+
 
 @dataclass(frozen=True)
-class MatchFinding:
+class Finding:
     """A finding indicating a rule trigger matched a line in a file."""
 
     rule: Rule
@@ -38,3 +51,9 @@ class MatchFinding:
     line_number: int
     matched_text: str
     context_line: str
+
+
+#: Historical name for :class:`Finding`; kept for backward compatibility.
+MatchFinding = Finding
+
+__all__ = ["Finding", "MatchFinding", "Rule"]

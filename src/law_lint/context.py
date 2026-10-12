@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import ast
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from law_lint.models import Rule
 
 # Project types daimonion's questionnaire offers (copier.yml).
 OJ_CODE_KINDS = ("atcoder", "codeforces", "kattis", "kaggle")
@@ -121,3 +123,32 @@ def gate_eval(gate: str, context: Mapping[str, Any]) -> bool:
             msg = f"gate names an unbound flag: {node.id}"
             raise ValueError(msg)
     return bool(eval(compile(tree, "<gate>", "eval"), {"__builtins__": {}}, dict(context)))
+
+
+def scope_rules(rules: Iterable[Rule], context: Mapping[str, Any]) -> list[Rule]:
+    """Return the subset of rules whose gate holds in the derived context."""
+    return [rule for rule in rules if gate_eval(rule.gate, context)]
+
+
+def describe_context(context: Mapping[str, Any]) -> list[str]:
+    """Human-readable summary of the derived project context."""
+    flags = [
+        key
+        for key in (
+            "web_api",
+            "data_science_layout",
+            "ds_stack",
+            "mcp_effective",
+            "scraping_effective",
+            "oj_code",
+            "oj_ctf",
+        )
+        if context.get(key)
+    ]
+    return [
+        f"project_type: {context.get('project_type') or '(unset)'}",
+        f"oj_kind: {context.get('oj_kind') or '-'}",
+        f"domain_traits: {', '.join(context.get('domain_traits') or []) or '-'}",
+        f"distribution: {', '.join(context.get('distribution') or []) or '-'}",
+        f"flags: {', '.join(flags) or '-'}",
+    ]
