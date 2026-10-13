@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import warnings
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
@@ -114,7 +115,11 @@ def gate_eval(gate: str, context: Mapping[str, Any]) -> bool:
     gate = (gate or "").strip()
     if not gate:
         return True
-    tree = ast.parse(gate, mode="eval")
+    try:
+        tree = ast.parse(gate, mode="eval")
+    except SyntaxError as exc:
+        msg = f"malformed gate expression: {exc.msg}"
+        raise ValueError(msg) from exc
     for node in ast.walk(tree):
         if not isinstance(node, _ALLOWED_NODES):
             msg = f"unsupported gate construct: {type(node).__name__}"
@@ -126,8 +131,26 @@ def gate_eval(gate: str, context: Mapping[str, Any]) -> bool:
 
 
 def scope_rules(rules: Iterable[Rule], context: Mapping[str, Any]) -> list[Rule]:
-    """Return the subset of rules whose gate holds in the derived context."""
-    return [rule for rule in rules if gate_eval(rule.gate, context)]
+    """Return the subset of rules whose gate holds in the derived context.
+
+    Gates that fail to evaluate (hostile construct, unbound flag, malformed
+    expression) fail closed: the rule is excluded and a ``UserWarning`` names it,
+    so one broken gate can neither switch itself on nor abort the whole scan.
+    """
+    scoped: list[Rule] = []
+    for rule in rules:
+        try:
+            active = gate_eval(rule.gate, context)
+        except (TypeError, ValueError) as exc:
+            warnings.warn(
+                f"law-lint: excluding rule {rule.id!r}: malformed gate {rule.gate!r} ({exc})",
+                UserWarning,
+                stacklevel=2,
+            )
+            continue
+        if active:
+            scoped.append(rule)
+    return scoped
 
 
 def describe_context(context: Mapping[str, Any]) -> list[str]:

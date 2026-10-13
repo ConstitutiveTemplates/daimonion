@@ -22,6 +22,44 @@ uvx --from git+https://github.com/ConstitutiveTemplates/law-lint law-lint prepar
 uvx --from git+https://github.com/ConstitutiveTemplates/law-lint law-lint check src/
 ```
 
+## Usage in CI / pre-commit
+
+Scan staged changes on every commit (`diff` mode reads git itself, so no
+filenames are passed):
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/ConstitutiveTemplates/law-lint
+    rev: <ref>
+    hooks:
+      - id: law-lint-diff
+```
+
+Or run the composite action in a workflow:
+
+```yaml
+- uses: ConstitutiveTemplates/law-lint@<ref>
+  with:
+    args: diff # default; any `check ...` / `diff ...` tail works
+    strict: "true" # default; fail the job on L2 findings
+```
+
+## Output formats
+
+`check` and `diff` accept `--format {human,json,sarif}` (default `human`)
+for CI annotations and SARIF upload; `list-rules` accepts `--format
+{human,json}`.
+
+## Ethics parity
+
+`.github/workflows/ethics-parity.yml` runs weekly and fails when a
+daimonion ethics section drifts from its law-lint rule (unmapped active
+section, uncovered trigger keyword, or a non-empty registry gate with an
+empty rule gate), filing a `drift`-labelled issue. The mapping lives in
+`tools/check_ethics_parity.py` (`SECTION_TO_RULE` — add a line when
+adding a section).
+
 ## Features
 
 - **Diff Mode (`law-lint diff`)**: Scans modified lines in `git diff` (or staged `--staged`) and flags touched compliance areas.

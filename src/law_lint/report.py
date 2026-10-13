@@ -1,0 +1,145 @@
+"""Machine-readable serialization of law-lint results (JSON and SARIF 2.1.0).
+
+Both formats are plain Python structures serialized with :mod:`json`; law-lint
+keeps ``pyyaml`` as its only third-party runtime dependency.
+"""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Sequence
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _distribution_version
+from typing import Any
+
+from law_lint.models import Finding, Rule
+
+SARIF_VERSION = "2.1.0"
+SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json"
+
+#: Enforcement tier -> SARIF result level (L2 blocking, L1 advisory, L0 informational).
+ENFORCEMENT_LEVELS: dict[str, str] = {"L2": "error", "L1": "warning", "L0": "note"}
+
+#: Level used for a missing or unrecognised enforcement tier.
+DEFAULT_LEVEL = "warning"
+
+
+def tool_version() -> str:
+    """Installed distribution version, or a placeholder when running from a source tree."""
+    try:
+        return _distribution_version("law-lint")
+    except PackageNotFoundError:
+        return "0.0.0+unknown"
+
+
+def dumps(payload: Any) -> str:
+    """Serialize a report payload as UTF-8-friendly, human-diffable JSON."""
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def finding_to_dict(finding: Finding) -> dict[str, Any]:
+    """Flat JSON view of one finding: the shape machine consumers parse."""
+    return {
+        "rule_id": finding.rule.id,
+        "rule_title": finding.rule.title,
+        "enforcement": finding.rule.enforcement,
+        "file": finding.file_path,
+        "line": finding.line_number,
+        "matched_text": finding.matched_text,
+        "context_line": finding.context_line,
+    }
+
+
+def build_json_report(findings: Sequence[Finding], *, strict_fail: bool = False) -> dict[str, Any]:
+    """The ``--format json`` payload: a summary object plus the flat findings list."""
+    return {
+        "summary": {
+            "findings": len(findings),
+            "rules_matched": len({f.rule.id for f in findings}),
+            "strict_fail": strict_fail,
+        },
+        "findings": [finding_to_dict(f) for f in findings],
+    }
+
+
+def build_rules_json_report(rules: Sequence[Rule]) -> dict[str, Any]:
+    """The ``list-rules --format json`` payload."""
+    return {
+        "summary": {"rules": len(rules)},
+        "rules": [rule.to_dict() for rule in rules],
+    }
+
+
+def _sarif_level(enforcement: str) -> str:
+    return ENFORCEMENT_LEVELS.get(enforcement.strip().upper(), DEFAULT_LEVEL)
+
+
+def _sarif_rule(rule: Rule) -> dict[str, Any]:
+    entry: dict[str, Any] = {
+        "id": rule.id,
+        "name": rule.id,
+        "shortDescription": {"text": rule.title or rule.summary or rule.id},
+        "defaultConfiguration": {"level": _sarif_level(rule.enforcement)},
+        "properties": {"enforcement": rule.enforcement, "category": rule.category},
+    }
+    if rule.summary:
+        entry["fullDescription"] = {"text": rule.summary}
+    return entry
+
+
+def _sarif_result(finding: Finding) -> dict[str, Any]:
+    rule = finding.rule
+    return {
+        "ruleId": rule.id,
+        "level": _sarif_level(rule.enforcement),
+        "message": {"text": f"{rule.title or rule.id}: matched '{finding.matched_text}'"},
+        "locations": [
+            {
+                "physicalLocation": {
+                    "artifactLocation": {"uri": finding.file_path.replace("\\", "/")},
+                    "region": {"startLine": max(finding.line_number, 1)},
+                }
+            }
+        ],
+    }
+
+
+def build_sarif_report(findings: Sequence[Finding]) -> dict[str, Any]:
+    """The ``--format sarif`` payload: a SARIF 2.1.0 log holding a single run.
+
+    ``tool.driver.rules`` lists exactly the rules that produced results, so every
+    ``results[].ruleId`` resolves within the same run.
+    """
+    matched: dict[str, Rule] = {}
+    for finding in findings:
+        matched.setdefault(finding.rule.id, finding.rule)
+    return {
+        "version": SARIF_VERSION,
+        "$schema": SARIF_SCHEMA,
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "law-lint",
+                        "version": tool_version(),
+                        "rules": [_sarif_rule(rule) for rule in matched.values()],
+                    }
+                },
+                "results": [_sarif_result(finding) for finding in findings],
+            }
+        ],
+    }
+
+
+__all__ = [
+    "DEFAULT_LEVEL",
+    "ENFORCEMENT_LEVELS",
+    "SARIF_SCHEMA",
+    "SARIF_VERSION",
+    "build_json_report",
+    "build_rules_json_report",
+    "build_sarif_report",
+    "dumps",
+    "finding_to_dict",
+    "tool_version",
+]

@@ -1,0 +1,8 @@
+# One hook: scan staged changes. `diff` mode reads git itself, so no
+# filenames are passed through (pass_filenames: false).
+- id: law-lint-diff
+  name: law-lint diff (staged)
+  description: Scan staged git changes against legal and ethical triggers.
+  language: python
+  entry: law-lint --strict diff --staged
+  pass_filenames: false

@@ -9,6 +9,12 @@ import yaml
 from law_lint.context import derive_context, describe_context, find_answers_file, load_answers
 from law_lint.engine import Linter
 from law_lint.models import Finding
+from law_lint.report import build_json_report, build_rules_json_report, build_sarif_report, dumps
+
+#: Output formats for finding-producing subcommands.
+FORMAT_CHOICES = ("human", "json", "sarif")
+#: ``list-rules`` describes rules, not locations, so SARIF does not apply there.
+RULE_FORMAT_CHOICES = ("human", "json")
 
 
 def format_findings(findings: list[Finding], *, verbose: bool = False) -> str:
@@ -128,6 +134,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_diff.add_argument(
         "--all", action="store_true", help="Scan with every rule, ignoring the copier-derived project scope"
     )
+    p_diff.add_argument(
+        "--format",
+        dest="output_format",
+        choices=FORMAT_CHOICES,
+        default="human",
+        help="Output format for findings (default: human)",
+    )
 
     # check
     p_check = sub.add_parser("check", help="Scan specific files or directories")
@@ -136,11 +149,25 @@ def build_parser() -> argparse.ArgumentParser:
     p_check.add_argument(
         "--all", action="store_true", help="Scan with every rule, ignoring the copier-derived project scope"
     )
+    p_check.add_argument(
+        "--format",
+        dest="output_format",
+        choices=FORMAT_CHOICES,
+        default="human",
+        help="Output format for findings (default: human)",
+    )
 
     # list-rules
     p_list = sub.add_parser("list-rules", help="List all active detection rules")
     p_list.add_argument("--repo", default=".", help="Project root for copier-derived scoping")
     p_list.add_argument("--all", action="store_true", help="List every rule, ignoring the copier-derived project scope")
+    p_list.add_argument(
+        "--format",
+        dest="output_format",
+        choices=RULE_FORMAT_CHOICES,
+        default="human",
+        help="Output format for the rule list (default: human)",
+    )
 
     return parser
 
@@ -154,6 +181,9 @@ def main(argv: list[str] | None = None) -> int:
     linter = resolve_linter(args)
 
     if args.subcommand == "list-rules":
+        if args.output_format == "json":
+            print(dumps(build_rules_json_report(linter.rules)))
+            return 0
         print(f"Active compliance rules ({len(linter.rules)}):")
         for r in linter.rules:
             print(f"- [{r.enforcement}] {r.id}: {r.title}")
@@ -167,12 +197,17 @@ def main(argv: list[str] | None = None) -> int:
     else:
         findings = []
 
-    print(format_findings(findings, verbose=args.verbose))
+    # --strict governs the exit code for every format.
+    strict_fail = bool(args.strict and any(f.rule.enforcement == "L2" for f in findings))
 
-    if args.strict and any(f.rule.enforcement == "L2" for f in findings):
-        return 1
+    if args.output_format == "json":
+        print(dumps(build_json_report(findings, strict_fail=strict_fail)))
+    elif args.output_format == "sarif":
+        print(dumps(build_sarif_report(findings)))
+    else:
+        print(format_findings(findings, verbose=args.verbose))
 
-    return 0
+    return 1 if strict_fail else 0
 
 
 if __name__ == "__main__":

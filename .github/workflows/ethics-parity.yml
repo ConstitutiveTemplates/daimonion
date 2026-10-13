@@ -1,0 +1,60 @@
+name: ethics-parity
+
+# Weekly guard: every distributed daimonion ethics section must stay covered
+# by a law-lint rule with agreeing triggers and gates. On drift it files one
+# `drift`-labelled issue (reuses the open one when it exists).
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Mondays 03:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  parity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ConstitutiveTemplates/daimonion
+          path: daimonion
+          sparse-checkout: _shared/ethics
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Check ethics parity
+        run: |
+          uv run --no-sync python tools/check_ethics_parity.py --registry daimonion/_shared/ethics/REGISTRY.yml > parity.txt 2>&1
+          rc=$?
+          cat parity.txt
+          exit $rc
+
+      - name: Open drift issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          body=$(cat parity.txt)
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          existing=$(gh issue list --search "Ethics parity drift" --state open --json number --jq 'length')
+          if [ "$existing" -eq 0 ]; then
+            gh issue create \
+              --title "Ethics parity drift (run ${{ github.run_id }})" \
+              --label "drift" \
+              --body "$body"$'\n\n'"See: $run_url"
+          else
+            echo "A parity drift issue is already open; skipping."
+          fi
