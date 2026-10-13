@@ -168,7 +168,32 @@ def load_rules_from_data(data: Any, *, yaml_path: Path | None = None) -> list[Ru
 
 
 def load_rules_from_yaml(path: str | Path) -> list[Rule]:
-    """Load rules from an external YAML file (e.g. from good-future-codex, law-map, or REGISTRY.yml)."""
+    """Load rules from an external YAML file or a law-map ``checks/`` directory.
+
+    A directory is consumed as a law-map checkout: every ``*.yml`` file
+    beneath it is parsed as a check spec (``id``/``obligation``/``level``
+    plus optional ``triggers``) and mapped to a rule. Files whose
+    basename starts with ``_`` are skipped.
+    """
     resolved = Path(path)
+    if resolved.is_dir():
+        return load_rules_from_checks_dir(resolved)
     data = yaml.safe_load(resolved.read_text(encoding="utf-8"))
     return load_rules_from_data(data, yaml_path=resolved)
+
+
+def load_rules_from_checks_dir(checks_root: str | Path) -> list[Rule]:
+    """Load one rule per law-map check spec under ``checks_root`` (recursive)."""
+    root = Path(checks_root)
+    rules: list[Rule] = []
+    for spec_file in sorted(root.rglob("*.yml")):
+        if spec_file.name.startswith("_"):
+            continue
+        try:
+            data = yaml.safe_load(spec_file.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        rules.append(Rule.from_check_spec(data))
+    return rules
