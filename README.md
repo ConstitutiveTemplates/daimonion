@@ -91,6 +91,11 @@ Or run the composite action in a workflow:
     strict: "true" # default; fail the job on L2 findings
 ```
 
+The action installs daimonion from its own checkout (`github.action_path`),
+so pinning `politeuma/daimonion@<sha>` runs exactly that commit. Inputs reach
+the shell only through environment variables; `args` is split on whitespace
+and never evaluated by the shell.
+
 ## Output formats
 
 `check` and `diff` accept `--format {human,json,sarif}` (default `human`)
