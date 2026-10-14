@@ -204,7 +204,9 @@ when an active section drifts from its daimonion rule (unmapped active section,
 uncovered trigger keyword, or a conditional `when` whose rule is ungated),
 filing a `drift`-labelled issue. The test suite runs the same check against the
 vendored snapshot. The mapping lives in `tools/check_ethics_parity.py`
-(`SECTION_TO_RULE` — add a line when adding a section).
+(`SECTION_TO_RULE` — add a line when adding a section). The agent-eval
+harness in `evals/` replays coding tasks with and without the rules block
+and counts violations (`python evals/run.py --dry-run`).
 
 ## Features
 
