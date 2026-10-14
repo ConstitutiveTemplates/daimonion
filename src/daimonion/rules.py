@@ -9,7 +9,11 @@ import yaml
 
 from daimonion.models import Rule
 
-# Canonical compliance rules derived from politeuma ethical and legal baseline
+# Canonical compliance rules derived from politeuma ethical and legal baseline.
+# Every builtin is a keyword rule (topic vocabulary, not the violation itself),
+# so it is a reminder: L1 when the vocabulary is specific (md5, a hardcoded NTP
+# address), L0 when it is broad (license, agent, requests). Only a rule with
+# "kind": "structural" may be L2 and fail --strict; see models.effective_enforcement.
 DEFAULT_RULES: list[dict[str, str]] = [
     {
         "id": "licensing-drift",
@@ -17,7 +21,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "triggers": r"(?i)\b(licen[cs]e|bsl|busl|sspl|rsal|elv2|copyleft|gpl|agpl|lgpl|terraform|opentofu|elasticsearch|redis|source-available)\b",
         "summary": "依存追加・更新時に現行ライセンスを確認し、BSL/SSPL等のソース可用ライセンスや強copyleftを不注意に混入させない。",
         "category": "licensing",
-        "enforcement": "L2",
+        "enforcement": "L0",
         "gate": "true",
     },
     {
@@ -26,7 +30,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "triggers": r"(?i)\b(md5|sha-?1(?!6|384|512)|(?<!3)des(?!c)|3des|triple-?des|rc4|sslv?3|tls\s?1\.[01]|sha1withrsa|rsa[_ /-]?1024)\b",
         "summary": "署名や完全性用途にMD5/SHA-1を用いない。TLSは1.2以上を強制し、レガシー暗号の新規コード混入を避ける。",
         "category": "crypto",
-        "enforcement": "L2",
+        "enforcement": "L1",
         "gate": "",
     },
     {
@@ -44,7 +48,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "triggers": r"(?i)\b(certificat|trust\s?store|ca_bundle|pinn|openssl|requests|httpx|urllib3|mtls|root\s?ca|intermediate)\b",
         "summary": "中間証明書や特定CAチェーンをコード内に固定・同梱しない。OS/システムのtrust storeに従う。",
         "category": "crypto",
-        "enforcement": "L1",
+        "enforcement": "L0",
         "gate": "project_type in ['micropython', 'cli'] or web_api",
     },
     {
@@ -53,7 +57,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "triggers": r"(?i)\b(pii|personal[_ ]?data|personal[_ ]?information|gdpr|privacy|user[_ ]?data|deletion|right[_ ]?to[_ ]?erasure|consent|retention)\b",
         "summary": "個人識別情報を取得・保存する前に必要性を問い、ログへの平文出力や外部API流出を防ぎ、削除経路を確保する。",
         "category": "privacy",
-        "enforcement": "L2",
+        "enforcement": "L1",
         "gate": "'personal-data' in domain_traits or 'face-recognition' in domain_traits or 'medtech' in domain_traits",
     },
     {
@@ -71,7 +75,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "triggers": r"(?i)\b(llm|prompt|agent|tool[_-]?call|mcp|openai|anthropic|chat|completion|system[_-]?prompt|guardrail)\b",
         "summary": "ツール権限は最小CRUDに絞り、破壊的・不可逆操作には人間承認を挟み、LLM出力を直接shellに渡さない。",
         "category": "security",
-        "enforcement": "L2",
+        "enforcement": "L0",
         "gate": "mcp_effective",
     },
     {
@@ -116,7 +120,7 @@ DEFAULT_RULES: list[dict[str, str]] = [
         "triggers": r"(?i)\b(133\.100\.9\.2|133\.100\.11\.8|clock\.nc\.fukuoka-u\.ac\.jp)\b",
         "summary": "単一の教育機関・特定NTPサーバーをコードにハードコードせず、ntp.pool.org等のプールを使用する。",
         "category": "security",
-        "enforcement": "L2",
+        "enforcement": "L1",
         "gate": "",
     },
 ]

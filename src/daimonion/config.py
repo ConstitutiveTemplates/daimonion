@@ -9,6 +9,9 @@ path through daimonion::
     when:                     # kanon conditions that hold; `always` is implied
       - scraping
       - jp
+    mode: adoption            # optional: `adoption` (warn-only, nothing fails) or `strict`
+    scan:
+      docs: true              # optional: also scan .md/.yml/.yaml/.toml (default: source only)
 """
 
 from __future__ import annotations
@@ -22,6 +25,9 @@ from daimonion.kanon import WHEN_VOCABULARY
 
 CONFIG_NAME = ".daimonion.yml"
 CONFIG_VERSION = 1
+#: Values ``mode`` accepts: ``adoption`` reports without failing, even under
+#: ``--strict``; ``strict`` fails on L2 findings without passing ``--strict``.
+MODES = ("adoption", "strict")
 
 
 class ConfigError(ValueError):
@@ -35,6 +41,8 @@ class ProjectConfig:
     path: Path
     when: tuple[str, ...]
     agents_md: str = "AGENTS.md"
+    mode: str = ""
+    scan_docs: bool = False
 
     @property
     def agents_md_path(self) -> Path:
@@ -81,4 +89,20 @@ def load_config(path: str | Path) -> ProjectConfig:
         msg = f"{path}: `agents_md` must be a relative path inside the project"
         raise ConfigError(msg)
 
-    return ProjectConfig(path=path, when=tuple(dict.fromkeys(when)), agents_md=agents_md)
+    mode = data.get("mode") or ""
+    if mode and mode not in MODES:
+        msg = f"{path}: `mode` must be one of {', '.join(MODES)}"
+        raise ConfigError(msg)
+
+    scan = data.get("scan") or {}
+    if not isinstance(scan, dict) or not isinstance(scan.get("docs", False), bool):
+        msg = f"{path}: `scan` must be a mapping whose `docs` is true or false"
+        raise ConfigError(msg)
+
+    return ProjectConfig(
+        path=path,
+        when=tuple(dict.fromkeys(when)),
+        agents_md=agents_md,
+        mode=mode,
+        scan_docs=scan.get("docs", False),
+    )

@@ -18,6 +18,30 @@ def _write_answers(root: Path, answers: dict) -> Path:
     return answers_file
 
 
+def _structural_rules(root: Path) -> Path:
+    """A rule file with one structural L2 rule and one keyword rule declared L2 (capped to L1)."""
+    rules_file = root / "rules.yml"
+    rules_file.write_text(
+        yaml.safe_dump(
+            {
+                "rules": [
+                    {
+                        "id": "md5-call",
+                        "title": "hashlib.md5() call",
+                        "triggers": r"hashlib\.md5\(",
+                        "summary": "s",
+                        "enforcement": "L2",
+                        "kind": "structural",
+                    },
+                    {"id": "md5-word", "title": "md5", "triggers": "(?i)md5", "summary": "s", "enforcement": "L2"},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    return rules_file
+
+
 def _json_output(capsys, argv: list[str]) -> tuple[int, dict]:
     """Run the CLI and parse stdout as JSON (stderr notices stay out of the way)."""
     rc = main(argv)
@@ -30,7 +54,7 @@ def test_default_format_is_human_and_unchanged(tmp_path, capsys):
     assert main(["check", str(target), "--all"]) == 0
     out = capsys.readouterr().out
     assert out.startswith("⚠️  daimonion: Detected")
-    assert "[L2]" in out
+    assert "[L1]" in out
     assert "deprecated-crypto" in out
     assert not out.lstrip().startswith("{")
 
@@ -64,19 +88,32 @@ def test_prepare_write_then_check_autoloads_prepared_rules(tmp_path, capsys):
 
 
 def test_strict_exit_codes(tmp_path, capsys):
+    rules = str(_structural_rules(tmp_path))
     l2_target = tmp_path / "l2.py"
     l2_target.write_text("hashlib.md5(b'x')\n", encoding="utf-8")
     l1_target = tmp_path / "l1.py"
-    l1_target.write_text("sbom = build_sbom()\n", encoding="utf-8")
+    l1_target.write_text("digest_name = 'md5'\n", encoding="utf-8")
 
-    assert main(["--strict", "check", str(l2_target), "--all"]) == 1
+    assert main(["--rules", rules, "--strict", "check", str(l2_target), "--all"]) == 1
     capsys.readouterr()
 
-    assert main(["--strict", "check", str(l1_target), "--all"]) == 0
-    assert "eu-cra-compliance" in capsys.readouterr().out
+    # The keyword rule declared L2 is capped to L1, so it never fails --strict.
+    assert main(["--rules", rules, "--strict", "check", str(l1_target), "--all"]) == 0
+    assert "[L1] md5 (md5-word)" in capsys.readouterr().out
 
     # Without --strict even an L2 hit exits 0.
-    assert main(["check", str(l2_target), "--all"]) == 0
+    assert main(["--rules", rules, "check", str(l2_target), "--all"]) == 0
+
+
+def test_builtin_rules_never_fail_strict(tmp_path, capsys):
+    """Every builtin is a keyword reminder: at most L1, so --strict passes."""
+    from daimonion.rules import BUILTIN_RULES
+
+    assert {rule.kind for rule in BUILTIN_RULES} == {"keyword"}
+    assert {rule.enforcement for rule in BUILTIN_RULES} <= {"L0", "L1"}
+    target = tmp_path / "app.py"
+    target.write_text("import hashlib, requests\nhashlib.md5(b'x')\nagent = 'ua'\n", encoding="utf-8")
+    assert main(["--strict", "check", str(target), "--all"]) == 0
 
 
 def test_list_rules_scoped_versus_all(tmp_path, capsys):
@@ -147,13 +184,16 @@ def test_check_json_payload(tmp_path, capsys):
     target = tmp_path / "auth.py"
     target.write_text("import hashlib\nreturn hashlib.md5(pwd)\n", encoding="utf-8")
 
-    rc, payload = _json_output(capsys, ["--strict", "check", str(target), "--format", "json", "--all"])
+    rules = str(_structural_rules(tmp_path))
+    rc, payload = _json_output(
+        capsys, ["--rules", rules, "--strict", "check", str(target), "--format", "json", "--all"]
+    )
     assert rc == 1
     assert payload["summary"]["findings"] == len(payload["findings"]) >= 1
     assert payload["summary"]["rules_matched"] == len({f["rule_id"] for f in payload["findings"]})
     assert payload["summary"]["strict_fail"] is True
 
-    hit = next(f for f in payload["findings"] if f["rule_id"] == "deprecated-crypto")
+    hit = next(f for f in payload["findings"] if f["rule_id"] == "md5-call")
     assert set(hit) == {
         "rule_id",
         "rule_title",
@@ -175,7 +215,14 @@ def test_check_json_summary_when_clean(tmp_path, capsys):
     target.write_text("value = compute()\n", encoding="utf-8")
     rc, payload = _json_output(capsys, ["check", str(target), "--format", "json", "--all"])
     assert rc == 0
-    assert payload["summary"] == {"findings": 0, "rules_matched": 0, "strict_fail": False}
+    assert payload["summary"] == {
+        "findings": 0,
+        "rules_matched": 0,
+        "strict_fail": False,
+        "suppressed": 0,
+        "baselined": 0,
+        "mode": "report",
+    }
     assert payload["findings"] == []
 
 
@@ -196,13 +243,13 @@ def test_check_sarif_payload(tmp_path, capsys):
     assert "deprecated-crypto" in rules
     assert rules["deprecated-crypto"]["name"] == "deprecated-crypto"
     assert rules["deprecated-crypto"]["shortDescription"]["text"]
-    assert rules["deprecated-crypto"]["defaultConfiguration"]["level"] == "error"
+    assert rules["deprecated-crypto"]["defaultConfiguration"]["level"] == "warning"
 
     results = payload["runs"][0]["results"]
     assert results
     result = results[0]
     assert result["ruleId"] == "deprecated-crypto"
-    assert result["level"] == "error"
+    assert result["level"] == "warning"
     assert result["message"]["text"]
     location = result["locations"][0]["physicalLocation"]
     assert location["artifactLocation"]["uri"].endswith("auth.py")
@@ -213,7 +260,7 @@ def test_sarif_level_mapping():
     from daimonion.report import build_sarif_report
 
     def finding(enforcement: str) -> Finding:
-        rule = Rule(id="r", title="t", triggers="x", summary="s", enforcement=enforcement)
+        rule = Rule(id="r", title="t", triggers="x", summary="s", enforcement=enforcement, kind="structural")
         return Finding(rule=rule, file_path="f.py", line_number=1, matched_text="x", context_line="x")
 
     payload = build_sarif_report([finding("L2"), finding("L1"), finding("L0"), finding("")])

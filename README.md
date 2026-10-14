@@ -88,7 +88,8 @@ Or run the composite action in a workflow:
 - uses: politeuma/daimonion@<ref>
   with:
     args: diff # default; any `check ...` / `diff ...` tail works
-    strict: "true" # default; fail the job on L2 findings
+    strict: "true" # default; fail the job on structural L2 findings
+    adoption: "false" # "true": report only, never fail (overrides strict)
 ```
 
 The action installs daimonion from its own checkout (`github.action_path`),
@@ -96,11 +97,65 @@ so pinning `politeuma/daimonion@<sha>` runs exactly that commit. Inputs reach
 the shell only through environment variables; `args` is split on whitespace
 and never evaluated by the shell.
 
+## Severity, scope, and adoption
+
+**Severity.** Every builtin rule is a *keyword* rule: it matches topic
+vocabulary (`license`, `agent`, `md5`), which says a compliance area was
+touched, not that anything is wrong. Keyword findings are reminders: L1 when
+the vocabulary is specific, L0 when it is broad. Only a rule declared
+`kind: structural` (one that matches the violating construct itself, e.g. via
+AST, semgrep, or dependency analysis) may be L2, and only L2 fails `--strict`.
+A keyword rule declared L2 in a custom rule file or law-map check spec is
+capped to L1.
+
+**Scope.** Directory scans read source code only (`.py .ts .js .go .rs
+.java`); `diff` skips `.md .yml .yaml .toml` changes. Opt documents in with
+`--include-docs` or in `.daimonion.yml`. A file named explicitly on the
+command line is always scanned.
+
+**Inline ignores.** Silence named rules on one line, with a reason and an
+optional expiry; a directive alone on a comment line covers the next line:
+
+```python
+ua = "crawler-agent/1.0"  # daimonion: ignore[llm-appsec] reason=HTTP User-Agent until=2027-01-31
+
+# daimonion: ignore[deprecated-crypto] reason=cache key, not a signature
+key = hashlib.md5(url.encode(), usedforsecurity=False).hexdigest()
+```
+
+A directive without `reason=` is not honoured, and after `until=` the finding
+is reported again.
+
+**Baseline.** Record what exists today and report only new findings:
+
+```sh
+daimonion check src/ --write-baseline   # writes .daimonion-baseline.json; commit it
+daimonion --strict check src/           # baselined findings no longer count
+```
+
+Entries are keyed by rule, file, and line text, so shifting lines keep
+matching. `--baseline PATH` points elsewhere.
+
+**Adoption mode.** `--adoption` (or `mode: adoption` in `.daimonion.yml`)
+reports everything and always exits 0, even when the pre-commit hook or the
+Action passes `--strict`; it notes how many findings would fail. Switch to
+`mode: strict` (or drop `mode`) once the baseline is clean.
+
+```yaml
+# .daimonion.yml
+version: 1
+when: [web_api, jp]
+mode: adoption   # or: strict
+scan:
+  docs: false    # true: also scan .md/.yml/.yaml/.toml
+```
+
 ## Output formats
 
 `check` and `diff` accept `--format {human,json,sarif}` (default `human`)
 for CI annotations and SARIF upload; `list-rules` accepts `--format
-{human,json}`.
+{human,json}`. SARIF keeps inline-ignored and baselined results, marked with
+`inSource` / `external` suppressions.
 
 ## Ethics parity
 
@@ -115,7 +170,7 @@ vendored snapshot. The mapping lives in `tools/check_ethics_parity.py`
 ## Features
 
 - **Diff Mode (`daimonion diff`)**: Scans modified lines in `git diff` (or staged `--staged`) and flags touched compliance areas.
-- **File Mode (`daimonion check <path>...`)**: Scans entire files or directories.
+- **File Mode (`daimonion check <path>...`)**: Scans entire files or directories (source code by default; docs opt-in).
 - **Kanon Ethics Block (`daimonion init` / `daimonion agents-md`)**: Suggests a template-independent `.daimonion.yml` from the repository's manifests, then writes, refreshes, or checks the matching kanon sections in `AGENTS.md`/`CLAUDE.md` from the bundled, SHA-pinned snapshot.
 - **Rule Bundles**: Ships with built-in default rule profiles (licensing, crypto, personal data, scraping, AI safety), and can load custom rule YAMLs (`--rules path/to/rules.yml`).
 - **law-map check specs**: `--rules` also accepts a law-map checkout's `checks/` directory — each `checks/<domain>/<slug>.yml` spec maps to a rule (enforcement from the spec's `level`, triggers from its `triggers:` regex list), so `daimonion --rules ../law-map/checks check <file>` scans with the same vocabulary law-map validates.

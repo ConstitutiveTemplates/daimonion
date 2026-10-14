@@ -7,12 +7,13 @@ from pathlib import Path
 import yaml
 
 from daimonion import kanon
-from daimonion.config import CONFIG_NAME, ConfigError, find_config, load_config
+from daimonion.config import CONFIG_NAME, ConfigError, ProjectConfig, find_config, load_config
 from daimonion.context import derive_context, describe_context, find_answers_file, load_answers
 from daimonion.detect import UNDETECTABLE, default_agents_md, detect, render_config
 from daimonion.engine import Linter
 from daimonion.models import Finding
 from daimonion.report import build_json_report, build_rules_json_report, build_sarif_report, dumps
+from daimonion.suppress import BASELINE_NAME, BaselineError, load_baseline, split_baselined, write_baseline
 
 #: Prepared per-project rule file written by ``prepare --write``.
 PREPARED_RULES_NAME = ".daimonion-rules.yml"
@@ -25,10 +26,38 @@ FORMAT_CHOICES = ("human", "json", "sarif")
 RULE_FORMAT_CHOICES = ("human", "json")
 
 
-def format_findings(findings: list[Finding], *, verbose: bool = False) -> str:
+def _suppression_note(finding: Finding) -> str:
+    """Why an inline directive on this finding's line did not silence it."""
+    if finding.suppression is None:
+        return ""
+    status = finding.suppression.status()
+    if status == "expired":
+        return f" [ignore expired {finding.suppression.until}]"
+    if status == "invalid":
+        return " [ignore needs reason=...]"
+    return ""
+
+
+def _footer(suppressed: list[Finding], baselined: list[Finding]) -> list[str]:
+    lines: list[str] = []
+    if suppressed:
+        lines.append(f"🔕 {len(suppressed)} finding(s) silenced by inline `daimonion: ignore[...]` directives.")
+    if baselined:
+        lines.append(f"📎 {len(baselined)} finding(s) already recorded in the baseline; not counted.")
+    return lines
+
+
+def format_findings(
+    findings: list[Finding],
+    *,
+    verbose: bool = False,
+    suppressed: list[Finding] | None = None,
+    baselined: list[Finding] | None = None,
+) -> str:
     """Format findings for terminal output."""
+    footer = _footer(suppressed or [], baselined or [])
     if not findings:
-        return "✨ No legal or compliance triggers matched."
+        return "\n".join(["✨ No legal or compliance triggers matched.", *footer])
 
     # Group by rule id
     by_rule: dict[str, list[Finding]] = {}
@@ -46,13 +75,14 @@ def format_findings(findings: list[Finding], *, verbose: bool = False) -> str:
         lines.append(f"   💡 要約: {rule.summary}")
         lines.append("   🔎 検出箇所:")
         for rf in rule_findings[:5]:
-            lines.append(f"      - {rf.file_path}:{rf.line_number} (hit: '{rf.matched_text}')")
+            lines.append(f"      - {rf.file_path}:{rf.line_number} (hit: '{rf.matched_text}'){_suppression_note(rf)}")
             if verbose:
                 lines.append(f"        line: {rf.context_line}")
         if len(rule_findings) > 5:
             lines.append(f"      ... and {len(rule_findings) - 5} more occurrence(s)")
         lines.append("")
 
+    lines.extend(footer)
     return "\n".join(lines).strip()
 
 
@@ -192,6 +222,88 @@ def resolve_linter(args: argparse.Namespace) -> Linter:
     return Linter()
 
 
+def _load_project_config(repo: Path) -> ProjectConfig | None:
+    """``.daimonion.yml`` under ``repo`` when present (raises ConfigError when malformed)."""
+    path = find_config(repo)
+    return load_config(path) if path is not None else None
+
+
+def scan(args: argparse.Namespace, linter: Linter) -> int:
+    """Run ``check``/``diff``: match, apply ignores and the baseline, then report and decide the exit code."""
+    repo = Path(args.repo)
+    try:
+        config = _load_project_config(repo)
+    except ConfigError as exc:
+        print(f"⚠️  {exc}", file=sys.stderr)
+        return 2
+    linter.include_docs = args.include_docs or (config is not None and config.scan_docs)
+
+    if args.subcommand == "diff":
+        findings = linter.scan_git_diff(staged=args.staged, repo_dir=repo)
+        base = repo  # diff paths are repo-relative
+    else:
+        findings = linter.scan_paths(args.paths)
+        base = Path.cwd()
+
+    active = [f for f in findings if not f.suppressed]
+    suppressed = [f for f in findings if f.suppressed]
+
+    baseline_path = Path(args.baseline) if args.baseline else repo / BASELINE_NAME
+    if args.write_baseline:
+        count = write_baseline(baseline_path, active, base=base, repo=repo)
+        print(f"📝 Wrote {count} finding(s) to {baseline_path}; later runs report only new ones.")
+        return 0
+    baselined: list[Finding] = []
+    if baseline_path.is_file():
+        try:
+            active, baselined = split_baselined(active, load_baseline(baseline_path), base=base, repo=repo)
+        except BaselineError as exc:
+            print(f"⚠️  {exc}", file=sys.stderr)
+            return 2
+    elif args.baseline:
+        print(f"⚠️  Baseline {baseline_path} not found; create it with --write-baseline.", file=sys.stderr)
+        return 2
+
+    mode = config.mode if config is not None else ""
+    adoption = args.adoption or mode == "adoption"
+    strict = (args.strict or mode == "strict") and not adoption
+    blocking = [f for f in active if f.rule.enforcement == "L2"]
+    strict_fail = strict and bool(blocking)
+
+    if args.output_format == "json":
+        report = build_json_report(active, strict_fail=strict_fail, suppressed=suppressed, baselined=baselined)
+        report["summary"]["mode"] = "adoption" if adoption else "strict" if strict else "report"
+        print(dumps(report))
+    elif args.output_format == "sarif":
+        print(dumps(build_sarif_report(active, suppressed=suppressed, baselined=baselined)))
+    else:
+        print(format_findings(active, verbose=args.verbose, suppressed=suppressed, baselined=baselined))
+
+    if adoption and blocking:
+        print(
+            f"ℹ️  Adoption mode: {len(blocking)} L2 finding(s) would fail --strict; nothing fails while adopting.",
+            file=sys.stderr,
+        )
+    return 1 if strict_fail else 0
+
+
+def _add_scan_options(sub: argparse.ArgumentParser) -> None:
+    """Options shared by ``check`` and ``diff``."""
+    sub.add_argument(
+        "--include-docs",
+        action="store_true",
+        help="Also scan .md/.yml/.yaml/.toml (default: source code only; or set scan.docs in .daimonion.yml)",
+    )
+    sub.add_argument(
+        "--baseline",
+        default=None,
+        help=f"Baseline file of accepted findings (default: {BASELINE_NAME} under --repo, when present)",
+    )
+    sub.add_argument(
+        "--write-baseline", action="store_true", help="Record the current findings as the baseline and exit 0"
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="daimonion",
@@ -199,7 +311,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--rules", type=Path, default=None, help="Custom rules YAML file")
     parser.add_argument("-v", "--verbose", action="store_true", help="Show full matched lines")
-    parser.add_argument("--strict", action="store_true", help="Exit with code 1 if any L2 rule triggers")
+    parser.add_argument("--strict", action="store_true", help="Exit with code 1 if any L2 (structural) rule triggers")
+    parser.add_argument(
+        "--adoption",
+        action="store_true",
+        help="Warn-only adoption mode: report findings but always exit 0, even with --strict "
+        "(or set `mode: adoption` in .daimonion.yml)",
+    )
 
     sub = parser.add_subparsers(dest="subcommand", required=True)
 
@@ -240,6 +358,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="human",
         help="Output format for findings (default: human)",
     )
+    _add_scan_options(p_diff)
 
     # check
     p_check = sub.add_parser("check", help="Scan specific files or directories")
@@ -255,6 +374,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="human",
         help="Output format for findings (default: human)",
     )
+    _add_scan_options(p_check)
 
     # list-rules
     p_list = sub.add_parser("list-rules", help="List all active detection rules")
@@ -293,24 +413,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  Summary: {r.summary}")
         return 0
 
-    if args.subcommand == "diff":
-        findings = linter.scan_git_diff(staged=args.staged, repo_dir=args.repo)
-    elif args.subcommand == "check":
-        findings = linter.scan_paths(args.paths)
-    else:
-        findings = []
-
-    # --strict governs the exit code for every format.
-    strict_fail = bool(args.strict and any(f.rule.enforcement == "L2" for f in findings))
-
-    if args.output_format == "json":
-        print(dumps(build_json_report(findings, strict_fail=strict_fail)))
-    elif args.output_format == "sarif":
-        print(dumps(build_sarif_report(findings)))
-    else:
-        print(format_findings(findings, verbose=args.verbose))
-
-    return 1 if strict_fail else 0
+    return scan(args, linter)
 
 
 if __name__ == "__main__":

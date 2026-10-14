@@ -79,18 +79,31 @@ def test_cli_check_clean_file(capsys):
         f_path.unlink()
 
 
-def test_cli_strict_mode_exit_code():
-    """--strict exits with 1 when L2 rules are triggered."""
-    with tempfile.NamedTemporaryFile("w+", suffix=".py", delete=False) as f:
-        f.write("import hashlib\nh = hashlib.md5(b'data')\n")
-        f.flush()
-        f_path = Path(f.name)
+def test_cli_strict_mode_exit_code(tmp_path):
+    """--strict exits with 1 when a structural L2 rule is triggered."""
+    import yaml
 
-    try:
-        rc = main(["--strict", "check", str(f_path)])
-        assert rc == 1
-    finally:
-        f_path.unlink()
+    rules = tmp_path / "rules.yml"
+    rules.write_text(
+        yaml.safe_dump(
+            {
+                "rules": [
+                    {
+                        "id": "md5-call",
+                        "title": "t",
+                        "triggers": r"hashlib\.md5\(",
+                        "summary": "s",
+                        "enforcement": "L2",
+                        "kind": "structural",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    target = tmp_path / "app.py"
+    target.write_text("import hashlib\nh = hashlib.md5(b'data')\n", encoding="utf-8")
+    assert main(["--rules", str(rules), "--strict", "check", str(target)]) == 1
 
 
 def _write_answers(tmp_path: Path, answers: dict) -> Path:

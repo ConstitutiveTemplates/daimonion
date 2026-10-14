@@ -2,9 +2,13 @@ name: daimonion
 description: Scan git diffs and files against legal and ethical triggers.
 inputs:
   strict:
-    description: Fail the job when an L2 rule triggers.
+    description: Fail the job when a structural L2 rule triggers.
     required: false
     default: "true"
+  adoption:
+    description: Warn-only adoption mode; report findings but never fail the job (overrides strict).
+    required: false
+    default: "false"
   args:
     description: Arguments passed to daimonion (e.g. "diff" or "check src/"), split on whitespace.
     required: false
@@ -23,11 +27,15 @@ runs:
       env:
         DAIMONION_ACTION_PATH: ${{ github.action_path }}
         DAIMONION_STRICT: ${{ inputs.strict }}
+        DAIMONION_ADOPTION: ${{ inputs.adoption }}
         DAIMONION_ARGS: ${{ inputs.args }}
       run: |
         flags=()
         if [ "$DAIMONION_STRICT" = "true" ]; then
           flags+=(--strict)
+        fi
+        if [ "$DAIMONION_ADOPTION" = "true" ]; then
+          flags+=(--adoption)
         fi
         # Word-split args into an array without glob or shell evaluation.
         read -r -a args <<< "$DAIMONION_ARGS"

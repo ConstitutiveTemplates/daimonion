@@ -50,13 +50,25 @@ def finding_to_dict(finding: Finding) -> dict[str, Any]:
     }
 
 
-def build_json_report(findings: Sequence[Finding], *, strict_fail: bool = False) -> dict[str, Any]:
-    """The ``--format json`` payload: a summary object plus the flat findings list."""
+def build_json_report(
+    findings: Sequence[Finding],
+    *,
+    strict_fail: bool = False,
+    suppressed: Sequence[Finding] = (),
+    baselined: Sequence[Finding] = (),
+) -> dict[str, Any]:
+    """The ``--format json`` payload: a summary object plus the flat findings list.
+
+    ``findings`` holds only what counts; inline-ignored and baselined findings
+    are tallied in the summary.
+    """
     return {
         "summary": {
             "findings": len(findings),
             "rules_matched": len({f.rule.id for f in findings}),
             "strict_fail": strict_fail,
+            "suppressed": len(suppressed),
+            "baselined": len(baselined),
         },
         "findings": [finding_to_dict(f) for f in findings],
     }
@@ -89,7 +101,7 @@ def _sarif_rule(rule: Rule) -> dict[str, Any]:
 
 def _sarif_result(finding: Finding) -> dict[str, Any]:
     rule = finding.rule
-    return {
+    result: dict[str, Any] = {
         "ruleId": rule.id,
         "level": _sarif_level(rule.enforcement),
         "message": {"text": f"{rule.title or rule.id}: matched '{finding.matched_text}'"},
@@ -102,16 +114,36 @@ def _sarif_result(finding: Finding) -> dict[str, Any]:
             }
         ],
     }
+    return result
 
 
-def build_sarif_report(findings: Sequence[Finding]) -> dict[str, Any]:
+def _suppressed_result(finding: Finding, *, kind: str, justification: str) -> dict[str, Any]:
+    result = _sarif_result(finding)
+    result["suppressions"] = [{"kind": kind, "justification": justification}]
+    return result
+
+
+def build_sarif_report(
+    findings: Sequence[Finding],
+    *,
+    suppressed: Sequence[Finding] = (),
+    baselined: Sequence[Finding] = (),
+) -> dict[str, Any]:
     """The ``--format sarif`` payload: a SARIF 2.1.0 log holding a single run.
 
     ``tool.driver.rules`` lists exactly the rules that produced results, so every
-    ``results[].ruleId`` resolves within the same run.
+    ``results[].ruleId`` resolves within the same run. Inline-ignored findings
+    carry an ``inSource`` suppression and baselined ones an ``external`` one, so
+    code-scanning UIs show them as dismissed rather than dropping them.
     """
+    results = [_sarif_result(finding) for finding in findings]
+    for finding in suppressed:
+        reason = finding.suppression.reason if finding.suppression is not None else ""
+        results.append(_suppressed_result(finding, kind="inSource", justification=reason))
+    for finding in baselined:
+        results.append(_suppressed_result(finding, kind="external", justification="daimonion baseline"))
     matched: dict[str, Rule] = {}
-    for finding in findings:
+    for finding in (*findings, *suppressed, *baselined):
         matched.setdefault(finding.rule.id, finding.rule)
     return {
         "version": SARIF_VERSION,
@@ -125,7 +157,7 @@ def build_sarif_report(findings: Sequence[Finding]) -> dict[str, Any]:
                         "rules": [_sarif_rule(rule) for rule in matched.values()],
                     }
                 },
-                "results": [_sarif_result(finding) for finding in findings],
+                "results": results,
             }
         ],
     }

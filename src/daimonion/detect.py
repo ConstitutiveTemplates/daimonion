@@ -85,7 +85,7 @@ DEPENDENCY_SIGNALS: dict[str, frozenset[str]] = {
             "jupyter",
             "jupyterlab",
             "notebook",
-                    }
+        }
     ),
     "web_api": frozenset(
         {
@@ -312,4 +312,10 @@ def render_config(signals: list[Signal], agents_md: str = "AGENTS.md") -> str:
     for condition, description in WHEN_DESCRIPTIONS.items():
         if condition not in detected:
             lines.append(f"#  - {condition.ljust(width)}  # {description}")
+    lines += [
+        "# Scanning (`daimonion check` / `diff`):",
+        "# mode: adoption   # warn-only while adopting: nothing fails, even with --strict",
+        "# scan:",
+        "#   docs: true     # also scan .md/.yml/.yaml/.toml (default: source code only)",
+    ]
     return "\n".join(lines) + "\n"

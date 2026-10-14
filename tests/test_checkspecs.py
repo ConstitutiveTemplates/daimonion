@@ -81,7 +81,14 @@ def test_load_rules_from_checks_dir(tmp_path):
     rules = load_rules_from_checks_dir(checks)
     by_id = {r.id: r for r in rules}
     assert set(by_id) == {"privacy/no-cleartext-pii", "crypto/no-deprecated-algorithms"}
-    assert by_id["crypto/no-deprecated-algorithms"].enforcement == "L2"
+    # A keyword spec declared L2 is capped to L1; only `kind: structural` keeps L2.
+    assert by_id["crypto/no-deprecated-algorithms"].enforcement == "L1"
+
+
+def test_structural_check_spec_keeps_l2():
+    spec = {"id": "crypto/md5-call", "level": "L2", "kind": "structural", "triggers": [r"hashlib\.md5\("]}
+    assert Rule.from_check_spec(spec).enforcement == "L2"
+    assert Rule.from_check_spec({**spec, "kind": "keyword"}).enforcement == "L1"
 
 
 def test_load_rules_from_yaml_accepts_directory(tmp_path):

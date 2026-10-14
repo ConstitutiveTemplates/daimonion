@@ -8,24 +8,17 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 from daimonion.context import derive_context, load_answers, scope_rules
-from daimonion.models import Finding, Rule
+from daimonion.models import Finding, Rule, Suppression
 from daimonion.rules import BUILTIN_RULES, load_rules_from_yaml
+from daimonion.suppress import parse_line
 
-#: File suffixes ``scan_paths`` descends into.
-SOURCE_SUFFIXES: frozenset[str] = frozenset(
-    {
-        ".py",
-        ".ts",
-        ".js",
-        ".go",
-        ".rs",
-        ".java",
-        ".md",
-        ".yml",
-        ".yaml",
-        ".toml",
-    }
-)
+#: Source-code suffixes ``scan_paths`` descends into by default.
+SOURCE_SUFFIXES: frozenset[str] = frozenset({".py", ".ts", ".js", ".go", ".rs", ".java"})
+
+#: Documentation and configuration suffixes, scanned only when docs are opted in
+#: (``scan: {docs: true}`` in ``.daimonion.yml`` or ``--include-docs``): a README
+#: that mentions "license" is not a licensing change.
+DOC_SUFFIXES: frozenset[str] = frozenset({".md", ".yml", ".yaml", ".toml"})
 
 
 class AddedLine(NamedTuple):
@@ -50,8 +43,12 @@ def _is_self_trigger_comment(line: str) -> bool:
     return stripped.startswith("#") and "Triggers:" in stripped
 
 
-def _iter_candidate_files(paths: Iterable[str | Path]) -> Iterator[Path]:
-    """Yield scannable files for the given files/directories."""
+def _iter_candidate_files(paths: Iterable[str | Path], suffixes: frozenset[str] = SOURCE_SUFFIXES) -> Iterator[Path]:
+    """Yield scannable files for the given files/directories.
+
+    An explicitly named file is always yielded; directories contribute only
+    files whose suffix is in ``suffixes``.
+    """
     for raw in paths:
         target = Path(raw)
         if target.is_file():
@@ -62,7 +59,7 @@ def _iter_candidate_files(paths: Iterable[str | Path]) -> Iterator[Path]:
                     continue
                 for name in files:
                     candidate = Path(root) / name
-                    if candidate.suffix.lower() in SOURCE_SUFFIXES:
+                    if candidate.suffix.lower() in suffixes:
                         yield candidate
 
 
@@ -97,8 +94,9 @@ def _iter_added_lines(diff_text: str) -> Iterator[AddedLine]:
 class Linter:
     """Scanning engine that matches files or git diffs against compliance rules."""
 
-    def __init__(self, rules: Iterable[Rule] | None = None) -> None:
+    def __init__(self, rules: Iterable[Rule] | None = None, *, include_docs: bool = False) -> None:
         self.rules: list[Rule] = list(rules) if rules is not None else list(BUILTIN_RULES)
+        self.include_docs = include_docs
         self._compiled: list[tuple[Rule, re.Pattern[str]]] = []
         for rule in self.rules:
             pattern = _compile_rule(rule)
@@ -112,7 +110,7 @@ class Linter:
 
     def for_context(self, context: Mapping[str, Any]) -> Linter:
         """Return a new Linter holding only the rules whose gate holds in context."""
-        return Linter(scope_rules(self.rules, context))
+        return Linter(scope_rules(self.rules, context), include_docs=self.include_docs)
 
     @classmethod
     def for_project(cls, answers_path: str | Path, base_rules: Linter | None = None) -> Linter:
@@ -121,11 +119,29 @@ class Linter:
         linter = base_rules if base_rules is not None else cls()
         return linter.for_context(context)
 
-    def _match_compiled(self, text: str, *, file_path: str, line_number: int) -> list[Finding]:
-        """Match the pre-compiled rule patterns against a single line of text."""
+    @property
+    def suffixes(self) -> frozenset[str]:
+        """File suffixes a directory scan descends into."""
+        return SOURCE_SUFFIXES | DOC_SUFFIXES if self.include_docs else SOURCE_SUFFIXES
+
+    def _match_compiled(
+        self,
+        text: str,
+        *,
+        file_path: str,
+        line_number: int,
+        directives: Iterable[Suppression] = (),
+    ) -> list[Finding]:
+        """Match the pre-compiled rule patterns against a single line of text.
+
+        ``text`` may carry a trailing ignore directive; only the code before it
+        is matched, and a directive naming the rule is attached to the finding.
+        """
+        parsed = parse_line(text, line_number)
+        active = [d for d in (*directives, parsed.directive) if d is not None]
         findings: list[Finding] = []
         for rule, pattern in self._compiled:
-            match = pattern.search(text)
+            match = pattern.search(parsed.code)
             if match:
                 findings.append(
                     Finding(
@@ -134,6 +150,7 @@ class Linter:
                         line_number=line_number,
                         matched_text=match.group(0),
                         context_line=text.strip(),
+                        suppression=next((d for d in active if d.covers(rule.id)), None),
                     )
                 )
         return findings
@@ -141,10 +158,17 @@ class Linter:
     def scan_text(self, text: str, file_path: str = "<stdin>") -> list[Finding]:
         """Scan a string line by line and report matched findings."""
         findings: list[Finding] = []
+        pending: Suppression | None = None
         for line_no, line in enumerate(text.splitlines(), start=1):
+            carried, pending = pending, None
             if not line.strip() or _is_self_trigger_comment(line):
                 continue
-            findings.extend(self._match_compiled(line, file_path=file_path, line_number=line_no))
+            parsed = parse_line(line, line_no)
+            if parsed.standalone:
+                pending = parsed.directive
+                continue
+            directives = (carried,) if carried is not None else ()
+            findings.extend(self._match_compiled(line, file_path=file_path, line_number=line_no, directives=directives))
         return findings
 
     def scan_file(self, path: str | Path) -> list[Finding]:
@@ -161,7 +185,7 @@ class Linter:
     def scan_paths(self, paths: Iterable[str | Path]) -> list[Finding]:
         """Recursively scan given paths."""
         findings: list[Finding] = []
-        for candidate in _iter_candidate_files(paths):
+        for candidate in _iter_candidate_files(paths, self.suffixes):
             findings.extend(self.scan_file(candidate))
         return findings
 
@@ -171,6 +195,39 @@ class Linter:
         if diff_text is None:
             return []
         findings: list[Finding] = []
+        previous: dict[str, AddedLine] = {}
         for added in _iter_added_lines(diff_text):
-            findings.extend(self._match_compiled(added.text, file_path=added.file_path, line_number=added.line_number))
+            prior = previous.get(added.file_path)
+            previous[added.file_path] = added
+            if Path(added.file_path).suffix.lower() in DOC_SUFFIXES and not self.include_docs:
+                continue
+            if not added.text.strip() or parse_line(added.text).standalone:
+                continue
+            # A standalone directive on the line above: an added line when the
+            # diff carries it, otherwise the unchanged line in the work tree.
+            if prior is not None and prior.line_number == added.line_number - 1:
+                above = prior.text
+            else:
+                above = _line_from_worktree(Path(repo_dir) / added.file_path, added.line_number - 1)
+            directive = parse_line(above, added.line_number - 1) if above is not None else None
+            directives = (directive.directive,) if directive is not None and directive.standalone else ()
+            findings.extend(
+                self._match_compiled(
+                    added.text, file_path=added.file_path, line_number=added.line_number, directives=directives
+                )
+            )
         return findings
+
+
+def _line_from_worktree(path: Path, line_number: int) -> str | None:
+    """Line ``line_number`` (1-based) of ``path``, or None when unavailable."""
+    if line_number < 1:
+        return None
+    try:
+        with path.open(encoding="utf-8", errors="replace") as handle:
+            for index, line in enumerate(handle, start=1):
+                if index == line_number:
+                    return line.rstrip("\n")
+    except OSError:
+        return None
+    return None
