@@ -8,6 +8,8 @@ Part of the [politeuma](https://github.com/politeuma) ecosystem.
 
 Rather than dumping thousands of lines of full legal commentary into your AI system prompts or `AGENTS.md`, `daimonion` inspects code changes as they happen. It surfaces only the concise rules and compliance requirements relevant to the code being touched.
 
+See the [15-second demo](docs/demo/README.md): raw PII in a log line gets flagged, with the sourced rule and the masked fix.
+
 ## Installation & Quickstart
 
 daimonion is not on PyPI yet. Run it from a pinned git ref: a release tag

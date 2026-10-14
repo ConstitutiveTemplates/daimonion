@@ -1,0 +1,5 @@
+version: 1
+agents_md: AGENTS.md
+when:
+  - cli
+  - personal_data
