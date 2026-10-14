@@ -1,0 +1,16 @@
+daimonion
+Copyright 2026 politeuma Contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product bundles a snapshot of kanon (https://github.com/politeuma/kanon)
+under src/daimonion/kanon/: sections/MANIFEST.yml and the section files it
+lists. The exact kanon commit is recorded in src/daimonion/kanon/KANON_SHA.
+kanon is Copyright 2026 politeuma Contributors and is licensed under the
+Apache License, Version 2.0. The bundled section prose is redistributed
+unmodified; `daimonion agents-md` copies it into a project's agent guide
+(AGENTS.md / CLAUDE.md) between the daimonion:ethics markers, and that copied
+text remains kanon content under the same license.
+
+The kanon sections summarise laws, standards, and court decisions for
+engineering guidance. They are not legal advice.
