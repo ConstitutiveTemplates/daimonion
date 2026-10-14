@@ -1,15 +1,18 @@
-"""Fail loudly when architekton-py ethics sections drift from daimonion rules.
+"""Fail loudly when kanon ethics sections drift from daimonion rules.
 
-Run from a daimonion checkout with a ``../architekton-py`` sibling (or pass
-explicit paths)::
+The kanon's ``sections/MANIFEST.yml`` is the canonical list of sections. By
+default the check reads the snapshot vendored into this package; pass an
+upstream kanon checkout to catch drift before re-vendoring::
 
     python tools/check_ethics_parity.py
-    python tools/check_ethics_parity.py --registry path/to/REGISTRY.yml --rules path/to/rules.py
+    python tools/check_ethics_parity.py --manifest ../kanon/sections/MANIFEST.yml --rules path/to/rules.py
 
-Exit 0 when every distributed (``status: active``) registry section is
-covered by a daimonion rule whose trigger regex and gate agree; exit 1 with
-a per-pair report otherwise. Draft sections are skipped with a note unless
-a same-named rule exists, in which case they need a mapping too.
+Exit 0 when every ``status=active`` section (status read from the section's
+``{# ethics: ... #}`` header) is covered by a daimonion rule whose trigger
+regex agrees and which is gated whenever the manifest's ``when`` is not
+``always``; exit 1 with a per-pair report otherwise. Draft sections are
+skipped with a note unless a same-named rule exists, in which case they need
+a mapping too.
 
 Only ``pyyaml`` plus the standard library is used. The rules file is parsed
 with :mod:`ast` and never imported, so the script stays runnable even when
@@ -25,7 +28,7 @@ from pathlib import Path
 
 import yaml
 
-# Map an architekton-py registry section id to the daimonion rule id that enforces
+# Map a kanon section id to the daimonion rule id that enforces
 # it. ADD A LINE HERE when adding a section (or acknowledge a deliberately
 # unmapped active section in KNOWN_UNMAPPED_ACTIVE below).
 SECTION_TO_RULE: dict[str, str] = {
@@ -57,6 +60,11 @@ KNOWN_UNMAPPED_ACTIVE = frozenset(
     }
 )
 
+# `when` conditions that .copier-answers.yml cannot express (no answer
+# implies them), so a rule cannot be gated on them yet.
+UNGATEABLE_WHEN = frozenset({"eu_market", "jp", "ai_assisted"})
+
+STATUS_RE = re.compile(r"\{#\s*ethics:.*?\bstatus=(\w+)", re.DOTALL)
 HEADER_RE = re.compile(r"\{#.*?triggers=\[(.*?)\].*?#\}", re.DOTALL)
 TRIGGERS_LINE_RE = re.compile(r"^>\s*Triggers:\s*`([^`]+)`", re.MULTILINE)
 LOOKAROUND_RE = re.compile(r"\(\?[<!=][^()]*\)")
@@ -64,22 +72,14 @@ FLAG_RE = re.compile(r"\(\?[a-zA-Z]+[-+]?[a-zA-Z]*\)")
 WORD_RE = re.compile(r"[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*")
 
 
-def _default_registry() -> Path:
-    """REGISTRY.yml next to a ``../architekton-py`` sibling of this checkout."""
-    return Path(__file__).resolve().parent.parent.parent / "architekton-py" / "_shared" / "ethics" / "REGISTRY.yml"
+def _default_manifest() -> Path:
+    """The kanon MANIFEST.yml vendored into this checkout."""
+    return Path(__file__).resolve().parent.parent / "src" / "daimonion" / "kanon" / "sections" / "MANIFEST.yml"
 
 
 def _default_rules() -> Path:
     """The daimonion rules file inside this checkout."""
     return Path(__file__).resolve().parent.parent / "src" / "daimonion" / "rules.py"
-
-
-def _architekton_root(registry: Path) -> Path:
-    """Recover the architekton-py repo root from a REGISTRY.yml path."""
-    parts = registry.resolve().parts
-    if len(parts) >= 4 and parts[-3] == "_shared" and parts[-2] == "ethics":
-        return Path(*parts[:-3])
-    return registry.resolve().parent
 
 
 def _is_default_rules_assign(node: ast.stmt) -> bool:
@@ -165,15 +165,28 @@ def _probes_from_pattern(pattern: str) -> list[str]:
     return probes
 
 
-def _read_section_file(root: Path, registry: Path, rel: str) -> str | None:
-    """Read a section file, resolved against the architekton-py repo root."""
-    for candidate in (root / rel, registry.parent / rel):
-        if candidate.is_file():
-            return candidate.read_text(encoding="utf-8")
-    return None
+def _read_section_file(manifest: Path, rel: str) -> str | None:
+    """Read a section file; manifest ``file`` paths are relative to the manifest's directory."""
+    candidate = manifest.parent / rel
+    return candidate.read_text(encoding="utf-8") if rel and candidate.is_file() else None
 
 
-def _check_pair(section_id: str, rule_id: str, text: str, rule: dict, gate: str) -> tuple[list[str], bool]:
+def _section_status(text: str | None) -> str:
+    """``status=`` from the section header; a section without one counts as draft."""
+    match = STATUS_RE.search(text or "")
+    return match.group(1) if match else "draft"
+
+
+def _conditions(when: object) -> list[str]:
+    """The manifest ``when`` as a list (a string means the one condition)."""
+    if isinstance(when, str):
+        return [when]
+    if isinstance(when, list):
+        return [str(item) for item in when]
+    return ["always"]
+
+
+def _check_pair(section_id: str, rule_id: str, text: str, rule: dict, when: list[str]) -> tuple[list[str], bool]:
     """Check one mapped section/rule pair; returns (report lines, failed)."""
     lines: list[str] = []
     failed = False
@@ -201,7 +214,7 @@ def _check_pair(section_id: str, rule_id: str, text: str, rule: dict, gate: str)
         shared = [probe for probe in probes if file_rx.search(probe) and rule_rx.search(probe)]
         rx_ok = len(shared) >= 3
 
-    # The header list is architekton-py's copier-QA vocabulary (prefix-style
+    # The header list is the kanon's copier-QA vocabulary (prefix-style
     # hints such as "scraping" or "tls"); the trailing-\b rule regexes only
     # cover full tokens, so partial misses are review notes. Total
     # divergence (zero keywords covered and no agreeing file regex) fails.
@@ -235,40 +248,53 @@ def _check_pair(section_id: str, rule_id: str, text: str, rule: dict, gate: str)
                 f"NOTE {section_id}: {len(missed)} header keywords not covered by the rule regex: {', '.join(missed)}"
             )
 
-    reg_gate = (gate or "").strip()
+    # The manifest speaks the kanon's abstract `when` vocabulary and the rule
+    # gate speaks .copier-answers.yml, so only the existence of gating can be
+    # compared: a conditional section needs a gated rule.
+    conditional = [cond for cond in when if cond != "always"]
     rule_gate = (rule.get("gate") or "").strip()
-    if reg_gate and not rule_gate:
-        lines.append(f"FAIL {section_id} -> {rule_id}: registry gate {reg_gate!r} but the rule gate is empty")
+    gated = rule_gate not in ("", "true", "True")
+    if conditional and len(conditional) == len(when) and not gated and set(conditional) <= UNGATEABLE_WHEN:
+        lines.append(
+            f"NOTE {section_id}: kanon when {', '.join(conditional)} has no .copier-answers.yml equivalent; "
+            "the rule stays ungated"
+        )
+    elif conditional and len(conditional) == len(when) and not gated:
+        lines.append(
+            f"FAIL {section_id} -> {rule_id}: kanon when {', '.join(conditional)} but the rule is ungated "
+            f"(gate {rule_gate!r})"
+        )
         failed = True
-    elif reg_gate and rule_gate and reg_gate != rule_gate:
-        # Parity of gating existence only: both sides gate the pair, so the
-        # wording may differ — report both for human review, do not fail.
-        lines.append(f"NOTE {section_id}: gate differs (registry {reg_gate!r} vs rule {rule_gate!r})")
+    elif not conditional and gated:
+        lines.append(f"NOTE {section_id}: kanon when always, but the rule is gated ({rule_gate!r})")
     return lines, failed
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Check architekton-py ethics sections against daimonion rules.")
+    parser = argparse.ArgumentParser(description="Check kanon ethics sections against daimonion rules.")
     parser.add_argument(
-        "--registry", type=Path, default=None, help="Path to architekton-py _shared/ethics/REGISTRY.yml"
+        "--manifest",
+        type=Path,
+        default=None,
+        help="Path to a kanon sections/MANIFEST.yml (default: the vendored snapshot)",
     )
     parser.add_argument("--rules", type=Path, default=None, help="Path to daimonion src/daimonion/rules.py")
     args = parser.parse_args(argv)
 
-    registry_path = args.registry or _default_registry()
+    manifest_path = args.manifest or _default_manifest()
     rules_path = args.rules or _default_rules()
 
     try:
-        registry = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     except OSError as exc:
-        print(f"FAIL cannot read registry {registry_path}: {exc}")
+        print(f"FAIL cannot read manifest {manifest_path}: {exc}")
         return 1
     except yaml.YAMLError as exc:
-        print(f"FAIL cannot parse registry {registry_path}: {exc}")
+        print(f"FAIL cannot parse manifest {manifest_path}: {exc}")
         return 1
-    sections = (registry or {}).get("sections")
+    sections = (manifest or {}).get("sections")
     if not isinstance(sections, list):
-        print(f"FAIL registry {registry_path} has no sections list")
+        print(f"FAIL manifest {manifest_path} has no sections list")
         return 1
 
     rules_by_id, rule_errors = _load_rules(rules_path)
@@ -277,14 +303,14 @@ def main(argv: list[str] | None = None) -> int:
 
     ok_count = 0
     skip_count = 0
-    root = _architekton_root(registry_path)
     for section in sections:
         if not isinstance(section, dict) or not section.get("id"):
-            lines.append("FAIL registry entry lacks an id")
+            lines.append("FAIL manifest entry lacks an id")
             failed = True
             continue
         section_id = section["id"]
-        status = str(section.get("status") or "draft")
+        text = _read_section_file(manifest_path, str(section.get("file") or ""))
+        status = _section_status(text)
         rule_id = SECTION_TO_RULE.get(section_id)
         if rule_id is None:
             if status == "active":
@@ -308,12 +334,11 @@ def main(argv: list[str] | None = None) -> int:
             lines.append(f"FAIL {section_id} -> {rule_id}: mapped rule not found in {rules_path}")
             failed = True
             continue
-        text = _read_section_file(root, registry_path, section.get("file") or "")
         if text is None:
             lines.append(f"FAIL {section_id} -> {rule_id}: section file {section.get('file')!r} not found")
             failed = True
             continue
-        pair_lines, pair_failed = _check_pair(section_id, rule_id, text, rule, section.get("gate") or "")
+        pair_lines, pair_failed = _check_pair(section_id, rule_id, text, rule, _conditions(section.get("when")))
         lines.extend(pair_lines)
         failed = pair_failed or failed
         ok_count += 0 if pair_failed else 1

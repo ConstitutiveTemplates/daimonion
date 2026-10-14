@@ -104,12 +104,13 @@ for CI annotations and SARIF upload; `list-rules` accepts `--format
 
 ## Ethics parity
 
-`.github/workflows/ethics-parity.yml` runs weekly and fails when an
-architekton-py ethics section drifts from its daimonion rule (unmapped active
-section, uncovered trigger keyword, or a non-empty registry gate with an
-empty rule gate), filing a `drift`-labelled issue. The mapping lives in
-`tools/check_ethics_parity.py` (`SECTION_TO_RULE` — add a line when
-adding a section).
+`.github/workflows/ethics-parity.yml` runs weekly against upstream
+[kanon](https://github.com/politeuma/kanon)'s `sections/MANIFEST.yml` and fails
+when an active section drifts from its daimonion rule (unmapped active section,
+uncovered trigger keyword, or a conditional `when` whose rule is ungated),
+filing a `drift`-labelled issue. The test suite runs the same check against the
+vendored snapshot. The mapping lives in `tools/check_ethics_parity.py`
+(`SECTION_TO_RULE` — add a line when adding a section).
 
 ## Features
 
