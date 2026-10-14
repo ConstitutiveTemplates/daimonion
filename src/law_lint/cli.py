@@ -6,7 +6,10 @@ from pathlib import Path
 
 import yaml
 
+from law_lint import kanon
+from law_lint.config import CONFIG_NAME, ConfigError, find_config, load_config
 from law_lint.context import derive_context, describe_context, find_answers_file, load_answers
+from law_lint.detect import UNDETECTABLE, default_agents_md, detect, render_config
 from law_lint.engine import Linter
 from law_lint.models import Finding
 from law_lint.report import build_json_report, build_rules_json_report, build_sarif_report, dumps
@@ -88,6 +91,75 @@ def prepare(args: argparse.Namespace) -> int:
     return 0
 
 
+def init(args: argparse.Namespace) -> int:
+    """Suggest a .daimonion.yml from the repository's manifests and agent files."""
+    repo = Path(args.repo)
+    signals = detect(repo)
+    text = render_config(signals, agents_md=default_agents_md(repo))
+    target = repo / CONFIG_NAME
+
+    print(f"🔍 law-lint init — {repo.resolve()}")
+    if signals:
+        for signal in signals:
+            print(f"   {signal.condition}: {signal.source} ({signal.detail})")
+    else:
+        print("   No condition detected from manifests or agent files.")
+    print(f"   Always ask yourself: {', '.join(UNDETECTABLE)} — no file can reveal these.")
+    print()
+
+    if not args.write:
+        print(text, end="")
+        print(f"\nℹ️  Pass --write to save this as {CONFIG_NAME}, then review the commented conditions.")
+        return 0
+    if target.exists() and not args.force:
+        print(f"⚠️  {target} already exists; pass --force to overwrite.", file=sys.stderr)
+        return 2
+    target.write_text(text, encoding="utf-8")
+    print(f"📝 Wrote {target}")
+    print("   Next: review the conditions, then run `law-lint agents-md --write`.")
+    return 0
+
+
+def agents_md(args: argparse.Namespace) -> int:
+    """Render the kanon ethics block for .daimonion.yml; print, write, or check it."""
+    config_path = Path(args.config) if args.config else find_config(args.repo)
+    if config_path is None:
+        print(f"⚠️  No {CONFIG_NAME} under {args.repo!r}; run `law-lint init --write` first.", file=sys.stderr)
+        return 2
+    try:
+        config = load_config(config_path)
+    except ConfigError as exc:
+        print(f"⚠️  {exc}", file=sys.stderr)
+        return 2
+
+    block = kanon.render_block(config.when)
+    target = config.agents_md_path
+    current = target.read_text(encoding="utf-8") if target.is_file() else ""
+    try:
+        updated = kanon.splice_block(current, block)
+    except ValueError as exc:
+        print(f"⚠️  {target}: {exc}", file=sys.stderr)
+        return 2
+
+    if args.check:
+        if kanon.extract_block(current) == block:
+            print(f"✅ {target} carries the current ethics block (kanon {kanon.kanon_sha()[:12]}).")
+            return 0
+        state = "is missing" if kanon.extract_block(current) is None else "is stale"
+        print(f"❌ The ethics block in {target} {state}; run `law-lint agents-md --write`.", file=sys.stderr)
+        return 1
+    if args.write:
+        if updated != current:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(updated, encoding="utf-8")
+            print(f"📝 Updated the ethics block in {target}")
+        else:
+            print(f"✅ {target} is already up to date.")
+        return 0
+    print(block, end="")
+    return 0
+
+
 def resolve_linter(args: argparse.Namespace) -> Linter:
     """Select the active rule set: --rules > prepared file > copier-answers scope > all builtins."""
     repo = Path(getattr(args, "repo", "."))
@@ -126,6 +198,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_prep.add_argument("--repo", default=".", help="Project root containing .copier-answers.yml")
     p_prep.add_argument("--answers", default=None, help="Explicit path to a copier answers file")
     p_prep.add_argument("--write", action="store_true", help="Write .law-lint-rules.yml next to the answers file")
+
+    # init
+    p_init = sub.add_parser("init", help=f"Suggest a {CONFIG_NAME} from the repository's manifests")
+    p_init.add_argument("--repo", default=".", help="Project root to inspect")
+    p_init.add_argument("--write", action="store_true", help=f"Save the suggestion as {CONFIG_NAME}")
+    p_init.add_argument("--force", action="store_true", help=f"Overwrite an existing {CONFIG_NAME}")
+
+    # agents-md
+    p_agents = sub.add_parser("agents-md", help=f"Render the good-future-codex ethics block selected by {CONFIG_NAME}")
+    p_agents.add_argument("--repo", default=".", help=f"Project root containing {CONFIG_NAME}")
+    p_agents.add_argument("--config", default=None, help=f"Explicit path to a {CONFIG_NAME}")
+    mode = p_agents.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="Insert or refresh the block in the guide file")
+    mode.add_argument("--check", action="store_true", help="Exit 1 when the guide file's block is missing or stale")
 
     # diff
     p_diff = sub.add_parser("diff", help="Scan git diff for modified lines")
@@ -177,6 +263,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.subcommand == "prepare":
         return prepare(args)
+    if args.subcommand == "init":
+        return init(args)
+    if args.subcommand == "agents-md":
+        return agents_md(args)
 
     linter = resolve_linter(args)
 
