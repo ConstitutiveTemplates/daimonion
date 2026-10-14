@@ -28,6 +28,14 @@ everything below is unreleased.
   builtin rules' titles and summaries are English, with the Japanese text kept
   in `src/daimonion/locales/ja.yml` for `--lang ja`. JSON and SARIF carry the
   English text.
+- The AGENTS.md "ethics block" is now the **rules block**: each applicable
+  kanon section renders as 1-3 imperative lines (the manifest's
+  `directives.agent` when present, else the section summary's numbered items)
+  plus its source links and a link to the full section at the pinned kanon
+  commit, instead of the folded Japanese prose. The block's markers are
+  `daimonion:rules:begin` / `daimonion:rules:end`; a block under the old
+  `daimonion:ethics:*` markers reads as stale and `agents-md --write`
+  replaces it in place.
 
 ### Added
 

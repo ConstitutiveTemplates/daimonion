@@ -1,9 +1,9 @@
 # Contributing to daimonion
 
 daimonion is the *runner* of the politeuma stack: it scans code against rules
-and renders kanon's ethics sections into agent guides. Section prose lives in
-[kanon](https://github.com/politeuma/kanon); propose text changes there, not
-here.
+and renders kanon's sections into agent guides as a block of sourced rules.
+Section prose lives in [kanon](https://github.com/politeuma/kanon); propose
+text changes there, not here.
 
 Issues and PRs in English or Japanese are welcome.
 

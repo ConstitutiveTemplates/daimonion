@@ -22,13 +22,13 @@ uvx --from git+https://github.com/politeuma/daimonion daimonion prepare --write
 uvx --from git+https://github.com/politeuma/daimonion daimonion check src/
 ```
 
-## Ethics block for any repository
+## Rules block for any repository
 
 daimonion carries a pinned snapshot of
 [kanon](https://github.com/politeuma/kanon)
 (the commit is in `src/daimonion/kanon/KANON_SHA`), so any project can pull
-the reviewed ethics sections into its agent guide, whatever template or
-toolchain it started from:
+the reviewed rules that apply to it into its agent guide, whatever template
+or toolchain it started from:
 
 ```sh
 # 1. Suggest conditions from pyproject.toml / requirements*.txt /
@@ -55,11 +55,37 @@ when:                  # `always` sections apply without being listed
 ```
 
 `init` only proposes. It cannot detect `commercial`, `eu_market`, or `jp`
-from files, so it leaves those commented out for you to decide. The block
-sits between `<!-- daimonion:ethics:begin ... -->` and
-`<!-- daimonion:ethics:end -->` markers; text outside them is never touched.
+from files, so it leaves those commented out for you to decide.
+
+The block is short on purpose: each rule is 1-3 imperative lines plus its
+sources, and the long prose (facts, cases, prohibited patterns) stays behind a
+link to the kanon section at the pinned commit:
+
+```markdown
+### Personal data -- minimise before you collect
+
+- NEVER pass raw user identifiers to logging or error trackers.
+- ...
+
+Sources: [eur-lex.europa.eu](https://eur-lex.europa.eu/eli/reg/2016/679/oj), [ppc.go.jp](https://www.ppc.go.jp/personalinfo/legal/) · Details: [kanon `baseline-personal-data`](https://github.com/politeuma/kanon/blob/<sha>/sections/baseline/personal-data.md)
+```
+
+The lines are the agent-facing `directives.agent` wording (as kept in
+[law-map](https://github.com/politeuma/law-map)) when the vendored kanon
+manifest carries it for a section, and otherwise the numbered items of the
+section's summary, which kanon currently writes in Japanese.
+
+The block sits between `<!-- daimonion:rules:begin ... -->` and
+`<!-- daimonion:rules:end -->` markers; text outside them is never touched.
 The same daimonion version always renders the same text, offline. Upgrading
 daimonion is how new kanon text arrives.
+
+**Migrating from the "ethics block".** Earlier releases wrote the block
+between `daimonion:ethics:begin` / `daimonion:ethics:end` markers. Those
+markers are still recognised: `agents-md --check` reports such a block as
+stale, and `agents-md --write` replaces it in place with the rules block and
+the new markers. Templates that pre-seed empty markers may keep the old ones
+or switch to the new ones.
 
 Maintainers refresh the snapshot from a kanon checkout:
 
@@ -171,7 +197,7 @@ vendored snapshot. The mapping lives in `tools/check_ethics_parity.py`
 
 - **Diff Mode (`daimonion diff`)**: Scans modified lines in `git diff` (or staged `--staged`) and flags touched compliance areas.
 - **File Mode (`daimonion check <path>...`)**: Scans entire files or directories (source code by default; docs opt-in).
-- **Kanon Ethics Block (`daimonion init` / `daimonion agents-md`)**: Suggests a template-independent `.daimonion.yml` from the repository's manifests, then writes, refreshes, or checks the matching kanon sections in `AGENTS.md`/`CLAUDE.md` from the bundled, SHA-pinned snapshot.
+- **Rules block (`daimonion init` / `daimonion agents-md`)**: Suggests a template-independent `.daimonion.yml` from the repository's manifests, then writes, refreshes, or checks the matching kanon rules (imperative lines, sources, and a link to the full section) in `AGENTS.md`/`CLAUDE.md` from the bundled, SHA-pinned snapshot.
 - **Rule Bundles**: Ships with built-in default rule profiles (licensing, crypto, personal data, scraping, AI safety), and can load custom rule YAMLs (`--rules path/to/rules.yml`).
 - **law-map check specs**: `--rules` also accepts a law-map checkout's `checks/` directory — each `checks/<domain>/<slug>.yml` spec maps to a rule (enforcement from the spec's `level`, triggers from its `triggers:` regex list), so `daimonion --rules ../law-map/checks check <file>` scans with the same vocabulary law-map validates.
 - **Project-Aware Scoping (`daimonion prepare`)**: Reads `.copier-answers.yml` (architekton-py/copier history), derives the project type and domain traits, evaluates each rule's gate, and prints or writes (`.daimonion-rules.yml` with `--write`) exactly the obligations that apply — e.g. a `web_api` project gets the Japanese third-party-transmission and EU accessibility duties, while a `script` project skips them. `check`, `diff`, and `list-rules` automatically scope themselves when a `.copier-answers.yml` or prepared rules file is present (`--all` opts out). A `.law-lint-rules.yml` prepared by the previous release is still read when `.daimonion-rules.yml` is absent.

@@ -2,7 +2,7 @@
 """Vendor a kanon checkout into src/daimonion/kanon/.
 
 daimonion ships the kanon sections inside its own package so a pinned
-daimonion release always renders the same ethics text, offline. This script
+daimonion release always renders the same rules block, offline. This script
 is the only writer of that snapshot: it copies ``sections/MANIFEST.yml`` and
 every file the manifest lists, then records the checkout's commit in
 ``KANON_SHA``. Bumping the snapshot is a deliberate, reviewable commit.

@@ -121,7 +121,7 @@ def test_agents_md_write_check_cycle(tmp_path, capsys):
     assert text.startswith("# Guide\n\nproject notes\n\n")
     assert text.count(kanon.BEGIN_MARKER) == 1
     scraping = next(s for s in kanon.load_sections() if s.id == "domain-scraping-law")
-    assert scraping.body.splitlines()[0] in text
+    assert f"### {scraping.title}" in text
     assert main(["agents-md", "--repo", str(tmp_path), "--check"]) == 0
 
     # A second write is a no-op; a condition change makes the block stale.
@@ -149,3 +149,18 @@ def test_agents_md_config_errors_exit_2(tmp_path, capsys, config):
     if config is not None:
         _config(tmp_path, config)
     assert main(["agents-md", "--repo", str(tmp_path), "--check"]) == 2
+
+
+def test_agents_md_migrates_a_legacy_ethics_block(tmp_path, capsys):
+    _config(tmp_path, "version: 1\nwhen: []\n")
+    guide = tmp_path / "AGENTS.md"
+    legacy = f"{kanon.LEGACY_BEGIN_MARKER} kanon=old -->\nold prose\n{kanon.LEGACY_END_MARKER}\n"
+    guide.write_text(f"# Guide\n\n{legacy}\n## Mine\n", encoding="utf-8")
+
+    assert main(["agents-md", "--repo", str(tmp_path), "--check"]) == 1
+    assert "is stale" in capsys.readouterr().err
+    assert main(["agents-md", "--repo", str(tmp_path), "--write"]) == 0
+    text = guide.read_text(encoding="utf-8")
+    assert kanon.LEGACY_BEGIN_MARKER not in text and "old prose" not in text
+    assert text.startswith(f"# Guide\n\n{kanon.BEGIN_MARKER}") and text.endswith(f"{kanon.END_MARKER}\n\n## Mine\n")
+    assert main(["agents-md", "--repo", str(tmp_path), "--check"]) == 0

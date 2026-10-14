@@ -54,13 +54,47 @@ def test_select_sections_gates_on_status_placement_and_when():
     assert [s.id for s in kanon.select_sections(["web_api"], pool)] == ["baseline-a", "domain-multi"]
 
 
-def test_fold_keeps_title_and_summary_visible():
-    folded = kanon.fold(_section("x", ("always",)).body)
-    head, details = folded.split("<details>", 1)
-    assert "# x title" in head and "> 要約: x" in head
-    assert "## 事実" not in head
-    assert details.startswith(f"\n{kanon.DETAILS_SUMMARY}\n\n## 事実")
-    assert folded.endswith("<!-- not legal advice -->\n\n</details>\n")
+def test_summary_items_split_the_numbered_summary():
+    body = (
+        "# t\n\n> 適用条件: x\n> 要約: (1)集める前に問う\n> (2)削除の経路を\n> 作る (3)protected\n"
+        "> attributeを外すだけにしない。詳細は本文。\n> Triggers: `x`.\n\n## 事実\n"
+    )
+    section = _section("baseline-a", ("always",))
+    section = Section(**{**section.__dict__, "body": body})
+    assert section.summary_items == ("集める前に問う", "削除の経路を作る", "protected attributeを外すだけにしない")
+    assert section.rule_lines == section.summary_items
+
+
+def test_snapshot_sections_all_yield_rule_lines_and_sources():
+    for section in kanon.load_sections():
+        assert 1 <= len(section.rule_lines) <= 3, section.id
+        assert section.sources, section.id
+
+
+def test_manifest_directives_and_title_take_precedence(tmp_path):
+    sections = tmp_path / "sections"
+    (sections / "baseline").mkdir(parents=True)
+    (sections / "baseline" / "a.md").write_text(
+        '{# ethics: id=baseline-a version=1 status=active triggers=["x"] sources=["https://example.org/law"] #}\n'
+        "# 見出し\n\n> 要約: (1)一つ目\n",
+        encoding="utf-8",
+    )
+    (sections / "MANIFEST.yml").write_text(
+        "sections:\n"
+        "  - id: baseline-a\n    file: baseline/a.md\n    when: always\n"
+        "    title: Rule A\n"
+        "    directives:\n      agent:\n        - NEVER do x.\n        - >\n          ALWAYS do\n          y.\n",
+        encoding="utf-8",
+    )
+    (section,) = kanon.load_sections(tmp_path)
+    assert section.title == "Rule A"
+    assert section.directives == ("NEVER do x.", "ALWAYS do y.")
+    block = kanon.render_block([], [section], sha="b" * 40)
+    assert "### Rule A\n\n- NEVER do x.\n- ALWAYS do y.\n" in block
+    assert "一つ目" not in block
+    assert "in Japanese" not in block
+    assert "Sources: [example.org](https://example.org/law)" in block
+    assert f"(https://github.com/politeuma/kanon/blob/{'b' * 40}/sections/baseline/a.md)" in block
 
 
 def test_render_block_is_deterministic_and_records_conditions():
@@ -69,7 +103,10 @@ def test_render_block_is_deterministic_and_records_conditions():
     assert block == kanon.render_block(["scraping"], pool, sha="a" * 40)
     assert block.startswith(f"{BEGIN_MARKER} kanon={'a' * 12} when=always,scraping -->\n")
     assert block.endswith(f"{END_MARKER}\n")
-    assert block.index("# baseline-a title") < block.index("# domain-scrape title")
+    assert block.index("### baseline-a title") < block.index("### domain-scrape title")
+    assert "- baseline-a\n" in block  # summary fallback
+    assert "which is in Japanese" in block
+    assert "## 事実" not in block  # the prose stays behind the details link
 
 
 def test_splice_appends_then_replaces_in_place():
@@ -81,6 +118,14 @@ def test_splice_appends_then_replaces_in_place():
     second = kanon.splice_block(first + tail, f"{BEGIN_MARKER} v2 -->\nnew\n{END_MARKER}\n")
     assert second == f"# Guide\n\nkeep me\n\n{BEGIN_MARKER} v2 -->\nnew\n{END_MARKER}\n{tail}"
     assert kanon.extract_block(second) == f"{BEGIN_MARKER} v2 -->\nnew\n{END_MARKER}\n"
+
+
+def test_legacy_ethics_block_is_replaced_in_place():
+    legacy = f"{kanon.LEGACY_BEGIN_MARKER} kanon=old -->\nold\n{kanon.LEGACY_END_MARKER}\n"
+    doc = f"# Guide\n\n{legacy}\n## After\n"
+    assert kanon.extract_block(doc) == legacy
+    block = f"{BEGIN_MARKER} -->\nnew\n{END_MARKER}\n"
+    assert kanon.splice_block(doc, block) == f"# Guide\n\n{block}\n## After\n"
 
 
 def test_splice_into_empty_document_is_just_the_block():

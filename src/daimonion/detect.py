@@ -298,7 +298,7 @@ def render_config(signals: list[Signal], agents_md: str = "AGENTS.md") -> str:
     width = max(len(name) for name in WHEN_DESCRIPTIONS)
     lines = [
         "# daimonion project conditions, in kanon's `when` vocabulary.",
-        "# `daimonion agents-md --write` renders the matching ethics sections into",
+        "# `daimonion agents-md --write` renders the matching rules into",
         "# the guide file below; `always` sections apply without being listed.",
         "version: 1",
         f"agents_md: {agents_md}",

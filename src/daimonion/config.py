@@ -5,7 +5,7 @@ config and one a template generator emits look the same and take the same
 path through daimonion::
 
     version: 1
-    agents_md: AGENTS.md      # where `agents-md --write` puts the ethics block
+    agents_md: AGENTS.md      # where `agents-md --write` puts the rules block
     when:                     # kanon conditions that hold; `always` is implied
       - scraping
       - jp
