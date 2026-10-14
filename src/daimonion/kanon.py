@@ -22,6 +22,12 @@ KANON_ROOT: Traversable = files("daimonion") / "kanon"
 #: The kanon's abstract ``when`` vocabulary (kanon README, MANIFEST.yml).
 WHEN_VOCABULARY: tuple[str, ...] = (
     "always",
+    "library",
+    "cli",
+    "embedded",
+    "personal_data",
+    "face_recognition",
+    "medtech",
     "scraping",
     "oj_code",
     "mcp",

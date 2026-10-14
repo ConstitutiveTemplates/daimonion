@@ -19,11 +19,17 @@ from typing import Any
 
 #: One-line meaning of each condition (kanon MANIFEST.yml).
 WHEN_DESCRIPTIONS: dict[str, str] = {
+    "library": "a library / API package project",
+    "cli": "a command-line / terminal tool project",
+    "embedded": "an embedded / microcontroller project",
     "scraping": "the project fetches the web (any engine)",
     "oj_code": "a code-submission judge workspace",
     "mcp": "the project ships an MCP server",
     "data_science": "a data-science / kaggle layout",
     "web_api": "an HTTP API project",
+    "personal_data": "the project processes personal data",
+    "face_recognition": "the project does biometric identification",
+    "medtech": "the project is medical / SaMD software",
     "commercial": "distributed as a commercial product",
     "eu_market": "shipped to the EU market",
     "jp": "operated under Japanese law",
@@ -31,7 +37,15 @@ WHEN_DESCRIPTIONS: dict[str, str] = {
 }
 
 #: Conditions a repository's files cannot reveal; init always asks about these.
-UNDETECTABLE: tuple[str, ...] = ("commercial", "eu_market", "jp")
+UNDETECTABLE: tuple[str, ...] = (
+    "embedded",
+    "personal_data",
+    "face_recognition",
+    "medtech",
+    "commercial",
+    "eu_market",
+    "jp",
+)
 
 #: Dependency names that signal a condition, across ecosystems. Go module
 #: paths match by prefix (major-version suffixes like ``/v2`` vary).
@@ -161,6 +175,21 @@ def _pyproject_deps(path: Path) -> Iterator[str]:
         yield from (_normalize(name) for name in group.get("dependencies", {}))
 
 
+def _manifest_signals(repo: Path) -> Iterator[Signal]:
+    """Conditions that a manifest's own metadata (not dependencies) reveals."""
+    data = _toml(repo / "pyproject.toml") if (repo / "pyproject.toml").is_file() else {}
+    project = data.get("project", {})
+    if project.get("scripts") or project.get("gui-scripts"):
+        yield Signal("cli", "pyproject.toml", "declares a console/GUI script")
+    if (repo / "package.json").is_file():
+        try:
+            pkg = json.loads((repo / "package.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            pkg = {}
+        if pkg.get("bin"):
+            yield Signal("cli", "package.json", "declares a bin entry")
+
+
 def _requirements_deps(path: Path) -> Iterator[str]:
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
         line = line.split("#", 1)[0].strip()
@@ -241,6 +270,7 @@ def detect(repo: str | Path) -> list[Signal]:
             if _matches(dep, names) and key not in seen:
                 seen.add(key)
                 signals.append(Signal(condition, source, f"depends on {dep}"))
+    signals.extend(_manifest_signals(repo))
     notebook = _has_notebook(repo)
     if notebook is not None:
         signals.append(Signal("data_science", notebook.relative_to(repo).as_posix(), "Jupyter notebook"))
