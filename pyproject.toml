@@ -31,8 +31,6 @@ Changelog = "https://github.com/politeuma/daimonion/blob/main/CHANGELOG.md"
 
 [project.scripts]
 daimonion = "daimonion.cli:main"
-# Deprecated alias for the previous distribution name; same entry point, removed next release.
-law-lint = "daimonion.cli:main"
 
 [build-system]
 requires = ["hatchling"]

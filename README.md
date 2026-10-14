@@ -18,14 +18,14 @@ whatever `main` is at that moment, so always pin.
 
 ```sh
 # Run via uvx without installing
-uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" daimonion diff
+uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" daimonion scan
 
-# In a copier/architekton-py-generated project, prepare the applicable
-# obligations from .copier-answers.yml (project_type, domain_traits, ...)
-uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" daimonion prepare --write
+# In a copier/architekton-py-generated project, convert .copier-answers.yml
+# (project_type, domain_traits, ...) into .daimonion.yml `when` conditions
+uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" daimonion init --write
 
-# Or check specific files or directories
-uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" daimonion check src/
+# Or scan specific files or directories
+uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" daimonion scan src/
 
 # Or install the pinned release as a tool; later examples call `daimonion` directly
 uv tool install "git+https://github.com/politeuma/daimonion@v0.1.0"
@@ -164,8 +164,8 @@ is reported again.
 **Baseline.** Record what exists today and report only new findings:
 
 ```sh
-daimonion check src/ --write-baseline   # writes .daimonion-baseline.json; commit it
-daimonion --strict check src/           # baselined findings no longer count
+daimonion scan src/ --write-baseline   # writes .daimonion-baseline.json; commit it
+daimonion --strict scan src/           # baselined findings no longer count
 ```
 
 Entries are keyed by rule, file, and line text, so shifting lines keep
@@ -187,8 +187,8 @@ scan:
 
 ## Output formats
 
-`check` and `diff` accept `--format {human,json,sarif}` (default `human`)
-for CI annotations and SARIF upload; `list-rules` accepts `--format
+`scan` accepts `--format {human,json,sarif}` (default `human`)
+for CI annotations and SARIF upload; `scan --list-rules` accepts `--format
 {human,json}`.
 
 Human-readable output is English. `--lang ja` (or `DAIMONION_LANG=ja`, or a
@@ -212,12 +212,11 @@ and counts violations (`python evals/run.py --dry-run`).
 
 ## Features
 
-- **Diff Mode (`daimonion diff`)**: Scans modified lines in `git diff` (or staged `--staged`) and flags touched compliance areas.
-- **File Mode (`daimonion check <path>...`)**: Scans entire files or directories (source code by default; docs opt-in).
+- **Scan Mode (`daimonion scan`)**: Scans modified lines in `git diff` (`--staged` for staged) or, with path arguments, entire files/directories (source code by default; docs opt-in) and flags touched compliance areas.
 - **Rules block (`daimonion init` / `daimonion agents-md`)**: Suggests a template-independent `.daimonion.yml` from the repository's manifests, then writes, refreshes, or checks the matching kanon rules (imperative lines, sources, and a link to the full section) in `AGENTS.md`/`CLAUDE.md` from the bundled, SHA-pinned snapshot.
 - **Rule Bundles**: Ships with built-in default rule profiles (licensing, crypto, personal data, scraping, AI safety), and can load custom rule YAMLs (`--rules path/to/rules.yml`).
-- **law-map check specs**: `--rules` also accepts a law-map checkout's `checks/` directory — each `checks/<domain>/<slug>.yml` spec maps to a rule (enforcement from the spec's `level`, triggers from its `triggers:` regex list), so `daimonion --rules ../law-map/checks check <file>` scans with the same vocabulary law-map validates.
-- **Project-Aware Scoping (`daimonion prepare`)**: Reads `.copier-answers.yml` (architekton-py/copier history), derives the project type and domain traits, evaluates each rule's gate, and prints or writes (`.daimonion-rules.yml` with `--write`) exactly the obligations that apply — e.g. a `web_api` project gets the Japanese third-party-transmission and EU accessibility duties, while a `script` project skips them. `check`, `diff`, and `list-rules` automatically scope themselves when a `.copier-answers.yml` or prepared rules file is present (`--all` opts out). A `.law-lint-rules.yml` prepared by the previous release is still read when `.daimonion-rules.yml` is absent.
+- **law-map check specs**: `--rules` also accepts a law-map checkout's `checks/` directory — each `checks/<domain>/<slug>.yml` spec maps to a rule (enforcement from the spec's `level`, triggers from its `triggers:` regex list), so `daimonion --rules ../law-map/checks scan <file>` scans with the same vocabulary law-map validates.
+- **Project-Aware Scoping (`daimonion init`)**: Reads `.copier-answers.yml` (architekton-py/copier history) once, converts the answers to `when` conditions, and writes `.daimonion.yml` (`init --write`) alongside manifest-detected signals — e.g. a `web_api` project gets the Japanese third-party-transmission and EU accessibility duties, while a `script` project skips them. `scan`, `agents-md`, and `scan --list-rules` scope themselves from `.daimonion.yml`; without a config file they scan everything.
 - **Zero Heavy Dependencies**: Lightweight (`pyyaml` only), instant execution in CI and local pre-commit hooks.
 
 ## Previous name
