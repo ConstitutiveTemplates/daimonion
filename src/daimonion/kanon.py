@@ -143,7 +143,7 @@ def render_block(conditions: Iterable[str], sections: Iterable[Section] | None =
         "",
         "## Ethics & legal field rules",
         "",
-        "Sections from [kanon](https://github.com/ConstitutiveTemplates/kanon)",
+        "Sections from [kanon](https://github.com/politeuma/kanon)",
         "that match this project's `.daimonion.yml` conditions. Each gives a rule summary and regex",
         "triggers up front; facts, prohibited patterns, and the change watch are folded in `<details>`.",
         "Before committing, run `daimonion diff` to match changed lines against these triggers.",

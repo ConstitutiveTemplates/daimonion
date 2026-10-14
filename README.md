@@ -2,7 +2,7 @@
 
 Fast, lightweight linter that inspects source files and `git diff` changes against legal and ethical triggers (intellectual property, cryptography, privacy, data governance, security policies).
 
-Part of the [ConstitutiveTemplates](https://github.com/ConstitutiveTemplates) ecosystem.
+Part of the [politeuma](https://github.com/politeuma) ecosystem.
 
 ## Why daimonion?
 
@@ -12,20 +12,20 @@ Rather than dumping thousands of lines of full legal commentary into your AI sys
 
 ```sh
 # Run via uvx without installing
-uvx --from git+https://github.com/ConstitutiveTemplates/daimonion daimonion diff
+uvx --from git+https://github.com/politeuma/daimonion daimonion diff
 
 # In a copier/architekton-py-generated project, prepare the applicable
 # obligations from .copier-answers.yml (project_type, domain_traits, ...)
-uvx --from git+https://github.com/ConstitutiveTemplates/daimonion daimonion prepare --write
+uvx --from git+https://github.com/politeuma/daimonion daimonion prepare --write
 
 # Or check specific files or directories
-uvx --from git+https://github.com/ConstitutiveTemplates/daimonion daimonion check src/
+uvx --from git+https://github.com/politeuma/daimonion daimonion check src/
 ```
 
 ## Ethics block for any repository
 
 daimonion carries a pinned snapshot of
-[kanon](https://github.com/ConstitutiveTemplates/kanon)
+[kanon](https://github.com/politeuma/kanon)
 (the commit is in `src/daimonion/kanon/KANON_SHA`), so any project can pull
 the reviewed ethics sections into its agent guide, whatever template or
 toolchain it started from:
@@ -76,7 +76,7 @@ filenames are passed):
 ```yaml
 # .pre-commit-config.yaml
 repos:
-  - repo: https://github.com/ConstitutiveTemplates/daimonion
+  - repo: https://github.com/politeuma/daimonion
     rev: <ref>
     hooks:
       - id: daimonion-diff
@@ -85,7 +85,7 @@ repos:
 Or run the composite action in a workflow:
 
 ```yaml
-- uses: ConstitutiveTemplates/daimonion@<ref>
+- uses: politeuma/daimonion@<ref>
   with:
     args: diff # default; any `check ...` / `diff ...` tail works
     strict: "true" # default; fail the job on L2 findings
@@ -118,5 +118,4 @@ adding a section).
 
 ## Previous name
 
-The `law-lint` console script and the `law-lint-diff` pre-commit hook id remain as
-deprecated aliases for one release (`law-lint diff` works like `daimonion diff`).
+The `law-lint` command name was the previous one; invoke `daimonion`.

@@ -22,4 +22,4 @@ runs:
           strict="--strict"
         fi
         # Intentionally unquoted: inputs.args may itself hold several words.
-        uvx --from git+https://github.com/ConstitutiveTemplates/daimonion daimonion $strict ${{ inputs.args }}
+        uvx --from git+https://github.com/politeuma/daimonion daimonion $strict ${{ inputs.args }}

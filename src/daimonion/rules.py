@@ -9,7 +9,7 @@ import yaml
 
 from daimonion.models import Rule
 
-# Canonical compliance rules derived from ConstitutiveTemplates ethical and legal baseline
+# Canonical compliance rules derived from politeuma ethical and legal baseline
 DEFAULT_RULES: list[dict[str, str]] = [
     {
         "id": "licensing-drift",

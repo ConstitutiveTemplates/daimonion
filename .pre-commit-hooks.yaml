@@ -6,10 +6,3 @@
   language: python
   entry: daimonion --strict diff --staged
   pass_filenames: false
-# Deprecated alias for the previous hook id; same entry point, removed next release.
-- id: law-lint-diff
-  name: law-lint diff (staged, deprecated alias)
-  description: Deprecated alias of daimonion-diff; Scan staged git changes against legal and ethical triggers.
-  language: python
-  entry: daimonion --strict diff --staged
-  pass_filenames: false
