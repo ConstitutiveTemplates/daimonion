@@ -14,7 +14,7 @@ def _section(id_: str, when: tuple[str, ...], status: str = "active", placement:
     body = f"# {id_} title\n\n> 要約: {id_}\n> Triggers: `x`.\n\n## 事実\n\nfact\n\n<!-- not legal advice -->\n"
     return Section(
         id=id_,
-        file=f"{id_}.md.jinja",
+        file=f"{id_}.md",
         when=when,
         placement=placement,
         status=status,
@@ -29,7 +29,7 @@ def test_snapshot_is_complete_and_well_formed():
     assert sections, "the vendored kanon has no sections"
     assert re.fullmatch(r"[0-9a-f]{40}", kanon.kanon_sha())
     for section in sections:
-        tier, slug = section.file.removesuffix(".md.jinja").split("/")
+        tier, slug = section.file.removesuffix(".md").split("/")
         assert section.id == f"{tier}-{slug}"
         assert section.status in {"draft", "active", "kind"}
         assert section.body.startswith("# "), f"{section.id}: body must open with its h1 title"
