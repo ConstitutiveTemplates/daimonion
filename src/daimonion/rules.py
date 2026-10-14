@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
+from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
@@ -9,131 +10,113 @@ import yaml
 
 from daimonion.models import Rule
 
-# Canonical compliance rules derived from politeuma ethical and legal baseline.
-# Titles and summaries are English (canonical); src/daimonion/locales/ja.yml
-# carries their Japanese translation for `--lang ja`.
-# Every builtin is a keyword rule (topic vocabulary, not the violation itself),
-# so it is a reminder: L1 when the vocabulary is specific (md5, a hardcoded NTP
-# address), L0 when it is broad (license, agent, requests). Only a rule with
-# "kind": "structural" may be L2 and fail --strict; see models.effective_enforcement.
-DEFAULT_RULES: list[dict[str, str]] = [
-    {
-        "id": "licensing-drift",
-        "title": "License drift — check dependencies' current licenses; keep BSL/SSPL and the like out",
-        "triggers": r"(?i)\b(licen[cs]e|bsl|busl|sspl|rsal|elv2|copyleft|gpl|agpl|lgpl|terraform|opentofu|elasticsearch|redis|source-available)\b",
-        "summary": "When adding or updating a dependency, check its current license and do not let source-available licenses (BSL, SSPL, ...) or strong copyleft slip in unnoticed.",
-        "category": "licensing",
-        "enforcement": "L0",
-        "gate": "true",
-    },
-    {
-        "id": "deprecated-crypto",
-        "title": "Deprecated cryptography — no new MD5/SHA-1 signatures, DES, or TLS 1.0/1.1",
-        "triggers": r"(?i)\b(md5|sha-?1(?!6|384|512)|(?<!3)des(?!c)|3des|triple-?des|rc4|sslv?3|tls\s?1\.[01]|sha1withrsa|rsa[_ /-]?1024)\b",
-        "summary": "Do not use MD5 or SHA-1 for signatures or integrity. Enforce TLS 1.2 or later and keep legacy ciphers out of new code.",
-        "category": "crypto",
-        "enforcement": "L1",
-        "gate": "",
-    },
-    {
-        "id": "pqc-standards",
-        "title": "PQC standards — choose ML-KEM/ML-DSA or hybrids for new cryptography",
-        "triggers": r"(?i)\b(ml-kem|ml-dsa|slh-dsa|kyber|dilithium|sphincs|fips\s?20[345]|pqc|post-quantum)\b",
-        "summary": "Use the FIPS 203/204/205 standard names, keep the KEM and signature roles apart, and do not adopt a classical-only scheme in new designs.",
-        "category": "crypto",
-        "enforcement": "L1",
-        "gate": "project_type in ['library', 'cli'] or web_api",
-    },
-    {
-        "id": "pki-trust-chain",
-        "title": "PKI chain changes — do not hardcode intermediate certificates or issuing chains",
-        "triggers": r"(?i)\b(certificat|trust\s?store|ca_bundle|pinn|openssl|requests|httpx|urllib3|mtls|root\s?ca|intermediate)\b",
-        "summary": "Do not pin or bundle intermediate certificates or a specific CA chain in code; follow the OS or system trust store.",
-        "category": "crypto",
-        "enforcement": "L0",
-        "gate": "project_type in ['micropython', 'cli'] or web_api",
-    },
-    {
-        "id": "personal-data-privacy",
-        "title": "Personal data — minimise collection, provide a deletion path, mask logs",
-        "triggers": r"(?i)\b(pii|personal[_ ]?data|personal[_ ]?information|gdpr|privacy|user[_ ]?data|deletion|right[_ ]?to[_ ]?erasure|consent|retention)\b",
-        "summary": "Ask whether personal identifiers are needed before collecting or storing them, keep them out of plaintext logs and external APIs, and provide a deletion path.",
-        "category": "privacy",
-        "enforcement": "L1",
-        "gate": "'personal-data' in domain_traits or 'face-recognition' in domain_traits or 'medtech' in domain_traits",
-    },
-    {
-        "id": "ai-copyright",
-        "title": "AI and copyright — lawful collection, training, and RAG code; respect robots.txt",
-        "triggers": r"(?i)\b(scrap|crawl|robots\.txt|rag|retrieval|fine-?tun|dataset|embedding|public[- ]domain|copyright)\b",
-        "summary": "Do not bypass robots.txt or a site's opt-out. Avoid RAG designs that reproduce protected expression verbatim without permission.",
-        "category": "copyright",
-        "enforcement": "L1",
-        "gate": "project_type == 'cli' or data_science_layout",
-    },
-    {
-        "id": "llm-appsec",
-        "title": "LLM apps / MCP security — least privilege, human approval, output validation",
-        "triggers": r"(?i)\b(llm|prompt|agent|tool[_-]?call|mcp|openai|anthropic|chat|completion|system[_-]?prompt|guardrail)\b",
-        "summary": "Limit tool permissions to the minimum CRUD, require human approval before destructive or irreversible actions, and never pass LLM output straight to a shell.",
-        "category": "security",
-        "enforcement": "L0",
-        "gate": "mcp_effective",
-    },
-    {
-        "id": "prompt-injection",
-        "title": "Prompt injection — never execute external input as instructions",
-        "triggers": r"(?i)\b(prompt[- ]?injection|jailbreak|indirect[- ]?injection|agent[- ]?hijack|system[- ]?prompt|tool[_-]?poisoning)\b",
-        "summary": "Keep instructions and external data strictly apart; never trust external text as system instructions.",
-        "category": "security",
-        "enforcement": "L1",
-        "gate": "mcp_effective",
-    },
-    {
-        "id": "eu-cra-compliance",
-        "title": "EU CRA — 24-hour vulnerability reporting and SBOM duties for commercial products",
-        "triggers": r"(?i)\b(cra|sbom|cyclonedx|vulnerability|vulnerabilities|cve|incident[_ ]?report|resilience|enisa)\b",
-        "summary": "Report an actively exploited vulnerability within 24 hours of becoming aware of it. Produce an SBOM and keep dependency provenance explainable.",
-        "category": "security",
-        "enforcement": "L1",
-        "gate": "'commercial' in distribution",
-    },
-    {
-        "id": "eu-eaa-accessibility",
-        "title": "European Accessibility Act (EAA) — EN 301 549 / WCAG 2.1 AA",
-        "triggers": r"(?i)\b(accessib|aria|wcag|a11y|axe|alt=|tabindex|focus|screen[ -]reader|en[ -]301[ -]549)\b",
-        "summary": "Design UI and front-end components for the EU market to meet EN 301 549 (equivalent to WCAG 2.1 AA).",
-        "category": "accessibility",
-        "enforcement": "L1",
-        "gate": "web_api",
-    },
-    {
-        "id": "jp-external-transmission",
-        "title": "External transmission rules (Japan, Telecommunications Business Act) — disclose third-party transmissions up front",
-        "triggers": r"(?i)\b(cookie|consent|gtm|gtag|analytics|opt-?out|tracker|advertis|sdk|tag manager)\b",
-        "summary": "When a Japan-facing website or app uses third-party tags or SDKs, disclose the recipients, the data sent, and the purpose in plain language beforehand.",
-        "category": "privacy",
-        "enforcement": "L1",
-        "gate": "web_api",
-    },
-    {
-        "id": "kyushu-ntp-hygiene",
-        "title": "NTP hygiene — no static references to Fukuoka University or similar NTP servers",
-        "triggers": r"(?i)\b(133\.100\.9\.2|133\.100\.11\.8|clock\.nc\.fukuoka-u\.ac\.jp)\b",
-        "summary": "Do not hardcode a single academic or specific NTP server in code; use a pool such as pool.ntp.org.",
-        "category": "security",
-        "enforcement": "L1",
-        "gate": "",
-    },
-]
+#: The vendored check specs this module builds the default rule set from:
+#: ``rulebook/checks/`` (law-map ``checks/`` at the ``LAWMAP_SHA`` pin).
+#: Every spec carries ``id`` (``domain/slug``), ``obligation``, ``level``,
+#: and a ``triggers`` list of regex strings. Specs that grow a structural
+#: ``kind`` (AST/semgrep/dep/license) keep their L2; plain ``keyword``
+#: specs are reminders capped at L1 — see ``models.effective_enforcement``.
+VENDORED_CHECKS = files("daimonion") / "rulebook" / "checks"
 
 
-#: Typed view of :data:`DEFAULT_RULES`; prefer this over re-parsing the raw dicts.
-BUILTIN_RULES: tuple[Rule, ...] = tuple(Rule.from_dict(item) for item in DEFAULT_RULES)
+def _english_title(obligation: str, spec_id: str) -> str:
+    """The obligation id's trailing slug as a title fallback (no spec carries titles)."""
+    slug = obligation.rsplit(".", 1)[-1] if obligation else spec_id
+    return slug.replace("-", " ").replace("_", " ")
+
+
+def _english_summary(spec: Mapping[str, Any]) -> str:
+    """One-line English summary from the spec's ``acceptance``/``fail_when``/obligation."""
+    acceptance = spec.get("acceptance")
+    if isinstance(acceptance, str) and acceptance.strip():
+        first = re.split(r"[.\n]", " ".join(acceptance.split()), maxsplit=1)[0].strip()
+        if first:
+            return first + "."
+    fail_when = spec.get("fail_when")
+    items = (
+        [item for item in fail_when if isinstance(item, str) and item.strip()] if isinstance(fail_when, list) else []
+    )
+    if items:
+        return "Fails when: " + " ".join(items[0].split())
+    obligation = spec.get("obligation")
+    if isinstance(obligation, str) and obligation:
+        return f"Check for {obligation} (see the linked rulebook section for details)."
+    return ""
+
+
+def _check_spec_triggers(spec: Mapping[str, Any]) -> str:
+    """Join a check spec's ``triggers`` list into one alternation for the engine."""
+    triggers = spec.get("triggers", [])
+    if isinstance(triggers, str):
+        return triggers
+    if isinstance(triggers, list):
+        # Join bare with ``|`` (no wrapping group): wrapping a pattern
+        # like ``(?i)\\b...`` in ``(?:...)`` moves the global flag off
+        # the start of the expression, which ``re`` rejects.
+        joined = "|".join(item for item in triggers if isinstance(item, str) and item)
+        return joined if joined else "(?!)"
+    return "(?!)"
+
+
+def rule_from_check_spec(spec: Mapping[str, Any]) -> Rule:
+    """Build a rule from a law-map ``checks/<domain>/<slug>.yml`` spec.
+
+    A spec carries ``id`` (``domain/slug``), ``obligation``, ``level``,
+    and an optional ``triggers`` list of regex strings; the rule joins
+    the list into one alternation so the engine's single-pattern match
+    applies. Specs without ``triggers`` map to ``(?!)`` — a pattern
+    that matches nothing — so the gate they describe still shows in
+    ``list-rules`` but can never fire on scanned text.
+    """
+    spec_id = str(spec.get("id", ""))
+    obligation = spec.get("obligation", "")
+    obligation = obligation if isinstance(obligation, str) else ""
+    category = spec_id.split("/")[0] or "general"
+    return Rule(
+        id=spec_id,
+        title=_english_title(obligation, spec_id),
+        triggers=_check_spec_triggers(spec),
+        summary=_english_summary(spec),
+        category=category,
+        enforcement=str(spec.get("level", "L1")),
+        gate="",
+        kind=str(spec.get("kind", "keyword")),
+    )
+
+
+def _iter_check_spec_files(checks_root: Path) -> list[Path]:
+    return sorted(p for p in checks_root.rglob("*.yml") if not p.name.startswith("_"))
+
+
+def load_rules_from_checks_dir(checks_root: str | Path) -> list[Rule]:
+    """Load one rule per law-map check spec under ``checks_root`` (recursive)."""
+    root = checks_root if isinstance(checks_root, Path) else Path(checks_root)
+    if not root.is_dir():
+        try:
+            root = Path(str(files("daimonion") / "rulebook" / "checks" / str(checks_root)))
+        except (TypeError, ValueError):
+            pass
+    rules: list[Rule] = []
+    for spec_file in _iter_check_spec_files(root):
+        try:
+            data = yaml.safe_load(spec_file.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        rules.append(rule_from_check_spec(data))
+    return rules
 
 
 def _enrich_from_section_file(item: dict[str, Any], yaml_path: Path) -> None:
-    """Fill a file-referencing entry (e.g. REGISTRY.yml) with triggers/title/summary scraped from its section file."""
+    """Fill a file-referencing entry with triggers/title/summary from its section file.
+
+    Kept for custom ``--rules`` YAML files whose entries point at section
+    files via ``file:``. The section file is Markdown with YAML front
+    matter; triggers come from the front matter, the title from the ``en:``
+    title (falling back to the prose h1), and the summary from the first
+    ``en:`` summary line (falling back to the ``why`` field).
+    """
     if "file" not in item or item.get("triggers"):
         return
     file_rel = str(item["file"])
@@ -146,12 +129,31 @@ def _enrich_from_section_file(item: dict[str, Any], yaml_path: Path) -> None:
     if sec_file is None:
         return
     sec_text = sec_file.read_text(encoding="utf-8")
-    triggers = re.search(r"> Triggers:\s*`([^`]+)`", sec_text)
+    front: dict[str, Any] = {}
+    if sec_text.startswith("---\n"):
+        head, sep, _ = sec_text[len("---\n") :].partition("\n---\n")
+        if sep:
+            try:
+                front = yaml.safe_load(head) or {}
+            except yaml.YAMLError:
+                front = {}
+    triggers = front.get("triggers", {})
+    pattern = triggers.get("pattern") if isinstance(triggers, dict) else None
+    en = front.get("en", {})
+    en_title = en.get("title") if isinstance(en, dict) else None
+    en_summary = en.get("summary") if isinstance(en, dict) else None
     title = re.search(r"^# (.+)$", sec_text, re.MULTILINE)
-    summary = re.search(r"> 要約:\s*(.+?)(?=\n>|\n\n)", sec_text, re.DOTALL)
-    item["triggers"] = triggers.group(1).strip() if triggers else ""
-    item["title"] = title.group(1).strip() if title else item.get("id", "")
-    item["summary"] = summary.group(1).replace("\n> ", " ").strip() if summary else item.get("why", "")
+    item["triggers"] = pattern.strip() if isinstance(pattern, str) else ""
+    item["title"] = (
+        en_title.strip()
+        if isinstance(en_title, str) and en_title.strip()
+        else (title.group(1).strip() if title else item.get("id", ""))
+    )
+    item["summary"] = (
+        str(en_summary[0]).strip()
+        if isinstance(en_summary, list) and en_summary and str(en_summary[0]).strip()
+        else item.get("why", "")
+    )
 
 
 def load_rules_from_data(data: Any, *, yaml_path: Path | None = None) -> list[Rule]:
@@ -188,18 +190,21 @@ def load_rules_from_yaml(path: str | Path) -> list[Rule]:
     return load_rules_from_data(data, yaml_path=resolved)
 
 
-def load_rules_from_checks_dir(checks_root: str | Path) -> list[Rule]:
-    """Load one rule per law-map check spec under ``checks_root`` (recursive)."""
-    root = Path(checks_root)
-    rules: list[Rule] = []
-    for spec_file in sorted(root.rglob("*.yml")):
-        if spec_file.name.startswith("_"):
-            continue
-        try:
-            data = yaml.safe_load(spec_file.read_text(encoding="utf-8"))
-        except (OSError, yaml.YAMLError):
-            continue
-        if not isinstance(data, dict):
-            continue
-        rules.append(Rule.from_check_spec(data))
-    return rules
+def _builtin_rules() -> tuple[Rule, ...]:
+    """The default rule set: one rule per vendored law-map check spec."""
+    return tuple(load_rules_from_checks_dir(Path(str(VENDORED_CHECKS))))
+
+
+#: The default rule set: one rule per vendored check spec (``rulebook/checks/``).
+#: Prefer this over re-parsing; ``--rules`` replaces it outright.
+BUILTIN_RULES: tuple[Rule, ...] = _builtin_rules()
+
+
+__all__ = [
+    "BUILTIN_RULES",
+    "VENDORED_CHECKS",
+    "load_rules_from_checks_dir",
+    "load_rules_from_data",
+    "load_rules_from_yaml",
+    "rule_from_check_spec",
+]

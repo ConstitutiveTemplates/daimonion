@@ -33,47 +33,54 @@ messages:
   init.wrote: "{path} を書き込みました"
   init.next: "次に条件を見直し、`daimonion agents-md --write` を実行してください。"
   agents.no_config: "{repo!r} に {name} がありません。先に `daimonion init --write` を実行してください。"
-  agents.current: "{path} のルールブロックは最新です（kanon {sha}）。"
+  agents.current: "{path} のルールブロックは最新です（rulebook {sha}）。"
   agents.missing: "{path} にルールブロックがありません。`daimonion agents-md --write` を実行してください。"
   agents.stale: "{path} のルールブロックが古くなっています。`daimonion agents-md --write` を実行してください。"
   agents.updated: "{path} のルールブロックを更新しました"
   agents.up_to_date: "{path} は既に最新です。"
 
-# Builtin rule titles and summaries (src/daimonion/rules.py DEFAULT_RULES).
+# Builtin rule titles and summaries (one rule per vendored check spec in
+# src/daimonion/rulebook/checks/).
 rules:
-  licensing-drift:
-    title: ライセンス変動 — 依存の現行ライセンス確認とBSL/SSPL等の混入防止
-    summary: 依存追加・更新時に現行ライセンスを確認し、BSL/SSPL等のソース可用ライセンスや強copyleftを不注意に混入させない。
-  deprecated-crypto:
-    title: 枯れた暗号 — MD5/SHA1署名・DES・TLS 1.0/1.1 の新規採用禁止
-    summary: 署名や完全性用途にMD5/SHA-1を用いない。TLSは1.2以上を強制し、レガシー暗号の新規コード混入を避ける。
-  pqc-standards:
-    title: PQC標準 — 新規暗号選択はML-KEM/ML-DSA系またはハイブリッド
-    summary: FIPS 203/204/205標準名で扱い、KEMと署名の役割を分離し、旧暗号単独の新規採用を避ける。
-  pki-trust-chain:
-    title: PKIチェーン再編 — 中間証明書・発行チェーンのハードコード禁止
-    summary: 中間証明書や特定CAチェーンをコード内に固定・同梱しない。OS/システムのtrust storeに従う。
-  personal-data-privacy:
-    title: 個人データ — 取得の最小化と削除経路・ログマスキング
-    summary: 個人識別情報を取得・保存する前に必要性を問い、ログへの平文出力や外部API流出を防ぎ、削除経路を確保する。
-  ai-copyright:
-    title: AIと著作権 — 取得・学習・RAGコードの適法性とrobots.txt遵守
-    summary: robots.txtやサイト拒否措置を回避しない。表現そのものを無許諾で再出力するRAG設計を避ける。
-  llm-appsec:
-    title: LLMアプリ/MCP安全設計 — 最小権限・人間承認・出力検証
-    summary: ツール権限は最小CRUDに絞り、破壊的・不可逆操作には人間承認を挟み、LLM出力を直接shellに渡さない。
-  prompt-injection:
-    title: プロンプトインジェクション — 外部入力を指示として直接実行しない
-    summary: 指示と外部データを厳格に分離し、外部テキストをシステム指示として信用しない。
-  eu-cra-compliance:
-    title: EU CRA — 商用製品の脆弱性報告(24h)とSBOM義務
-    summary: 能動的悪用を知ったら24時間以内に報告する。SBOMを作成し、依存関係の出所を説明可能にする。
-  eu-eaa-accessibility:
+  accessibility/european-accessibility-act:
     title: 欧州アクセシビリティ法 (EAA) — EN 301 549 / WCAG 2.1 AA 準拠
-    summary: EU市場向けUI/フロントエンドコンポーネントにおいて、EN 301 549 (WCAG 2.1 AA相当)を満たす設計を行う。
-  jp-external-transmission:
-    title: 外部送信規律 (電気通信事業法) — サードパーティ送信の事前開示
-    summary: 日本向けWeb/アプリでサードパーティタグやSDKを使用する場合、送信先・情報・目的を平易に事前開示する。
-  kyushu-ntp-hygiene:
-    title: NTPハイジーン — 福岡大などの静的NTP参照禁止
-    summary: 単一の教育機関・特定NTPサーバーをコードにハードコードせず、ntp.pool.org等のプールを使用する。
+    summary: 自動化できるWCAG 2.1 AA監査をCIで行い、alt欠落・tabindexトラップ等の静的シンクを残さない。
+  ai/biometric-identification-gated:
+    title: 生体識別ゲート — 法的根拠・同意・保存期間の明示
+    summary: 生体識別コードごとに法的根拠・同意フロー・保存/破棄計画を示し、禁止用途を置かない。
+  ai/llm-tool-allowlist-gate:
+    title: LLMアプリ基盤 — ツールallowlist・人間承認・出力検証
+    summary: モデルが呼べるツールを最小権限のallowlistで宣言し、破壊的操作には人間承認を挟み、実行前に出力を検証する。
+  ai/ml-bias-mitigation:
+    title: MLバイアス緩和 — サブグループ別評価と人間レビュー
+    summary: 人に影響するモデルは保護サブグループ別の性能指標を示し、人口統計の学習/評価分割を記録し、高リスク判定を人間確認に回す。
+  ai/samd-clinical-evaluation:
+    title: SaMD臨床評価 — 診断主張はCIの評価ハーネスと変更管理で裏付ける
+    summary: 診断主張はCI実行の評価ハーネスに対応付け、臨床モデルの変更は変更管理の範囲を引用し、臨床評価文書と市販後監視を備える。
+  copyright/tdm-optout-respected:
+    title: AI学習データ利用 — TDMオプトアウト尊重と出所記録
+    summary: 学習に使う取得パイプラインは機械可読のTDMオプトアウトを確認し、学習コーパスごとに出所URLと評価結果を記録する。
+  crypto/deprecated-algorithms-prohibited:
+    title: 枯れた暗号 — MD5/SHA1署名・DES系・TLS 1.0/1.1 の新規採用禁止
+    summary: 署名や完全性用途にMD5/SHA-1を用いず、DES/3DES/RC4・ECB・1024bit RSA・TLS 1.0/1.1 を新規コードと設定から排除する。
+  licensing/no-copyleft-contamination:
+    title: ライセンス変動 — 依存の現行ライセンス確認とコピーレフト混入防止
+    summary: 出荷物に含まれる依存・同梱コードの現行ライセンスを確認し、強いコピーレフトの混入は方針ファイルの決定記録と照合する。
+  privacy/cleartext-pii-logging-prohibited:
+    title: 個人データ — ログ・テレメトリへの平文PII出力禁止
+    summary: 個人識別子をマスク・ハッシュ・削除せずにログやエラー報告へ出さない。全シンクのペイロードを出す前に減らす。
+  privacy/external-transmission-declared:
+    title: 外部送信規律 — 第三者送信の登録と同意ゲート
+    summary: 利用者識別子の第三者送信は送信先・目的・法域タグ付きで登録し、求められる体制では同意ゲートを通す。
+  security/prompt-injection-defense:
+    title: プロンプトインジェクション — 外部入力を指示として直接実行しない
+    summary: 指示と外部データを厳格に分離し、外部テキストをシステム指示として信用しない。ツール出力の再投入は境界を明示する。
+  security/public-ntp-hygiene:
+    title: NTPハイジーン — 単一機関の公開NTP固定禁止
+    summary: 単一機関のNTPホスト名・アドレスリテラルを出荷コードにハードコードせず、プール基盤または利用者設定可能なエンドポイントを使う。
+  security/sbom-present:
+    title: SBOMと脆弱性対応 — リリースごとSBOM・連絡窓口・既知CVEなし
+    summary: リリースごとにSBOM成果物を添え、監視される脆弱性連絡窓口を持ち、未対応の悪用可能CVEを残さない。
+  security/vdp-contact-published:
+    title: 脆弱性開示 — 外部報告の公開チャネル
+    summary: SECURITY.mdやsecurity.txt等の発見可能な面で、監視される報告先(連絡先・フォーム・対応期限)を公表する。

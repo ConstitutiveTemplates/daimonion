@@ -5,16 +5,20 @@ from pathlib import Path
 
 from daimonion.cli import format_findings, main
 from daimonion.engine import Linter
+from daimonion.rules import VENDORED_CHECKS, load_rules_from_checks_dir
 
 
 def test_default_rules_loaded():
-    """Default linter loads standard compliance rules."""
+    """Default linter loads one rule per vendored check spec."""
     linter = Linter()
-    assert len(linter.rules) >= 10
+    assert len(linter.rules) == len(load_rules_from_checks_dir(Path(str(VENDORED_CHECKS))))
     rule_ids = {r.id for r in linter.rules}
-    assert "deprecated-crypto" in rule_ids
-    assert "licensing-drift" in rule_ids
-    assert "personal-data-privacy" in rule_ids
+    assert "crypto/deprecated-algorithms-prohibited" in rule_ids
+    assert "licensing/no-copyleft-contamination" in rule_ids
+    assert "privacy/cleartext-pii-logging-prohibited" in rule_ids
+    # All builtins are keyword matchers: capped at L1, so --strict never fails on them.
+    assert {r.kind for r in linter.rules} == {"keyword"}
+    assert {r.enforcement for r in linter.rules} <= {"L0", "L1"}
 
 
 def test_scan_text_detects_triggers():
@@ -29,8 +33,7 @@ def hash_password(pwd):
 """
     findings = linter.scan_text(code, file_path="auth.py")
     assert len(findings) >= 1
-    crypto_hits = [f for f in findings if f.rule.id == "deprecated-crypto"]
-    assert len(crypto_hits) >= 1
+    crypto_hits = [f for f in findings if f.rule.id == "crypto/deprecated-algorithms-prohibited"]
     hit = crypto_hits[0]
     assert hit.file_path == "auth.py"
     assert "md5" in hit.matched_text.lower()
@@ -49,7 +52,7 @@ def test_scan_file_and_format():
         assert len(findings) >= 1
         output = format_findings(findings)
         assert "daimonion: Detected" in output
-        assert "Personal data" in output
+        assert "no cleartext pii logging" in output
     finally:
         f_path.unlink()
 
@@ -60,7 +63,7 @@ def test_cli_list_rules(capsys):
     assert rc == 0
     captured = capsys.readouterr().out
     assert "Active compliance rules" in captured
-    assert "licensing-drift" in captured
+    assert "licensing/no-copyleft-contamination" in captured
 
 
 def test_cli_check_clean_file(capsys):
@@ -122,16 +125,21 @@ def _write_config(tmp_path: Path, when: list[str]) -> Path:
     return config
 
 
-def test_config_scopes_rules_from_when(tmp_path, capsys):
-    """A web_api + commercial config gets JP transmission/EAA/CRA rules in scan output."""
+def test_config_does_not_scope_builtin_scan(tmp_path, capsys):
+    """Builtin rules carry no gates, so `scan` runs all of them whatever `when` says.
+
+    Scoping lives in `agents-md`, which renders only the matching sections;
+    `scan` is the cheap keyword net over everything. A config therefore
+    announces no scoping.
+    """
     _write_config(tmp_path, ["web_api", "personal_data", "commercial"])
     assert main(["scan", "--list-rules", "--repo", str(tmp_path)]) == 0
     out = capsys.readouterr().out
-    assert "jp-external-transmission" in out
-    assert "eu-eaa-accessibility" in out
-    assert "eu-cra-compliance" in out
-    assert "personal-data-privacy" in out
-    assert "ai-copyright" not in out  # cli/data_science only
+    assert "privacy/external-transmission-declared" in out
+    assert "accessibility/european-accessibility-act" in out
+    assert "security/sbom-present" in out
+    assert "privacy/cleartext-pii-logging-prohibited" in out
+    assert "copyright/tdm-optout-respected" in out
 
 
 def test_init_converts_answers_to_when_config(tmp_path, capsys):
@@ -149,8 +157,8 @@ def test_init_without_answers_still_suggests(tmp_path, capsys):
     assert "version: 1" in capsys.readouterr().out
 
 
-def test_diff_scopes_via_config(tmp_path, capsys):
-    """Without --all, the config-derived scope is announced on stderr."""
+def test_diff_does_not_announce_scope(tmp_path, capsys):
+    """Builtin scan runs everything, so no scope note is printed."""
     _write_config(tmp_path, ["cli"])
     (tmp_path / "x.py").write_text("print('hi')\n")
     import subprocess
@@ -158,7 +166,7 @@ def test_diff_scopes_via_config(tmp_path, capsys):
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     rc = main(["scan", "--repo", str(tmp_path)])
     err = capsys.readouterr().err
-    assert "Scoped to" in err
+    assert "Scoped to" not in err
     assert rc == 0
 
 

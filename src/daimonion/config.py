@@ -1,14 +1,16 @@
 """``.daimonion.yml``: a project's declared conditions, independent of any template.
 
-The file speaks the kanon's abstract ``when`` vocabulary, so a hand-written
+The file speaks the rulebook's abstract ``when`` vocabulary, so a hand-written
 config and one a template generator emits look the same and take the same
 path through daimonion::
 
     version: 1
     agents_md: AGENTS.md      # where `agents-md --write` puts the rules block
-    when:                     # kanon conditions that hold; `always` is implied
+    when:                     # rulebook conditions that hold; `always` is implied
       - scraping
       - jp
+    packs: [core]             # optional: rulebook packs to render (`core` always
+                              # applies; e.g. `competitive-programming` opts in)
     mode: adoption            # optional: `adoption` (warn-only, nothing fails) or `strict`
     scan:
       docs: true              # optional: also scan .md/.yml/.yaml/.toml (default: source only)
@@ -21,7 +23,7 @@ from pathlib import Path
 
 import yaml
 
-from daimonion.kanon import WHEN_VOCABULARY
+from daimonion.rulebook import WHEN_VOCABULARY
 
 CONFIG_NAME = ".daimonion.yml"
 CONFIG_VERSION = 1
@@ -43,6 +45,7 @@ class ProjectConfig:
     agents_md: str = "AGENTS.md"
     mode: str = ""
     scan_docs: bool = False
+    packs: tuple[str, ...] = ("core",)
 
     @property
     def agents_md_path(self) -> Path:
@@ -99,10 +102,18 @@ def load_config(path: str | Path) -> ProjectConfig:
         msg = f"{path}: `scan` must be a mapping whose `docs` is true or false"
         raise ConfigError(msg)
 
+    packs = data.get("packs") or ["core"]
+    if not isinstance(packs, list) or not all(isinstance(item, str) for item in packs):
+        msg = f"{path}: `packs` must be a list of pack names"
+        raise ConfigError(msg)
+    if "core" not in packs:
+        packs = ["core", *packs]
+
     return ProjectConfig(
         path=path,
         when=tuple(dict.fromkeys(when)),
         agents_md=agents_md,
         mode=mode,
         scan_docs=scan.get("docs", False),
+        packs=tuple(dict.fromkeys(packs)),
     )

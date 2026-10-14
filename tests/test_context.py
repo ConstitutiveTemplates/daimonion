@@ -104,22 +104,22 @@ def test_gate_eval_empty_and_whitespace_gate_is_always_on():
     assert gate_eval("   ", ctx) is True
 
 
-def test_scope_rules_includes_and_excludes():
-    """cli scoping keeps always-on + cli-gated rules and drops web_api-gated ones."""
-    ctx = derive_context({"project_type": "cli"})
-    scoped = {rule.id for rule in scope_rules(BUILTIN_RULES, ctx)}
-    assert "deprecated-crypto" in scoped  # empty gate -> always-on
-    assert "ai-copyright" in scoped  # gate: project_type == 'cli'
-    assert "eu-eaa-accessibility" not in scoped  # gate: web_api
-    assert "jp-external-transmission" not in scoped  # gate: web_api
-    assert "personal-data-privacy" not in scoped  # gate: domain_traits
+def test_builtin_rules_carry_no_gates():
+    """Check-spec builtins are ungated: every context keeps all of them."""
+    assert {rule.gate for rule in BUILTIN_RULES} == {""}
+    for answers in ({"project_type": "cli"}, {"project_type": "web_api"}):
+        scoped = {rule.id for rule in scope_rules(BUILTIN_RULES, derive_context(answers))}
+        assert scoped == {rule.id for rule in BUILTIN_RULES}
 
 
-def test_scope_rules_web_api_includes_web_gated_rules():
-    ctx = derive_context({"project_type": "web_api", "distribution": ["commercial"]})
-    scoped = {rule.id for rule in scope_rules(BUILTIN_RULES, ctx)}
-    assert {"eu-eaa-accessibility", "jp-external-transmission", "eu-cra-compliance"} <= scoped
-    assert "ai-copyright" not in scoped  # cli/data_science only
+def test_scope_rules_still_gates_custom_rules():
+    """Custom `--rules` files may carry gates; those still scope."""
+    from daimonion.engine import KANON_CONDITIONS
+
+    assert "web_api" in KANON_CONDITIONS
+    cli = derive_context({"project_type": "cli"})
+    scoped = {rule.id for rule in scope_rules([_rule("web-only", "web_api")], cli)}
+    assert scoped == set()
 
 
 def test_scope_rules_malformed_gate_fails_closed():

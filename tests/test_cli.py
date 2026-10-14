@@ -55,7 +55,7 @@ def test_default_format_is_human_and_unchanged(tmp_path, capsys):
     out = capsys.readouterr().out
     assert out.startswith("⚠️  daimonion: Detected")
     assert "[L1]" in out
-    assert "deprecated-crypto" in out
+    assert "crypto/deprecated-algorithms-prohibited" in out
     assert not out.lstrip().startswith("{")
 
 
@@ -66,8 +66,12 @@ def test_default_format_clean_file(tmp_path, capsys):
     assert capsys.readouterr().out.strip() == "✨ No legal or compliance triggers matched."
 
 
-def test_init_converts_answers_then_scan_uses_config(tmp_path, capsys):
-    """`init` converts .copier-answers.yml into .daimonion.yml; `scan` reads only the config."""
+def test_init_converts_answers_then_scan_runs_all_builtins(tmp_path, capsys):
+    """`init` converts .copier-answers.yml into .daimonion.yml; `scan` runs every builtin.
+
+    Builtin rules carry no gates (check specs cannot name `when`), so the
+    config does not scope the scan: scoping lives in `agents-md`.
+    """
     _write_answers(tmp_path, {"project_type": "cli", "include_scraping": True})
     target = tmp_path / "app.py"
     target.write_text("import hashlib\nhashlib.md5(b'x')\ncookie = True\n", encoding="utf-8")
@@ -77,14 +81,14 @@ def test_init_converts_answers_then_scan_uses_config(tmp_path, capsys):
     config = tmp_path / ".daimonion.yml"
     assert config.is_file()
 
-    # Remove the answers file: only the converted config can scope the next run.
+    # Remove the answers file: only the converted config remains.
     (tmp_path / ".copier-answers.yml").unlink()
 
     rc, payload = _json_output(capsys, ["scan", str(target), "--repo", str(tmp_path), "--format", "json"])
     ids = {finding["rule_id"] for finding in payload["findings"]}
     assert rc == 0
-    assert "deprecated-crypto" in ids
-    assert "jp-external-transmission" not in ids  # web_api-gated, project is cli
+    assert "crypto/deprecated-algorithms-prohibited" in ids
+    assert "privacy/external-transmission-declared" in ids
 
 
 def test_strict_exit_codes(tmp_path, capsys):
@@ -116,18 +120,18 @@ def test_builtin_rules_never_fail_strict(tmp_path, capsys):
     assert main(["--strict", "scan", str(target), "--all"]) == 0
 
 
-def test_list_rules_scoped_versus_all(tmp_path, capsys):
+def test_list_rules_config_and_all_agree(tmp_path, capsys):
+    """Builtin rules are ungated: the config and --all list the same set."""
     (tmp_path / ".daimonion.yml").write_text("version: 1\nwhen: [cli]\n", encoding="utf-8")
 
     assert main(["scan", "--list-rules", "--repo", str(tmp_path)]) == 0
     scoped = capsys.readouterr().out
-    assert "ai-copyright" in scoped
-    assert "eu-eaa-accessibility" not in scoped
+    assert "copyright/tdm-optout-respected" in scoped
+    assert "accessibility/european-accessibility-act" in scoped
 
     assert main(["scan", "--list-rules", "--repo", str(tmp_path), "--all"]) == 0
     every = capsys.readouterr().out
-    assert "eu-eaa-accessibility" in every
-    assert every.count("- [") > scoped.count("- [")
+    assert every == scoped
 
 
 def test_list_rules_json(tmp_path, capsys):
@@ -136,27 +140,40 @@ def test_list_rules_json(tmp_path, capsys):
     assert rc == 0
     ids = {rule["id"] for rule in payload["rules"]}
     assert payload["summary"]["rules"] == len(payload["rules"])
-    assert "ai-copyright" in ids
-    assert "eu-eaa-accessibility" not in ids
+    assert "copyright/tdm-optout-respected" in ids
+    assert "accessibility/european-accessibility-act" in ids
     assert {"id", "title", "triggers", "summary", "enforcement"} <= set(payload["rules"][0])
 
 
-def test_custom_rules_file_wins_outright(tmp_path, capsys):
-    """With `--rules`, the file wins outright: no config scoping applies."""
+def test_custom_rules_file_gates_still_scope(tmp_path, capsys):
+    """With `--rules`, a gated custom file is scoped through `for_when`; ungated rules run."""
     rules_file = tmp_path / "rules.yml"
     rules_file.write_text(
         yaml.safe_dump(
-            {"rules": [{"id": "good-rule", "title": "Good", "triggers": "good", "summary": "s", "gate": ""}]},
+            {
+                "rules": [
+                    {"id": "good-rule", "title": "Good", "triggers": "good", "summary": "s", "gate": ""},
+                    {
+                        "id": "web-rule",
+                        "title": "Web",
+                        "triggers": "webthing",
+                        "summary": "s",
+                        "gate": "web_api",
+                    },
+                ]
+            },
             allow_unicode=True,
         ),
         encoding="utf-8",
     )
     (tmp_path / ".daimonion.yml").write_text("version: 1\nwhen: []\n", encoding="utf-8")
     target = tmp_path / "app.py"
-    target.write_text("a good line\n", encoding="utf-8")
+    target.write_text("a good line with webthing\n", encoding="utf-8")
 
     assert main(["--rules", str(rules_file), "scan", str(target), "--repo", str(tmp_path)]) == 0
-    assert "good-rule" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "good-rule" in out
+    assert "web-rule" not in out
 
 
 def test_list_rules_rejects_sarif_list_format():
@@ -223,15 +240,15 @@ def test_check_sarif_payload(tmp_path, capsys):
     assert driver["name"] == "daimonion"
     assert driver["version"]
     rules = {rule["id"]: rule for rule in driver["rules"]}
-    assert "deprecated-crypto" in rules
-    assert rules["deprecated-crypto"]["name"] == "deprecated-crypto"
-    assert rules["deprecated-crypto"]["shortDescription"]["text"]
-    assert rules["deprecated-crypto"]["defaultConfiguration"]["level"] == "warning"
+    assert "crypto/deprecated-algorithms-prohibited" in rules
+    assert rules["crypto/deprecated-algorithms-prohibited"]["name"] == "crypto/deprecated-algorithms-prohibited"
+    assert rules["crypto/deprecated-algorithms-prohibited"]["shortDescription"]["text"]
+    assert rules["crypto/deprecated-algorithms-prohibited"]["defaultConfiguration"]["level"] == "warning"
 
     results = payload["runs"][0]["results"]
     assert results
     result = results[0]
-    assert result["ruleId"] == "deprecated-crypto"
+    assert result["ruleId"] == "crypto/deprecated-algorithms-prohibited"
     assert result["level"] == "warning"
     assert result["message"]["text"]
     location = result["locations"][0]["physicalLocation"]
@@ -299,11 +316,11 @@ def test_scan_without_config_scopes_nothing(tmp_path, capsys):
     rc, payload = _json_output(capsys, ["scan", str(target), "--repo", str(tmp_path), "--format", "json"])
     ids = {finding["rule_id"] for finding in payload["findings"]}
     assert rc == 0
-    assert "jp-external-transmission" in ids
+    assert "privacy/external-transmission-declared" in ids
 
 
-def test_scan_config_scopes_rules(tmp_path, capsys):
-    """A `cli` config gates out the web_api-only rules."""
+def test_scan_config_runs_all_builtins(tmp_path, capsys):
+    """A `cli` config no longer gates the scan: every builtin rule runs."""
     (tmp_path / ".daimonion.yml").write_text("version: 1\nwhen: [cli]\n", encoding="utf-8")
     target = tmp_path / "app.py"
     target.write_text("import hashlib\nhashlib.md5(b'x')\ncookie = True\n", encoding="utf-8")
@@ -311,12 +328,12 @@ def test_scan_config_scopes_rules(tmp_path, capsys):
     rc, payload = _json_output(capsys, ["scan", str(target), "--repo", str(tmp_path), "--format", "json"])
     ids = {finding["rule_id"] for finding in payload["findings"]}
     assert rc == 0
-    assert "deprecated-crypto" in ids
-    assert "jp-external-transmission" not in ids
+    assert "crypto/deprecated-algorithms-prohibited" in ids
+    assert "privacy/external-transmission-declared" in ids
 
 
-def test_scan_diff_mode_uses_config_scope(tmp_path, capsys):
-    """Bare `scan` reads the git diff and applies the config scope."""
+def test_scan_diff_mode_runs_all_builtins(tmp_path, capsys):
+    """Bare `scan` reads the git diff and runs every builtin rule."""
     import subprocess
 
     (tmp_path / ".daimonion.yml").write_text("version: 1\nwhen: [cli]\n", encoding="utf-8")
@@ -329,4 +346,4 @@ def test_scan_diff_mode_uses_config_scope(tmp_path, capsys):
     rc, payload = _json_output(capsys, ["scan", "--repo", str(tmp_path), "--format", "json"])
     ids = {finding["rule_id"] for finding in payload["findings"]}
     assert rc == 0
-    assert "deprecated-crypto" in ids
+    assert "crypto/deprecated-algorithms-prohibited" in ids

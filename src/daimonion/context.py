@@ -198,7 +198,7 @@ def derive_context(answers: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def answers_to_when(answers: Mapping[str, Any]) -> list[str]:
-    """The kanon ``when`` conditions a copier answers file implies.
+    """The rulebook ``when`` conditions a copier answers file implies.
 
     Mirrors architekton-py's ``_shared/daimonion-when.jinja``:
     ``project_type``/``micropython_pkg``/``domain_traits`` map directly, the

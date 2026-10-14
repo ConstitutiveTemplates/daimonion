@@ -20,10 +20,10 @@ SOURCE_SUFFIXES: frozenset[str] = frozenset({".py", ".ts", ".js", ".go", ".rs", 
 #: that mentions "license" is not a licensing change.
 DOC_SUFFIXES: frozenset[str] = frozenset({".md", ".yml", ".yaml", ".toml"})
 
-#: The kanon ``when`` conditions a project can declare in ``.daimonion.yml``
+#: The rulebook ``when`` conditions a project can declare in ``.daimonion.yml``
 #: (``always`` sections apply without being listed). Kept next to the engine
 #: so rule gates can name them directly; mirrors ``WHEN_VOCABULARY``.
-KANON_CONDITIONS: tuple[str, ...] = (
+RULEBOOK_CONDITIONS: tuple[str, ...] = (
     "always",
     "library",
     "cli",
@@ -42,6 +42,9 @@ KANON_CONDITIONS: tuple[str, ...] = (
     "jp",
     "ai_assisted",
 )
+
+#: Historical name for :data:`RULEBOOK_CONDITIONS`; kept for backward compatibility.
+KANON_CONDITIONS: tuple[str, ...] = RULEBOOK_CONDITIONS
 
 
 def _gate_names(gate: str) -> set[str]:
@@ -189,7 +192,7 @@ class Linter:
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> Linter:
-        """Load rules from an external YAML file (e.g. from kanon, law-map, or REGISTRY.yml)."""
+        """Load rules from an external YAML file (e.g. a law-map ``checks/`` dir or REGISTRY.yml)."""
         return cls(load_rules_from_yaml(path))
 
     def for_context(self, context: Mapping[str, Any]) -> Linter:
@@ -197,7 +200,7 @@ class Linter:
         return Linter(scope_rules(self.rules, context), include_docs=self.include_docs)
 
     def for_when(self, when: Iterable[str]) -> Linter:
-        """Scope the rules to the kanon ``when`` conditions a project declares.
+        """Scope the rules to the rulebook ``when`` conditions a project declares.
 
         A rule whose gate names a ``when`` condition applies when the project
         declares it; a gate naming anything else falls back to the

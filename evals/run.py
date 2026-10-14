@@ -57,15 +57,16 @@ def rules_block_text() -> str:
     """The rules block injected in the ``with`` arm.
 
     Today: the personal-data section rendered the same way ``daimonion
-    agents-md`` renders it (imperative lines + sources). Kept inline so the
-    dry-run fixtures stay reproducible without a kanon checkout.
+    agents-md --lang en`` renders it (``en:`` title and summary + sources).
+    Kept inline so the dry-run fixtures stay reproducible without a
+    rulebook checkout.
     """
     return (
-        "### Personal data -- minimise before you collect\n"
+        "### Personal data — minimise before collecting, and build the deletion path first\n"
         "\n"
-        "- NEVER pass raw user identifiers to logging or error trackers.\n"
-        "- Minimise collection: ask whether each identifier is needed.\n"
-        "- Provide a deletion path for stored personal data.\n"
+        "- Ask whether each item is needed before collecting it; default to the minimum.\n"
+        "- Include deletion and correction paths in the initial design; retrofitting is expensive.\n"
+        "- Know what leaves the process (error trackers, cloud, external APIs) and reduce it before it leaves.\n"
         "\n"
         "Sources: [eur-lex.europa.eu](https://eur-lex.europa.eu/eli/reg/2016/679/oj), "
         "[ppc.go.jp](https://www.ppc.go.jp/personalinfo/legal/)\n"

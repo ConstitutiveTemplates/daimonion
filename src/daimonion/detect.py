@@ -1,4 +1,4 @@
-"""Suggest kanon ``when`` conditions from what a repository already contains.
+"""Suggest rulebook ``when`` conditions from what a repository already contains.
 
 ``daimonion init`` proposes, it does not decide: every suggestion carries the
 file and dependency it came from, and the conditions no file can reveal
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-#: One-line meaning of each condition (kanon MANIFEST.yml).
+#: One-line meaning of each condition (rulebook MANIFEST.yml).
 WHEN_DESCRIPTIONS: dict[str, str] = {
     "library": "a library / API package project",
     "cli": "a command-line / terminal tool project",
@@ -49,7 +49,7 @@ UNDETECTABLE: tuple[str, ...] = (
 )
 
 #: Condition order for rendered configs: the template's
-#: ``_shared/daimonion-when.jinja`` macro emits conditions in kanon
+#: ``_shared/daimonion-when.jinja`` macro emits conditions in rulebook
 #: vocabulary order, so a rendered ``.daimonion.yml`` matches what the
 #: template would generate for the same answers.
 WHEN_ORDER: tuple[str, ...] = (
@@ -320,7 +320,7 @@ def render_config(signals: list[Signal], agents_md: str = "AGENTS.md") -> str:
         detected.setdefault(signal.condition, []).append(signal)
     width = max(len(name) for name in WHEN_DESCRIPTIONS)
     lines = [
-        "# daimonion project conditions, in kanon's `when` vocabulary.",
+        "# daimonion project conditions, in the rulebook `when` vocabulary.",
         "# `daimonion agents-md --write` renders the matching rules into",
         "# the guide file below; `always` sections apply without being listed.",
         "version: 1",

@@ -6,10 +6,11 @@ from pathlib import Path
 
 import yaml
 
+from daimonion import rulebook
 from daimonion.cli import main
 from daimonion.engine import Linter
 from daimonion.models import Rule
-from daimonion.rules import load_rules_from_checks_dir, load_rules_from_yaml
+from daimonion.rules import VENDORED_CHECKS, load_rules_from_checks_dir, load_rules_from_yaml
 
 
 def _write_spec(checks_root: Path, ref: str, spec: dict) -> Path:
@@ -36,7 +37,7 @@ def test_from_check_spec_maps_level_and_triggers():
     assert rule.id == "privacy/no-cleartext-pii"
     assert rule.enforcement == "L1"
     assert rule.category == "privacy"
-    assert rule.title == "obligation.privacy.no-cleartext-pii-logging"
+    assert rule.title == "no cleartext pii logging"
     assert rule.summary == "No raw personal identifier reaches a logging sink."
     assert rule.gate == ""
     findings = Linter([rule]).scan_text("logger.info(personal_data)\n")
@@ -108,15 +109,22 @@ def test_check_with_rules_pointing_at_checks_dir(tmp_path, capsys):
     assert "privacy/no-cleartext-pii" in out
 
 
-def test_repo_check_specs_load_and_scan(tmp_path):
-    """Every shipped law-map check spec loads; the PII + NTP pair fires end to end."""
-    repo_checks = Path(__file__).resolve().parent.parent.parent / "law-map" / "checks"
-    rules = load_rules_from_yaml(repo_checks)
-    assert len(rules) == 18
+def test_vendored_check_specs_load_and_scan():
+    """Every vendored check spec loads; the PII + NTP pair fires end to end."""
+    rules = load_rules_from_yaml(Path(str(VENDORED_CHECKS)))
+    assert len(rules) == 14
     linter = Linter(rules)
     pii = linter.scan_text("logger.info(personal_data)\n")
-    assert any(f.rule.id == "privacy/no-cleartext-pii" for f in pii)
+    assert any(f.rule.id == "privacy/cleartext-pii-logging-prohibited" for f in pii)
     ntp = linter.scan_text("server = clock.nc.fukuoka-u.ac.jp\n")
     assert any(f.rule.id == "security/public-ntp-hygiene" for f in ntp)
-    l2_ids = {f.rule.id for f in linter.scan_text("vulnerability CVE-2024-1 found\n")}
-    assert {"security/sbom-present", "security/no-known-cve"} <= l2_ids
+
+
+def test_vendored_specs_agree_with_sections(tmp_path):
+    """Each vendored spec's trigger matches the pattern of a section serving its obligation."""
+    sections = rulebook.load_sections()
+    assert [s.triggers for s in sections]
+    for spec_file in sorted(Path(str(VENDORED_CHECKS)).rglob("*.yml")):
+        spec = yaml.safe_load(spec_file.read_text(encoding="utf-8"))
+        assert spec.get("obligation"), spec_file
+        assert spec.get("level") in ("L0", "L1", "L2"), spec_file

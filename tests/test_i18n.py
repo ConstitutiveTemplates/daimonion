@@ -64,7 +64,7 @@ def test_resolve_emoji():
 def test_check_output_is_english_by_default(pii_file, capsys):
     assert main(["scan", str(pii_file), "--all"]) == 0
     out = capsys.readouterr().out
-    assert "Summary:" in out and "Matched at:" in out and "Personal data" in out
+    assert "Summary:" in out and "Matched at:" in out and "no cleartext pii logging" in out
     assert "要約" not in out
 
 
@@ -89,7 +89,7 @@ def test_no_emoji_drops_every_icon(pii_file, capsys):
 
 
 def test_custom_rule_reusing_a_builtin_id_keeps_its_own_text():
-    builtin = next(r for r in BUILTIN_RULES if r.id == "deprecated-crypto")
+    builtin = next(r for r in BUILTIN_RULES if r.id == "crypto/deprecated-algorithms-prohibited")
     custom = Rule(id=builtin.id, title="Our crypto policy", triggers="md5", summary="Use our KMS.")
     ui = UI.create("ja")
     assert ui.rule_title(custom) == "Our crypto policy"

@@ -77,7 +77,7 @@ MESSAGES: dict[str, str] = {
     "init.next": "Next: review the conditions, then run `daimonion agents-md --write`.",
     # agents-md
     "agents.no_config": "No {name} under {repo!r}; run `daimonion init --write` first.",
-    "agents.current": "{path} carries the current rules block (kanon {sha}).",
+    "agents.current": "{path} carries the current rules block (rulebook {sha}).",
     "agents.missing": "The rules block in {path} is missing; run `daimonion agents-md --write`.",
     "agents.stale": "The rules block in {path} is stale; run `daimonion agents-md --write`.",
     "agents.updated": "Updated the rules block in {path}",

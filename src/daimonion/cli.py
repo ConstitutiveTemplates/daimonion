@@ -4,15 +4,15 @@ import argparse
 import sys
 from pathlib import Path
 
-from daimonion import kanon
+from daimonion import rulebook
 from daimonion.config import CONFIG_NAME, ConfigError, ProjectConfig, find_config, load_config
 from daimonion.context import answers_to_when, find_answers_file, load_answers
 from daimonion.detect import UNDETECTABLE, Signal, default_agents_md, detect, render_config
 from daimonion.engine import Linter
 from daimonion.i18n import DEFAULT_UI, LANGS, UI, resolve_emoji, resolve_lang
-from daimonion.kanon import WHEN_VOCABULARY
 from daimonion.models import Finding
 from daimonion.report import build_json_report, build_rules_json_report, build_sarif_report, dumps
+from daimonion.rulebook import WHEN_VOCABULARY
 from daimonion.suppress import BASELINE_NAME, BaselineError, load_baseline, split_baselined, write_baseline
 
 #: Output formats for finding-producing subcommands.
@@ -145,20 +145,20 @@ def agents_md(args: argparse.Namespace, ui: UI = DEFAULT_UI) -> int:
         print(f"{ui.icon('warn')}{exc}", file=sys.stderr)
         return 2
 
-    block = kanon.render_block(config.when)
+    block = rulebook.render_block(config.when, lang=ui.lang, packs=config.packs)
     target = config.agents_md_path
     current = target.read_text(encoding="utf-8") if target.is_file() else ""
     try:
-        updated = kanon.splice_block(current, block)
+        updated = rulebook.splice_block(current, block)
     except ValueError as exc:
         print(f"{ui.icon('warn')}{target}: {exc}", file=sys.stderr)
         return 2
 
     if args.check:
-        if kanon.extract_block(current) == block:
-            print(ui.line("ok", "agents.current", path=target, sha=kanon.kanon_sha()[:12]))
+        if rulebook.extract_block(current) == block:
+            print(ui.line("ok", "agents.current", path=target, sha=rulebook.lawmap_sha()[:12]))
             return 0
-        state = "agents.missing" if kanon.extract_block(current) is None else "agents.stale"
+        state = "agents.missing" if rulebook.extract_block(current) is None else "agents.stale"
         print(ui.line("fail", state, path=target), file=sys.stderr)
         return 1
     if args.write:
@@ -174,19 +174,23 @@ def agents_md(args: argparse.Namespace, ui: UI = DEFAULT_UI) -> int:
 
 
 def resolve_rules(args: argparse.Namespace, config: ProjectConfig | None, ui: UI = DEFAULT_UI) -> Linter:
-    """Select the active rule set: --rules wins, else the ``.daimonion.yml`` conditions gate the builtins.
+    """Select the active rule set: --rules wins, else the vendored check-spec builtins.
 
-    ``scan`` and ``agents-md`` read only ``.daimonion.yml``: a project with
-    no config scans everything, exactly like ``--all``.
+    The builtins carry no gates (a check spec cannot name the project's
+    ``when`` conditions), so ``scan`` always runs all of them: scoping lives
+    in ``agents-md``, which renders only the matching sections. ``--rules``
+    replaces the set outright; a custom file whose rules carry gates is
+    still scoped through ``for_when``.
     """
     if args.rules:
-        return Linter.from_yaml(args.rules)
-    base = Linter()
-    if config is None or getattr(args, "all", False):
-        return base
-    scoped = base.for_when(config.when)
-    print(ui.line("info", "scope.note", count=len(scoped.rules), config=config.path), file=sys.stderr)
-    return scoped
+        linter = Linter.from_yaml(args.rules)
+        if config is None or getattr(args, "all", False):
+            return linter
+        scoped = linter.for_when(config.when)
+        if len(scoped.rules) != len(linter.rules):
+            print(ui.line("info", "scope.note", count=len(scoped.rules), config=config.path), file=sys.stderr)
+        return scoped
+    return Linter()
 
 
 def _load_project_config(repo: Path) -> ProjectConfig | None:
@@ -322,7 +326,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # agents-md
     p_agents = sub.add_parser(
-        "agents-md", parents=[display], help=f"Render the rules block (sourced kanon rules) selected by {CONFIG_NAME}"
+        "agents-md",
+        parents=[display],
+        help=f"Render the rules block (sourced rulebook rules) selected by {CONFIG_NAME}",
     )
     p_agents.add_argument("--repo", default=".", help=f"Project root containing {CONFIG_NAME}")
     p_agents.add_argument("--config", default=None, help=f"Explicit path to a {CONFIG_NAME}")

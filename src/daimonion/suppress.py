@@ -5,7 +5,7 @@ when it stands alone on a comment line::
 
     ua = "my-crawler-agent/1.0"  # daimonion: ignore[llm-appsec] reason=HTTP User-Agent until=2027-01-31
 
-    # daimonion: ignore[licensing-drift,pki-trust-chain] reason=vendored notice
+    # daimonion: ignore[licensing/no-copyleft-contamination] reason=vendored notice
     LICENSE_URL = "https://..."
 
 ``reason=`` is required (a directive without one is not honoured) and

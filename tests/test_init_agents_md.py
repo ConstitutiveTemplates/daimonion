@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from daimonion import kanon
+from daimonion import rulebook
 from daimonion.cli import main
 from daimonion.config import ConfigError, load_config
 from daimonion.detect import detect, render_config
@@ -144,9 +144,12 @@ def test_agents_md_write_check_cycle(tmp_path, capsys):
     assert main(["agents-md", "--repo", str(tmp_path), "--write"]) == 0
     text = guide.read_text(encoding="utf-8")
     assert text.startswith("# Guide\n\nproject notes\n\n")
-    assert text.count(kanon.BEGIN_MARKER) == 1
-    scraping = next(s for s in kanon.load_sections() if s.id == "domain-scraping-law")
-    assert f"### {scraping.title}" in text
+    assert text.count(rulebook.BEGIN_MARKER) == 1
+    scraping = next(s for s in rulebook.load_sections() if s.id == "domain-scraping-law")
+    marker = next(line for line in text.splitlines() if line.startswith(rulebook.BEGIN_MARKER))
+    assert "lang=en" in marker  # default UI lang is en: the `en:` rendering
+    assert f"### {scraping.en_title}" in text
+    assert scraping.en_summary[0] in text
     assert main(["agents-md", "--repo", str(tmp_path), "--check"]) == 0
 
     # A second write is a no-op; a condition change makes the block stale.
@@ -158,11 +161,29 @@ def test_agents_md_write_check_cycle(tmp_path, capsys):
     assert "is stale" in capsys.readouterr().err
 
 
+def test_agents_md_write_lang_ja_renders_japanese(tmp_path, capsys):
+    """`--lang ja` renders the sections' Japanese h1 and summary items."""
+    _config(tmp_path, "version: 1\nwhen: [scraping]\n")
+    guide = tmp_path / "AGENTS.md"
+    guide.write_text("# Guide\n", encoding="utf-8")
+
+    assert main(["--lang", "ja", "agents-md", "--repo", str(tmp_path), "--write"]) == 0
+    text = guide.read_text(encoding="utf-8")
+    scraping = next(s for s in rulebook.load_sections() if s.id == "domain-scraping-law")
+    marker = next(line for line in text.splitlines() if line.startswith(rulebook.BEGIN_MARKER))
+    assert "lang=ja" in marker
+    assert f"### {scraping.title}" in text
+    assert f"### {scraping.en_title}" not in text
+    assert main(["--lang", "ja", "agents-md", "--repo", str(tmp_path), "--check"]) == 0
+    # The en block differs: language is part of the block identity.
+    assert main(["agents-md", "--repo", str(tmp_path), "--check"]) == 1
+
+
 def test_agents_md_creates_missing_guide_and_prints_by_default(tmp_path, capsys):
     _config(tmp_path, "version: 1\nagents_md: docs/AGENTS.md\nwhen: []\n")
     assert main(["agents-md", "--repo", str(tmp_path)]) == 0
     printed = capsys.readouterr().out
-    assert printed.startswith(kanon.BEGIN_MARKER)
+    assert printed.startswith(rulebook.BEGIN_MARKER)
     assert not (tmp_path / "docs").exists()
 
     assert main(["agents-md", "--repo", str(tmp_path), "--write"]) == 0
@@ -179,13 +200,15 @@ def test_agents_md_config_errors_exit_2(tmp_path, capsys, config):
 def test_agents_md_migrates_a_legacy_ethics_block(tmp_path, capsys):
     _config(tmp_path, "version: 1\nwhen: []\n")
     guide = tmp_path / "AGENTS.md"
-    legacy = f"{kanon.LEGACY_BEGIN_MARKER} kanon=old -->\nold prose\n{kanon.LEGACY_END_MARKER}\n"
+    legacy = f"{rulebook.LEGACY_BEGIN_MARKER} kanon=old -->\nold prose\n{rulebook.LEGACY_END_MARKER}\n"
     guide.write_text(f"# Guide\n\n{legacy}\n## Mine\n", encoding="utf-8")
 
     assert main(["agents-md", "--repo", str(tmp_path), "--check"]) == 1
     assert "is stale" in capsys.readouterr().err
     assert main(["agents-md", "--repo", str(tmp_path), "--write"]) == 0
     text = guide.read_text(encoding="utf-8")
-    assert kanon.LEGACY_BEGIN_MARKER not in text and "old prose" not in text
-    assert text.startswith(f"# Guide\n\n{kanon.BEGIN_MARKER}") and text.endswith(f"{kanon.END_MARKER}\n\n## Mine\n")
+    assert rulebook.LEGACY_BEGIN_MARKER not in text and "old prose" not in text
+    assert text.startswith(f"# Guide\n\n{rulebook.BEGIN_MARKER}") and text.endswith(
+        f"{rulebook.END_MARKER}\n\n## Mine\n"
+    )
     assert main(["agents-md", "--repo", str(tmp_path), "--check"]) == 0
