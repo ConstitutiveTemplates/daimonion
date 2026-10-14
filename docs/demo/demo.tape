@@ -21,7 +21,7 @@ Set TypingSpeed 28ms
 Type "cat docs/demo/fixture/app.py" Sleep 400ms Enter
 Sleep 1s
 
-Type "uv run daimonion --no-emoji check docs/demo/fixture/app.py --repo docs/demo/fixture" Sleep 400ms Enter
+Type "uv run daimonion --no-emoji scan docs/demo/fixture/app.py --repo docs/demo/fixture" Sleep 400ms Enter
 Sleep 2s
 
 Type "sed -n '/個人データ/,/kanon/p' docs/demo/fixture/AGENTS.md" Sleep 400ms Enter
@@ -30,5 +30,5 @@ Sleep 2s
 Type "cat docs/demo/fixture/app_fixed.py" Sleep 400ms Enter
 Sleep 1s
 
-Type "uv run daimonion --no-emoji check docs/demo/fixture/app_fixed.py --repo docs/demo/fixture" Sleep 400ms Enter
+Type "uv run daimonion --no-emoji scan docs/demo/fixture/app_fixed.py --repo docs/demo/fixture" Sleep 400ms Enter
 Sleep 2s

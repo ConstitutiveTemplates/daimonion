@@ -48,6 +48,29 @@ UNDETECTABLE: tuple[str, ...] = (
     "jp",
 )
 
+#: Condition order for rendered configs: the template's
+#: ``_shared/daimonion-when.jinja`` macro emits conditions in kanon
+#: vocabulary order, so a rendered ``.daimonion.yml`` matches what the
+#: template would generate for the same answers.
+WHEN_ORDER: tuple[str, ...] = (
+    "library",
+    "cli",
+    "embedded",
+    "personal_data",
+    "face_recognition",
+    "medtech",
+    "scraping",
+    "oj_code",
+    "kaggle",
+    "mcp",
+    "data_science",
+    "web_api",
+    "commercial",
+    "eu_market",
+    "jp",
+    "ai_assisted",
+)
+
 #: Dependency names that signal a condition, across ecosystems. Go module
 #: paths match by prefix (major-version suffixes like ``/v2`` vary).
 DEPENDENCY_SIGNALS: dict[str, frozenset[str]] = {
@@ -278,7 +301,7 @@ def detect(repo: str | Path) -> list[Signal]:
     for name in AI_ASSISTANT_FILES:
         if (repo / name).exists():
             signals.append(Signal("ai_assisted", name, "AI agent instructions present"))
-    order = list(WHEN_DESCRIPTIONS)
+    order = list(WHEN_ORDER)
     return sorted(signals, key=lambda s: order.index(s.condition))
 
 
@@ -304,16 +327,16 @@ def render_config(signals: list[Signal], agents_md: str = "AGENTS.md") -> str:
         f"agents_md: {agents_md}",
         "when:",
     ]
-    for condition in WHEN_DESCRIPTIONS:
+    for condition in WHEN_ORDER:
         if condition in detected:
             evidence = "; ".join(f"{s.source}: {s.detail}" for s in detected[condition][:3])
             lines.append(f"  - {condition.ljust(width)}  # detected -- {evidence}")
     lines.append("# Not detected -- uncomment the ones that hold for this project:")
-    for condition, description in WHEN_DESCRIPTIONS.items():
+    for condition in WHEN_ORDER:
         if condition not in detected:
-            lines.append(f"#  - {condition.ljust(width)}  # {description}")
+            lines.append(f"#  - {condition.ljust(width)}  # {WHEN_DESCRIPTIONS[condition]}")
     lines += [
-        "# Scanning (`daimonion check` / `diff`):",
+        "# Scanning (`daimonion scan` adds paths, or reads the git diff with none):",
         "# mode: adoption   # warn-only while adopting: nothing fails, even with --strict",
         "# scan:",
         "#   docs: true     # also scan .md/.yml/.yaml/.toml (default: source code only)",

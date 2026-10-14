@@ -103,7 +103,7 @@ def test_check_with_rules_pointing_at_checks_dir(tmp_path, capsys):
     _write_spec(checks, "privacy/no-cleartext-pii", _pii_spec())
     target = tmp_path / "app.py"
     target.write_text("logger.info(personal_data)\n", encoding="utf-8")
-    assert main(["--rules", str(checks), "check", str(target), "--all"]) == 0
+    assert main(["--rules", str(checks), "scan", str(target), "--all"]) == 0
     out = capsys.readouterr().out
     assert "privacy/no-cleartext-pii" in out
 

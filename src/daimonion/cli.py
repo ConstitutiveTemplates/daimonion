@@ -4,22 +4,16 @@ import argparse
 import sys
 from pathlib import Path
 
-import yaml
-
 from daimonion import kanon
 from daimonion.config import CONFIG_NAME, ConfigError, ProjectConfig, find_config, load_config
-from daimonion.context import derive_context, describe_context, find_answers_file, load_answers
-from daimonion.detect import UNDETECTABLE, default_agents_md, detect, render_config
+from daimonion.context import answers_to_when, find_answers_file, load_answers
+from daimonion.detect import UNDETECTABLE, Signal, default_agents_md, detect, render_config
 from daimonion.engine import Linter
 from daimonion.i18n import DEFAULT_UI, LANGS, UI, resolve_emoji, resolve_lang
+from daimonion.kanon import WHEN_VOCABULARY
 from daimonion.models import Finding
 from daimonion.report import build_json_report, build_rules_json_report, build_sarif_report, dumps
 from daimonion.suppress import BASELINE_NAME, BaselineError, load_baseline, split_baselined, write_baseline
-
-#: Prepared per-project rule file written by ``prepare --write``.
-PREPARED_RULES_NAME = ".daimonion-rules.yml"
-#: Previous name of the prepared rule file; still read when the new name is absent.
-LEGACY_PREPARED_RULES_NAME = ".law-lint-rules.yml"
 
 #: Output formats for finding-producing subcommands.
 FORMAT_CHOICES = ("human", "json", "sarif")
@@ -88,49 +82,36 @@ def format_findings(
     return "\n".join(lines).strip()
 
 
-def prepare(args: argparse.Namespace, ui: UI = DEFAULT_UI) -> int:
-    """Derive the applicable compliance set from .copier-answers.yml."""
-    answers_path = Path(args.answers) if args.answers else find_answers_file(args.repo)
-    if answers_path is None:
-        print(ui.line("warn", "prepare.no_answers", repo=args.repo), file=sys.stderr)
-        return 2
-
-    context = derive_context(load_answers(answers_path))
-    base = Linter.from_yaml(args.rules) if args.rules else Linter()
-    scoped = base.for_context(context)
-    skipped = [r for r in base.rules if r not in scoped.rules]
-
-    print(ui.line("plan", "prepare.header", path=answers_path))
-    for line in describe_context(context):
-        print(f"   {line}")
-    print()
-    print(ui.line("ok", "prepare.applicable", count=len(scoped.rules), total=len(base.rules)))
-    for r in scoped.rules:
-        print(f"   [{r.enforcement}] {r.id}: {ui.rule_title(r)}")
-        print(f"        {ui.icon('summary')}{ui.rule_summary(r)}")
-    if skipped:
-        print()
-        print(ui.line("skip", "prepare.skipped", count=len(skipped), ids=", ".join(r.id for r in skipped)))
-
-    if args.write:
-        payload = {"rules": [r.to_dict() for r in scoped.rules]}
-        out = answers_path.parent / PREPARED_RULES_NAME
-        out.write_text(yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), encoding="utf-8")
-        print("\n" + ui.line("wrote", "prepare.wrote", path=out))
-        print("   " + ui.t("prepare.commit", name=PREPARED_RULES_NAME))
-    else:
-        print("\n" + ui.line("info", "prepare.hint", name=PREPARED_RULES_NAME))
-    return 0
-
-
 def init(args: argparse.Namespace, ui: UI = DEFAULT_UI) -> int:
-    """Suggest a .daimonion.yml from the repository's manifests and agent files."""
+    """Write a .daimonion.yml from manifests, agent files, and .copier-answers.yml.
+
+    The answers file is read **once**, here: its answers convert to ``when``
+    conditions that merge with the manifest-detected signals. ``scan`` and
+    ``agents-md`` later read only the written ``.daimonion.yml``.
+    """
     repo = Path(args.repo)
     signals = detect(repo)
-    text = render_config(signals, agents_md=default_agents_md(repo))
+    answers_path = Path(args.answers) if args.answers else find_answers_file(repo)
+    converted = answers_to_when(load_answers(answers_path)) if answers_path is not None else []
+    known = set(WHEN_VOCABULARY)
+    converted = [c for c in converted if c in known]
+    merged = list(signals)
+    seen = {s.condition for s in merged}
+    source = answers_path.name if answers_path is not None else ".copier-answers.yml"
+    for condition in converted:
+        if condition not in seen:
+            seen.add(condition)
+            merged.append(Signal(condition, source, "converted from copier answers"))
+    text = render_config(merged, agents_md=default_agents_md(repo))
     target = repo / CONFIG_NAME
 
     print(ui.line("scan", "init.header", path=repo.resolve()))
+    if answers_path is not None:
+        print(ui.line("plan", "init.answers", path=answers_path))
+        if converted:
+            print(f"   {', '.join(converted)}")
+        else:
+            print("   " + ui.t("init.answers_none"))
     if signals:
         for signal in signals:
             print(f"   {signal.condition}: {signal.source} ({signal.detail})")
@@ -192,28 +173,20 @@ def agents_md(args: argparse.Namespace, ui: UI = DEFAULT_UI) -> int:
     return 0
 
 
-def resolve_linter(args: argparse.Namespace, ui: UI = DEFAULT_UI) -> Linter:
-    """Select the active rule set: --rules > prepared file > copier-answers scope > all builtins.
+def resolve_rules(args: argparse.Namespace, config: ProjectConfig | None, ui: UI = DEFAULT_UI) -> Linter:
+    """Select the active rule set: --rules wins, else the ``.daimonion.yml`` conditions gate the builtins.
 
-    The prepared file is :data:`PREPARED_RULES_NAME`; a project that prepared
-    under the previous release name still has :data:`LEGACY_PREPARED_RULES_NAME`,
-    which is read only when the new name is absent.
+    ``scan`` and ``agents-md`` read only ``.daimonion.yml``: a project with
+    no config scans everything, exactly like ``--all``.
     """
-    repo = Path(getattr(args, "repo", "."))
     if args.rules:
         return Linter.from_yaml(args.rules)
-    prepared = repo / PREPARED_RULES_NAME
-    legacy = repo / LEGACY_PREPARED_RULES_NAME
-    answers = find_answers_file(repo)
-    if prepared.is_file():
-        return Linter.from_yaml(prepared)
-    if legacy.is_file():
-        return Linter.from_yaml(legacy)
-    if answers is not None and not getattr(args, "all", False):
-        scoped = Linter.for_project(answers)
-        print(ui.line("info", "scope.note", count=len(scoped.rules), answers=answers), file=sys.stderr)
-        return scoped
-    return Linter()
+    base = Linter()
+    if config is None or getattr(args, "all", False):
+        return base
+    scoped = base.for_when(config.when)
+    print(ui.line("info", "scope.note", count=len(scoped.rules), config=config.path), file=sys.stderr)
+    return scoped
 
 
 def _load_project_config(repo: Path) -> ProjectConfig | None:
@@ -222,22 +195,23 @@ def _load_project_config(repo: Path) -> ProjectConfig | None:
     return load_config(path) if path is not None else None
 
 
-def scan(args: argparse.Namespace, linter: Linter, ui: UI = DEFAULT_UI) -> int:
-    """Run ``check``/``diff``: match, apply ignores and the baseline, then report and decide the exit code."""
+def scan(args: argparse.Namespace, ui: UI = DEFAULT_UI) -> int:
+    """Run ``scan``: match, apply ignores and the baseline, then report and decide the exit code."""
     repo = Path(args.repo)
     try:
         config = _load_project_config(repo)
     except ConfigError as exc:
         print(f"{ui.icon('warn')}{exc}", file=sys.stderr)
         return 2
+    linter = resolve_rules(args, config, ui)
     linter.include_docs = args.include_docs or (config is not None and config.scan_docs)
 
-    if args.subcommand == "diff":
-        findings = linter.scan_git_diff(staged=args.staged, repo_dir=repo)
-        base = repo  # diff paths are repo-relative
-    else:
+    if args.paths:
         findings = linter.scan_paths(args.paths)
         base = Path.cwd()
+    else:
+        findings = linter.scan_git_diff(staged=args.staged, repo_dir=repo)
+        base = repo  # diff paths are repo-relative
 
     active = [f for f in findings if not f.suppressed]
     suppressed = [f for f in findings if f.suppressed]
@@ -279,7 +253,7 @@ def scan(args: argparse.Namespace, linter: Linter, ui: UI = DEFAULT_UI) -> int:
 
 
 def _add_scan_options(sub: argparse.ArgumentParser) -> None:
-    """Options shared by ``check`` and ``diff``."""
+    """Options shared by the two ``scan`` modes (paths vs git diff)."""
     sub.add_argument(
         "--include-docs",
         action="store_true",
@@ -337,19 +311,12 @@ def build_parser() -> argparse.ArgumentParser:
     display = _display_options(top_level=False)
     sub = parser.add_subparsers(dest="subcommand", required=True)
 
-    # prepare
-    p_prep = sub.add_parser(
-        "prepare",
-        parents=[display],
-        help="Read .copier-answers.yml, infer the project type, and show the applicable compliance rules",
+    # init: convert manifests + .copier-answers.yml into .daimonion.yml
+    p_init = sub.add_parser(
+        "init", parents=[display], help=f"Write a {CONFIG_NAME} from manifests and .copier-answers.yml"
     )
-    p_prep.add_argument("--repo", default=".", help="Project root containing .copier-answers.yml")
-    p_prep.add_argument("--answers", default=None, help="Explicit path to a copier answers file")
-    p_prep.add_argument("--write", action="store_true", help=f"Write {PREPARED_RULES_NAME} next to the answers file")
-
-    # init
-    p_init = sub.add_parser("init", parents=[display], help=f"Suggest a {CONFIG_NAME} from the repository's manifests")
     p_init.add_argument("--repo", default=".", help="Project root to inspect")
+    p_init.add_argument("--answers", default=None, help="Explicit path to a copier answers file")
     p_init.add_argument("--write", action="store_true", help=f"Save the suggestion as {CONFIG_NAME}")
     p_init.add_argument("--force", action="store_true", help=f"Overwrite an existing {CONFIG_NAME}")
 
@@ -363,77 +330,63 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument("--write", action="store_true", help="Insert or refresh the block in the guide file")
     mode.add_argument("--check", action="store_true", help="Exit 1 when the guide file's block is missing or stale")
 
-    # diff
-    p_diff = sub.add_parser("diff", parents=[display], help="Scan git diff for modified lines")
-    p_diff.add_argument("--staged", action="store_true", help="Scan staged changes instead of unstaged")
-    p_diff.add_argument("--repo", default=".", help="Target repository directory (default: current)")
-    p_diff.add_argument(
-        "--all", action="store_true", help="Scan with every rule, ignoring the copier-derived project scope"
-    )
-    p_diff.add_argument(
+    # scan: findings over explicit paths, or over the git diff when no paths are given
+    p_scan = sub.add_parser("scan", parents=[display], help="Scan paths, or the git diff when no paths are given")
+    p_scan.add_argument("paths", nargs="*", help="Files or directories to scan (default: scan the git diff)")
+    p_scan.add_argument("--staged", action="store_true", help="Scan staged changes instead of unstaged (diff mode)")
+    p_scan.add_argument("--repo", default=".", help=f"Project root containing {CONFIG_NAME}")
+    p_scan.add_argument("--all", action="store_true", help=f"Scan with every rule, ignoring the {CONFIG_NAME} scope")
+    p_scan.add_argument(
         "--format",
         dest="output_format",
         choices=FORMAT_CHOICES,
         default="human",
         help="Output format for findings (default: human)",
     )
-    _add_scan_options(p_diff)
-
-    # check
-    p_check = sub.add_parser("check", parents=[display], help="Scan specific files or directories")
-    p_check.add_argument("paths", nargs="+", help="Files or directories to scan")
-    p_check.add_argument("--repo", default=".", help="Project root for copier-derived scoping")
-    p_check.add_argument(
-        "--all", action="store_true", help="Scan with every rule, ignoring the copier-derived project scope"
-    )
-    p_check.add_argument(
-        "--format",
-        dest="output_format",
-        choices=FORMAT_CHOICES,
-        default="human",
-        help="Output format for findings (default: human)",
-    )
-    _add_scan_options(p_check)
-
-    # list-rules
-    p_list = sub.add_parser("list-rules", parents=[display], help="List all active detection rules")
-    p_list.add_argument("--repo", default=".", help="Project root for copier-derived scoping")
-    p_list.add_argument("--all", action="store_true", help="List every rule, ignoring the copier-derived project scope")
-    p_list.add_argument(
-        "--format",
-        dest="output_format",
+    p_scan.add_argument("--list-rules", action="store_true", help="List the active detection rules instead of scanning")
+    p_scan.add_argument(
+        "--list-format",
+        dest="list_format",
         choices=RULE_FORMAT_CHOICES,
         default="human",
-        help="Output format for the rule list (default: human)",
+        help="Output format for --list-rules (default: human)",
     )
+    _add_scan_options(p_scan)
 
     return parser
+
+
+def list_rules(args: argparse.Namespace, ui: UI = DEFAULT_UI) -> int:
+    """List the rules ``scan`` would use: ``--rules`` wins, else the ``.daimonion.yml`` scope."""
+    repo = Path(args.repo)
+    try:
+        config = _load_project_config(repo)
+    except ConfigError as exc:
+        print(f"{ui.icon('warn')}{exc}", file=sys.stderr)
+        return 2
+    rules = resolve_rules(args, config, ui).rules
+    if getattr(args, "list_format", "human") == "json":
+        print(dumps(build_rules_json_report(rules)))
+        return 0
+    print(ui.t("rules.header", count=len(rules)))
+    for r in rules:
+        print(f"- [{r.enforcement}] {r.id}: {ui.rule_title(r)}")
+        print(f"  {ui.t('rules.summary', summary=ui.rule_summary(r))}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     ui = UI.create(resolve_lang(getattr(args, "lang", None)), emoji=resolve_emoji(getattr(args, "no_emoji", False)))
 
-    if args.subcommand == "prepare":
-        return prepare(args, ui)
     if args.subcommand == "init":
         return init(args, ui)
     if args.subcommand == "agents-md":
         return agents_md(args, ui)
 
-    linter = resolve_linter(args, ui)
-
-    if args.subcommand == "list-rules":
-        if args.output_format == "json":
-            print(dumps(build_rules_json_report(linter.rules)))
-            return 0
-        print(ui.t("rules.header", count=len(linter.rules)))
-        for r in linter.rules:
-            print(f"- [{r.enforcement}] {r.id}: {ui.rule_title(r)}")
-            print(f"  {ui.t('rules.summary', summary=ui.rule_summary(r))}")
-        return 0
-
-    return scan(args, linter, ui)
+    if getattr(args, "list_rules", False):
+        return list_rules(args, ui)
+    return scan(args, ui)
 
 
 if __name__ == "__main__":

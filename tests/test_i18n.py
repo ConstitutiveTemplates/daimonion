@@ -62,13 +62,13 @@ def test_resolve_emoji():
 
 
 def test_check_output_is_english_by_default(pii_file, capsys):
-    assert main(["check", str(pii_file), "--all"]) == 0
+    assert main(["scan", str(pii_file), "--all"]) == 0
     out = capsys.readouterr().out
     assert "Summary:" in out and "Matched at:" in out and "Personal data" in out
     assert "要約" not in out
 
 
-@pytest.mark.parametrize("argv", [["--lang", "ja", "check"], ["check", "--lang", "ja"]])
+@pytest.mark.parametrize("argv", [["--lang", "ja", "scan"], ["scan", "--lang", "ja"]])
 def test_lang_ja_before_or_after_the_subcommand(pii_file, capsys, argv):
     assert main([*argv, str(pii_file), "--all"]) == 0
     out = capsys.readouterr().out
@@ -77,12 +77,12 @@ def test_lang_ja_before_or_after_the_subcommand(pii_file, capsys, argv):
 
 def test_locale_selects_japanese(pii_file, capsys, monkeypatch):
     monkeypatch.setenv("LANG", "ja_JP.UTF-8")
-    assert main(["check", str(pii_file), "--all"]) == 0
+    assert main(["scan", str(pii_file), "--all"]) == 0
     assert "検出箇所:" in capsys.readouterr().out
 
 
 def test_no_emoji_drops_every_icon(pii_file, capsys):
-    assert main(["check", str(pii_file), "--all", "--no-emoji"]) == 0
+    assert main(["scan", str(pii_file), "--all", "--no-emoji"]) == 0
     out = capsys.readouterr().out
     assert out.startswith("daimonion: Detected")
     assert not any(icon.strip() in out for icon in ICONS.values())

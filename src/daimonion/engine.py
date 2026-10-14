@@ -7,7 +7,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
 from typing import Any, NamedTuple
 
-from daimonion.context import derive_context, load_answers, scope_rules
+from daimonion.context import scope_rules
 from daimonion.models import Finding, Rule, Suppression
 from daimonion.rules import BUILTIN_RULES, load_rules_from_yaml
 from daimonion.suppress import parse_line
@@ -19,6 +19,90 @@ SOURCE_SUFFIXES: frozenset[str] = frozenset({".py", ".ts", ".js", ".go", ".rs", 
 #: (``scan: {docs: true}`` in ``.daimonion.yml`` or ``--include-docs``): a README
 #: that mentions "license" is not a licensing change.
 DOC_SUFFIXES: frozenset[str] = frozenset({".md", ".yml", ".yaml", ".toml"})
+
+#: The kanon ``when`` conditions a project can declare in ``.daimonion.yml``
+#: (``always`` sections apply without being listed). Kept next to the engine
+#: so rule gates can name them directly; mirrors ``WHEN_VOCABULARY``.
+KANON_CONDITIONS: tuple[str, ...] = (
+    "always",
+    "library",
+    "cli",
+    "embedded",
+    "personal_data",
+    "face_recognition",
+    "medtech",
+    "scraping",
+    "oj_code",
+    "kaggle",
+    "mcp",
+    "data_science",
+    "web_api",
+    "commercial",
+    "eu_market",
+    "jp",
+    "ai_assisted",
+)
+
+
+def _gate_names(gate: str) -> set[str]:
+    """The bare names a gate expression references (empty gate: no names)."""
+    import ast
+
+    gate = (gate or "").strip()
+    if not gate:
+        return set()
+    try:
+        tree = ast.parse(gate, mode="eval")
+    except SyntaxError:
+        return set()
+    return {node.id for node in ast.walk(tree) if isinstance(node, ast.Name)}
+
+
+def when_to_answers(when: Iterable[str]) -> dict[str, Any]:
+    """Answer-vocabulary flags reconstructed from declared ``when`` conditions.
+
+    Lets gates written in the old copier-answers vocabulary (``web_api``,
+    ``mcp_effective``, ``domain_traits``, ...) keep working under a
+    ``.daimonion.yml`` scope: each declared condition sets the answers that
+    would have implied it.
+    """
+    declared = set(when)
+    traits = [
+        trait
+        for trait, condition in (
+            ("personal-data", "personal_data"),
+            ("face-recognition", "face_recognition"),
+            ("medtech", "medtech"),
+        )
+        if condition in declared
+    ]
+    project_type = next(
+        (
+            answer
+            for answer, condition in (
+                ("library", "library"),
+                ("cli", "cli"),
+                ("web_api", "web_api"),
+                ("data_science", "data_science"),
+                ("micropython", "embedded"),
+            )
+            if condition in declared
+        ),
+        "",
+    )
+    answers: dict[str, Any] = {
+        "project_type": project_type,
+        "domain_traits": traits,
+        "distribution": ["commercial"] if "commercial" in declared else [],
+        "oj_kind": "kaggle" if "kaggle" in declared else ("atcoder" if "oj_code" in declared else ""),
+        "include_mcp": "mcp" in declared,
+        "include_scraping": "scraping" in declared,
+        "include_web_api": "web_api" in declared and project_type != "web_api",
+        "include_data_science": "data_science" in declared and project_type != "data_science",
+    }
+    if ("kaggle" in declared or "oj_code" in declared) and project_type == "":
+        answers["project_type"] = "online_judge"
+    return answers
 
 
 class AddedLine(NamedTuple):
@@ -112,12 +196,31 @@ class Linter:
         """Return a new Linter holding only the rules whose gate holds in context."""
         return Linter(scope_rules(self.rules, context), include_docs=self.include_docs)
 
-    @classmethod
-    def for_project(cls, answers_path: str | Path, base_rules: Linter | None = None) -> Linter:
-        """Build a scoped Linter from a project's .copier-answers.yml."""
-        context = derive_context(load_answers(answers_path))
-        linter = base_rules if base_rules is not None else cls()
-        return linter.for_context(context)
+    def for_when(self, when: Iterable[str]) -> Linter:
+        """Scope the rules to the kanon ``when`` conditions a project declares.
+
+        A rule whose gate names a ``when`` condition applies when the project
+        declares it; a gate naming anything else falls back to the
+        answer-vocabulary context (``web_api``, ``mcp_effective``, ...),
+        derived from the ``when`` set as if it were the answers. Rules whose
+        gate mentions neither stay as they are.
+        """
+        from daimonion.context import derive_context
+
+        declared = set(when) | {"always"}
+        scoped: list[Rule] = []
+        for rule in self.rules:
+            gate_names = _gate_names(rule.gate)
+            if not gate_names:
+                scoped.append(rule)
+                continue
+            if gate_names <= set(KANON_CONDITIONS):
+                context = {condition: condition in declared for condition in KANON_CONDITIONS}
+                context |= {"true": True, "false": False}
+                scoped.extend(scope_rules([rule], context))
+                continue
+            scoped.extend(scope_rules([rule], derive_context(when_to_answers(declared))))
+        return Linter(scoped, include_docs=self.include_docs)
 
     @property
     def suffixes(self) -> frozenset[str]:

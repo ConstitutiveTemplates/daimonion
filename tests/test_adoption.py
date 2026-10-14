@@ -58,7 +58,7 @@ def test_docs_opt_in_via_flag_and_config(tmp_path, capsys):
     docs = tmp_path / "docs"
     docs.mkdir()
     (docs / "README.md").write_text("Uses md5 checksums.\n", encoding="utf-8")
-    argv = ["--rules", rules, "check", str(docs), "--repo", str(tmp_path), "--format", "json"]
+    argv = ["--rules", rules, "scan", str(docs), "--repo", str(tmp_path), "--format", "json"]
 
     assert _json(capsys, argv)[1]["summary"]["findings"] == 0
     assert _json(capsys, [*argv, "--include-docs"])[1]["summary"]["findings"] == 1
@@ -130,11 +130,11 @@ def test_cli_reports_expired_ignore_and_fails_strict(tmp_path, capsys):
     rules = str(_rules_file(tmp_path))
     target = tmp_path / "app.py"
     target.write_text("hashlib.md5(b'x')  # daimonion: ignore[md5-call] reason=x until=2020-01-01\n", encoding="utf-8")
-    assert main(["--rules", rules, "--strict", "check", str(target), "--repo", str(tmp_path)]) == 1
+    assert main(["--rules", rules, "--strict", "scan", str(target), "--repo", str(tmp_path)]) == 1
     assert "ignore expired 2020-01-01" in capsys.readouterr().out
     target.write_text("hashlib.md5(b'x')  # daimonion: ignore[md5-call] reason=cache key\n", encoding="utf-8")
     rc, payload = _json(
-        capsys, ["--rules", rules, "--strict", "check", str(target), "--repo", str(tmp_path), "--format", "json"]
+        capsys, ["--rules", rules, "--strict", "scan", str(target), "--repo", str(tmp_path), "--format", "json"]
     )
     assert rc == 0
     assert payload["summary"]["suppressed"] == 1
@@ -156,7 +156,7 @@ def test_sarif_marks_suppressed_results(tmp_path, capsys):
     rules = str(_rules_file(tmp_path))
     target = tmp_path / "app.py"
     target.write_text("hashlib.md5(b'x')  # daimonion: ignore[md5-call] reason=cache key\n", encoding="utf-8")
-    rc, payload = _json(capsys, ["--rules", rules, "check", str(target), "--repo", str(tmp_path), "--format", "sarif"])
+    rc, payload = _json(capsys, ["--rules", rules, "scan", str(target), "--repo", str(tmp_path), "--format", "sarif"])
     assert rc == 0
     (result,) = [r for r in payload["runs"][0]["results"] if r["ruleId"] == "md5-call"]
     assert result["suppressions"] == [{"kind": "inSource", "justification": "cache key"}]
@@ -171,7 +171,7 @@ def test_baseline_absorbs_existing_findings_only(tmp_path, capsys, monkeypatch):
     (tmp_path / "src").mkdir()
     target = tmp_path / "src" / "app.py"
     target.write_text("hashlib.md5(b'old')\n", encoding="utf-8")
-    argv = ["--rules", rules, "--strict", "check", "src", "--repo", "."]
+    argv = ["--rules", rules, "--strict", "scan", "src", "--repo", "."]
 
     assert main(argv) == 1
     capsys.readouterr()
@@ -197,7 +197,7 @@ def test_baseline_absorbs_existing_findings_only(tmp_path, capsys, monkeypatch):
 def test_explicit_missing_baseline_is_an_error(tmp_path, capsys):
     target = tmp_path / "app.py"
     target.write_text("x = 1\n", encoding="utf-8")
-    assert main(["check", str(target), "--baseline", str(tmp_path / "nope.json")]) == 2
+    assert main(["scan", str(target), "--baseline", str(tmp_path / "nope.json")]) == 2
     assert "not found" in capsys.readouterr().err
 
 
@@ -208,7 +208,7 @@ def test_adoption_flag_overrides_strict(tmp_path, capsys):
     rules = str(_rules_file(tmp_path))
     target = tmp_path / "app.py"
     target.write_text("hashlib.md5(b'x')\n", encoding="utf-8")
-    argv = ["--rules", rules, "--strict", "check", str(target), "--repo", str(tmp_path)]
+    argv = ["--rules", rules, "--strict", "scan", str(target), "--repo", str(tmp_path)]
     assert main(argv) == 1
     capsys.readouterr()
     assert main(["--adoption", *argv]) == 0
@@ -219,7 +219,7 @@ def test_config_mode_adoption_and_strict(tmp_path, capsys):
     rules = str(_rules_file(tmp_path))
     target = tmp_path / "app.py"
     target.write_text("hashlib.md5(b'x')\n", encoding="utf-8")
-    argv = ["--rules", rules, "check", str(target), "--repo", str(tmp_path), "--format", "json"]
+    argv = ["--rules", rules, "scan", str(target), "--repo", str(tmp_path), "--format", "json"]
 
     _config(tmp_path, mode="adoption")
     rc, payload = _json(capsys, ["--strict", *argv])
@@ -237,5 +237,5 @@ def test_invalid_config_mode_is_loud(tmp_path, capsys):
     target = tmp_path / "app.py"
     target.write_text("x = 1\n", encoding="utf-8")
     _config(tmp_path, mode="lenient")
-    assert main(["check", str(target), "--repo", str(tmp_path)]) == 2
+    assert main(["scan", str(target), "--repo", str(tmp_path)]) == 2
     assert "`mode` must be one of" in capsys.readouterr().err

@@ -1,8 +1,8 @@
-# One hook: scan staged changes. `diff` mode reads git itself, so no
-# filenames are passed through (pass_filenames: false).
+# One hook: scan staged changes. `scan` with no paths reads the git diff
+# itself, so no filenames are passed through (pass_filenames: false).
 - id: daimonion-diff
-  name: daimonion diff (staged)
+  name: daimonion scan (staged)
   description: Scan staged git changes against legal and ethical triggers.
   language: python
-  entry: daimonion --strict diff --staged
+  entry: daimonion --strict scan --staged
   pass_filenames: false

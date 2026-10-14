@@ -55,8 +55,8 @@ def test_scan_file_and_format():
 
 
 def test_cli_list_rules(capsys):
-    """daimonion list-rules outputs the active rules."""
-    rc = main(["list-rules"])
+    """daimonion scan --list-rules outputs the active rules."""
+    rc = main(["scan", "--list-rules"])
     assert rc == 0
     captured = capsys.readouterr().out
     assert "Active compliance rules" in captured
@@ -71,7 +71,7 @@ def test_cli_check_clean_file(capsys):
         f_path = Path(f.name)
 
     try:
-        rc = main(["check", str(f_path)])
+        rc = main(["scan", str(f_path)])
         assert rc == 0
         captured = capsys.readouterr().out
         assert "No legal or compliance triggers matched" in captured
@@ -103,7 +103,7 @@ def test_cli_strict_mode_exit_code(tmp_path):
     )
     target = tmp_path / "app.py"
     target.write_text("import hashlib\nh = hashlib.md5(b'data')\n", encoding="utf-8")
-    assert main(["--rules", str(rules), "--strict", "check", str(target)]) == 1
+    assert main(["--rules", str(rules), "--strict", "scan", str(target)]) == 1
 
 
 def _write_answers(tmp_path: Path, answers: dict) -> Path:
@@ -114,53 +114,49 @@ def _write_answers(tmp_path: Path, answers: dict) -> Path:
     return answers_file
 
 
-def test_prepare_scopes_rules_from_copier_answers(tmp_path, capsys):
-    """A web_api + commercial project gets JP transmission/EAA/CRA rules,
-    while cli-scraping copyright stays gated out."""
-    _write_answers(
-        tmp_path,
-        {
-            "project_type": "web_api",
-            "domain_traits": ["personal-data"],
-            "distribution": ["commercial"],
-            "include_mcp": True,
-        },
-    )
-    assert main(["prepare", "--repo", str(tmp_path)]) == 0
+def _write_config(tmp_path: Path, when: list[str]) -> Path:
+    import yaml
+
+    config = tmp_path / ".daimonion.yml"
+    config.write_text(yaml.safe_dump({"version": 1, "when": when}, allow_unicode=True), encoding="utf-8")
+    return config
+
+
+def test_config_scopes_rules_from_when(tmp_path, capsys):
+    """A web_api + commercial config gets JP transmission/EAA/CRA rules in scan output."""
+    _write_config(tmp_path, ["web_api", "personal_data", "commercial"])
+    assert main(["scan", "--list-rules", "--repo", str(tmp_path)]) == 0
     out = capsys.readouterr().out
-    assert "project_type: web_api" in out
     assert "jp-external-transmission" in out
     assert "eu-eaa-accessibility" in out
     assert "eu-cra-compliance" in out
-    assert "ai-copyright" in out  # in the gated-out list
+    assert "personal-data-privacy" in out
+    assert "ai-copyright" not in out  # cli/data_science only
 
 
-def test_prepare_write_emits_rules_file(tmp_path, capsys):
+def test_init_converts_answers_to_when_config(tmp_path, capsys):
+    """`init` reads .copier-answers.yml once and writes the converted conditions."""
     _write_answers(tmp_path, {"project_type": "cli", "include_scraping": True})
-    assert main(["prepare", "--repo", str(tmp_path), "--write"]) == 0
-    generated = tmp_path / ".daimonion-rules.yml"
-    assert generated.is_file()
-    import yaml
+    assert main(["init", "--repo", str(tmp_path), "--write"]) == 0
+    capsys.readouterr()
+    from daimonion.config import load_config
 
-    rules = yaml.safe_load(generated.read_text())["rules"]
-    ids = {r["id"] for r in rules}
-    assert "ai-copyright" in ids  # scraping_effective -> copyright gate on
-    assert "eu-eaa-accessibility" not in ids
+    assert load_config(tmp_path / ".daimonion.yml").when == ("cli", "scraping")
 
 
-def test_prepare_without_answers_fails_loudly(tmp_path, capsys):
-    assert main(["prepare", "--repo", str(tmp_path)]) == 2
-    assert "No .copier-answers.yml" in capsys.readouterr().err
+def test_init_without_answers_still_suggests(tmp_path, capsys):
+    assert main(["init", "--repo", str(tmp_path)]) == 0
+    assert "version: 1" in capsys.readouterr().out
 
 
-def test_diff_scopes_via_copier_answers(tmp_path, capsys):
-    """Without --all, a project-derived scope is announced on stderr."""
-    _write_answers(tmp_path, {"project_type": "script"})
+def test_diff_scopes_via_config(tmp_path, capsys):
+    """Without --all, the config-derived scope is announced on stderr."""
+    _write_config(tmp_path, ["cli"])
     (tmp_path / "x.py").write_text("print('hi')\n")
     import subprocess
 
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
-    rc = main(["diff", "--repo", str(tmp_path)])
+    rc = main(["scan", "--repo", str(tmp_path)])
     err = capsys.readouterr().err
     assert "Scoped to" in err
     assert rc == 0

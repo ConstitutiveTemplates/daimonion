@@ -51,7 +51,7 @@ def _json_output(capsys, argv: list[str]) -> tuple[int, dict]:
 def test_default_format_is_human_and_unchanged(tmp_path, capsys):
     target = tmp_path / "auth.py"
     target.write_text("import hashlib\nreturn hashlib.md5(pwd)\n", encoding="utf-8")
-    assert main(["check", str(target), "--all"]) == 0
+    assert main(["scan", str(target), "--all"]) == 0
     out = capsys.readouterr().out
     assert out.startswith("⚠️  daimonion: Detected")
     assert "[L1]" in out
@@ -62,25 +62,25 @@ def test_default_format_is_human_and_unchanged(tmp_path, capsys):
 def test_default_format_clean_file(tmp_path, capsys):
     target = tmp_path / "clean.py"
     target.write_text("value = compute()\n", encoding="utf-8")
-    assert main(["check", str(target), "--all"]) == 0
+    assert main(["scan", str(target), "--all"]) == 0
     assert capsys.readouterr().out.strip() == "✨ No legal or compliance triggers matched."
 
 
-def test_prepare_write_then_check_autoloads_prepared_rules(tmp_path, capsys):
-    """prepare --write materializes a rule set that a later check picks up on its own."""
-    _write_answers(tmp_path, {"project_type": "cli"})
+def test_init_converts_answers_then_scan_uses_config(tmp_path, capsys):
+    """`init` converts .copier-answers.yml into .daimonion.yml; `scan` reads only the config."""
+    _write_answers(tmp_path, {"project_type": "cli", "include_scraping": True})
     target = tmp_path / "app.py"
     target.write_text("import hashlib\nhashlib.md5(b'x')\ncookie = True\n", encoding="utf-8")
 
-    assert main(["prepare", "--repo", str(tmp_path), "--write"]) == 0
+    assert main(["init", "--repo", str(tmp_path), "--write"]) == 0
     capsys.readouterr()
-    prepared = tmp_path / ".daimonion-rules.yml"
-    assert prepared.is_file()
+    config = tmp_path / ".daimonion.yml"
+    assert config.is_file()
 
-    # Remove the answers file: only the prepared rule file can scope the next run.
+    # Remove the answers file: only the converted config can scope the next run.
     (tmp_path / ".copier-answers.yml").unlink()
 
-    rc, payload = _json_output(capsys, ["check", str(target), "--repo", str(tmp_path), "--format", "json"])
+    rc, payload = _json_output(capsys, ["scan", str(target), "--repo", str(tmp_path), "--format", "json"])
     ids = {finding["rule_id"] for finding in payload["findings"]}
     assert rc == 0
     assert "deprecated-crypto" in ids
@@ -94,15 +94,15 @@ def test_strict_exit_codes(tmp_path, capsys):
     l1_target = tmp_path / "l1.py"
     l1_target.write_text("digest_name = 'md5'\n", encoding="utf-8")
 
-    assert main(["--rules", rules, "--strict", "check", str(l2_target), "--all"]) == 1
+    assert main(["--rules", rules, "--strict", "scan", str(l2_target), "--all"]) == 1
     capsys.readouterr()
 
     # The keyword rule declared L2 is capped to L1, so it never fails --strict.
-    assert main(["--rules", rules, "--strict", "check", str(l1_target), "--all"]) == 0
+    assert main(["--rules", rules, "--strict", "scan", str(l1_target), "--all"]) == 0
     assert "[L1] md5 (md5-word)" in capsys.readouterr().out
 
     # Without --strict even an L2 hit exits 0.
-    assert main(["--rules", rules, "check", str(l2_target), "--all"]) == 0
+    assert main(["--rules", rules, "scan", str(l2_target), "--all"]) == 0
 
 
 def test_builtin_rules_never_fail_strict(tmp_path, capsys):
@@ -113,26 +113,26 @@ def test_builtin_rules_never_fail_strict(tmp_path, capsys):
     assert {rule.enforcement for rule in BUILTIN_RULES} <= {"L0", "L1"}
     target = tmp_path / "app.py"
     target.write_text("import hashlib, requests\nhashlib.md5(b'x')\nagent = 'ua'\n", encoding="utf-8")
-    assert main(["--strict", "check", str(target), "--all"]) == 0
+    assert main(["--strict", "scan", str(target), "--all"]) == 0
 
 
 def test_list_rules_scoped_versus_all(tmp_path, capsys):
-    _write_answers(tmp_path, {"project_type": "cli"})
+    (tmp_path / ".daimonion.yml").write_text("version: 1\nwhen: [cli]\n", encoding="utf-8")
 
-    assert main(["list-rules", "--repo", str(tmp_path)]) == 0
+    assert main(["scan", "--list-rules", "--repo", str(tmp_path)]) == 0
     scoped = capsys.readouterr().out
     assert "ai-copyright" in scoped
     assert "eu-eaa-accessibility" not in scoped
 
-    assert main(["list-rules", "--repo", str(tmp_path), "--all"]) == 0
+    assert main(["scan", "--list-rules", "--repo", str(tmp_path), "--all"]) == 0
     every = capsys.readouterr().out
     assert "eu-eaa-accessibility" in every
     assert every.count("- [") > scoped.count("- [")
 
 
 def test_list_rules_json(tmp_path, capsys):
-    _write_answers(tmp_path, {"project_type": "cli"})
-    rc, payload = _json_output(capsys, ["list-rules", "--repo", str(tmp_path), "--format", "json"])
+    (tmp_path / ".daimonion.yml").write_text("version: 1\nwhen: [cli]\n", encoding="utf-8")
+    rc, payload = _json_output(capsys, ["scan", "--list-rules", "--repo", str(tmp_path), "--list-format", "json"])
     assert rc == 0
     ids = {rule["id"] for rule in payload["rules"]}
     assert payload["summary"]["rules"] == len(payload["rules"])
@@ -141,42 +141,27 @@ def test_list_rules_json(tmp_path, capsys):
     assert {"id", "title", "triggers", "summary", "enforcement"} <= set(payload["rules"][0])
 
 
-def test_prepare_with_malformed_gate_warns_and_excludes(tmp_path, capsys):
-    """A broken gate in a loaded rule file fails closed and names the rule in a warning."""
-    _write_answers(tmp_path, {"project_type": "web_api"})
+def test_custom_rules_file_wins_outright(tmp_path, capsys):
+    """With `--rules`, the file wins outright: no config scoping applies."""
     rules_file = tmp_path / "rules.yml"
     rules_file.write_text(
         yaml.safe_dump(
-            {
-                "rules": [
-                    {"id": "good-rule", "title": "Good", "triggers": "good", "summary": "s", "gate": "web_api"},
-                    {
-                        "id": "broken-rule",
-                        "title": "Broken",
-                        "triggers": "broken",
-                        "summary": "s",
-                        "gate": "web_api ==",
-                    },
-                ]
-            },
+            {"rules": [{"id": "good-rule", "title": "Good", "triggers": "good", "summary": "s", "gate": ""}]},
             allow_unicode=True,
         ),
         encoding="utf-8",
     )
+    (tmp_path / ".daimonion.yml").write_text("version: 1\nwhen: []\n", encoding="utf-8")
+    target = tmp_path / "app.py"
+    target.write_text("a good line\n", encoding="utf-8")
 
-    with pytest.warns(UserWarning, match="broken-rule"):
-        rc = main(["--rules", str(rules_file), "prepare", "--repo", str(tmp_path)])
-
-    assert rc == 0
-    applicable, _, gated = capsys.readouterr().out.partition("⏭️")
-    assert "good-rule" in applicable
-    assert "broken-rule" not in applicable
-    assert "broken-rule" in gated
+    assert main(["--rules", str(rules_file), "scan", str(target), "--repo", str(tmp_path)]) == 0
+    assert "good-rule" in capsys.readouterr().out
 
 
-def test_list_rules_has_no_sarif_format():
+def test_list_rules_rejects_sarif_list_format():
     with pytest.raises(SystemExit) as excinfo:
-        main(["list-rules", "--format", "sarif"])
+        main(["scan", "--list-rules", "--list-format", "sarif"])
     assert excinfo.value.code == 2
 
 
@@ -185,9 +170,7 @@ def test_check_json_payload(tmp_path, capsys):
     target.write_text("import hashlib\nreturn hashlib.md5(pwd)\n", encoding="utf-8")
 
     rules = str(_structural_rules(tmp_path))
-    rc, payload = _json_output(
-        capsys, ["--rules", rules, "--strict", "check", str(target), "--format", "json", "--all"]
-    )
+    rc, payload = _json_output(capsys, ["--rules", rules, "--strict", "scan", str(target), "--format", "json", "--all"])
     assert rc == 1
     assert payload["summary"]["findings"] == len(payload["findings"]) >= 1
     assert payload["summary"]["rules_matched"] == len({f["rule_id"] for f in payload["findings"]})
@@ -213,7 +196,7 @@ def test_check_json_payload(tmp_path, capsys):
 def test_check_json_summary_when_clean(tmp_path, capsys):
     target = tmp_path / "clean.py"
     target.write_text("value = compute()\n", encoding="utf-8")
-    rc, payload = _json_output(capsys, ["check", str(target), "--format", "json", "--all"])
+    rc, payload = _json_output(capsys, ["scan", str(target), "--format", "json", "--all"])
     assert rc == 0
     assert payload["summary"] == {
         "findings": 0,
@@ -230,7 +213,7 @@ def test_check_sarif_payload(tmp_path, capsys):
     target = tmp_path / "auth.py"
     target.write_text("return hashlib.md5(pwd)\n", encoding="utf-8")
 
-    rc, payload = _json_output(capsys, ["check", str(target), "--format", "sarif", "--all"])
+    rc, payload = _json_output(capsys, ["scan", str(target), "--format", "sarif", "--all"])
     assert rc == 0
     assert payload["version"] == "2.1.0"
     assert "$schema" in payload
@@ -281,7 +264,7 @@ def test_sarif_rules_only_cover_referenced_rule_ids():
 
 def test_diff_outside_git_repo_is_graceful(tmp_path, capsys):
     """A directory that is not a git repo (or has no changes) yields no findings, exit 0."""
-    rc, payload = _json_output(capsys, ["diff", "--repo", str(tmp_path), "--format", "json"])
+    rc, payload = _json_output(capsys, ["scan", "--repo", str(tmp_path), "--format", "json"])
     assert rc == 0
     assert payload["findings"] == []
     assert payload["summary"]["findings"] == 0
@@ -290,7 +273,7 @@ def test_diff_outside_git_repo_is_graceful(tmp_path, capsys):
 def test_check_binary_file_is_graceful(tmp_path, capsys):
     target = tmp_path / "blob.py"
     target.write_bytes(b"\x00\x01\xff\xfe binary payload \x00\x80")
-    rc, payload = _json_output(capsys, ["check", str(target), "--format", "json", "--all"])
+    rc, payload = _json_output(capsys, ["scan", str(target), "--format", "json", "--all"])
     assert rc == 0
     assert payload["findings"] == []
 
@@ -303,60 +286,47 @@ def test_check_unreadable_file_is_graceful(tmp_path, capsys, monkeypatch):
         raise PermissionError("permission denied")
 
     monkeypatch.setattr(Path, "read_text", _denied)
-    rc, payload = _json_output(capsys, ["check", str(target), "--format", "json", "--all"])
+    rc, payload = _json_output(capsys, ["scan", str(target), "--format", "json", "--all"])
     assert rc == 0
     assert payload["findings"] == []
 
 
-def test_legacy_prepared_rules_file_is_used_as_fallback(tmp_path, capsys):
-    """A `.law-lint-rules.yml` from the previous release still scopes check runs."""
-    _write_answers(tmp_path, {"project_type": "cli"})
-    assert main(["prepare", "--repo", str(tmp_path), "--write"]) == 0
-    capsys.readouterr()
-    prepared = tmp_path / ".daimonion-rules.yml"
-    assert prepared.is_file()
-    legacy = tmp_path / ".law-lint-rules.yml"
-    prepared.rename(legacy)
+def test_scan_without_config_scopes_nothing(tmp_path, capsys):
+    """Without `.daimonion.yml`, scan runs every rule (like `--all`)."""
+    target = tmp_path / "app.py"
+    target.write_text("cookie = True\n", encoding="utf-8")
 
+    rc, payload = _json_output(capsys, ["scan", str(target), "--repo", str(tmp_path), "--format", "json"])
+    ids = {finding["rule_id"] for finding in payload["findings"]}
+    assert rc == 0
+    assert "jp-external-transmission" in ids
+
+
+def test_scan_config_scopes_rules(tmp_path, capsys):
+    """A `cli` config gates out the web_api-only rules."""
+    (tmp_path / ".daimonion.yml").write_text("version: 1\nwhen: [cli]\n", encoding="utf-8")
     target = tmp_path / "app.py"
     target.write_text("import hashlib\nhashlib.md5(b'x')\ncookie = True\n", encoding="utf-8")
-    (tmp_path / ".copier-answers.yml").unlink()
 
-    rc, payload = _json_output(capsys, ["check", str(target), "--repo", str(tmp_path), "--format", "json"])
+    rc, payload = _json_output(capsys, ["scan", str(target), "--repo", str(tmp_path), "--format", "json"])
     ids = {finding["rule_id"] for finding in payload["findings"]}
     assert rc == 0
     assert "deprecated-crypto" in ids
     assert "jp-external-transmission" not in ids
 
 
-def test_new_prepared_rules_file_wins_over_legacy(tmp_path, capsys):
-    """When both names exist, `.daimonion-rules.yml` takes precedence."""
-    _write_answers(tmp_path, {"project_type": "cli"})
-    assert main(["prepare", "--repo", str(tmp_path), "--write"]) == 0
-    capsys.readouterr()
-    assert (tmp_path / ".daimonion-rules.yml").is_file()
-    legacy = tmp_path / ".law-lint-rules.yml"
-    legacy.write_text(
-        yaml.safe_dump(
-            {
-                "rules": [
-                    {
-                        "id": "legacy-only",
-                        "title": "Legacy",
-                        "triggers": "legacy-marker-xyz",
-                        "summary": "s",
-                    }
-                ]
-            },
-            allow_unicode=True,
-        ),
-        encoding="utf-8",
-    )
+def test_scan_diff_mode_uses_config_scope(tmp_path, capsys):
+    """Bare `scan` reads the git diff and applies the config scope."""
+    import subprocess
 
+    (tmp_path / ".daimonion.yml").write_text("version: 1\nwhen: [cli]\n", encoding="utf-8")
     target = tmp_path / "app.py"
-    target.write_text("legacy-marker-xyz\n", encoding="utf-8")
-    (tmp_path / ".copier-answers.yml").unlink()
+    target.write_text("value = 1\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    target.write_text("import hashlib\nhashlib.md5(b'x')\n", encoding="utf-8")
 
-    rc, payload = _json_output(capsys, ["check", str(target), "--repo", str(tmp_path), "--format", "json"])
+    rc, payload = _json_output(capsys, ["scan", "--repo", str(tmp_path), "--format", "json"])
+    ids = {finding["rule_id"] for finding in payload["findings"]}
     assert rc == 0
-    assert payload["findings"] == []
+    assert "deprecated-crypto" in ids

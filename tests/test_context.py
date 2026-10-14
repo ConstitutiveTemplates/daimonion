@@ -1,4 +1,4 @@
-"""Tests for copier-answer context derivation, gate evaluation, and rule scoping."""
+"""Tests for answers-to-`when` conversion, gate evaluation, and rule scoping."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import warnings
 
 import pytest
 
-from daimonion.context import derive_context, gate_eval, scope_rules
+from daimonion.context import answers_to_when, derive_context, gate_eval, scope_rules
 from daimonion.models import Rule
 from daimonion.rules import BUILTIN_RULES
 
@@ -64,14 +64,19 @@ def test_derive_context_normalizes_trait_and_distribution_shapes():
 
 
 def test_derive_context_kaggle_sets_ds_stack():
+    """Kaggle is a data competition, not a code-submission workspace (template's oj_code excludes it)."""
     ctx = derive_context({"project_type": "online_judge", "oj_kind": "kaggle"})
     assert ctx["ds_stack"] is True
-    assert ctx["oj_code"] is True
+    assert ctx["oj_code"] is False
     assert ctx["oj_ctf"] is False
 
     ctf = derive_context({"project_type": "online_judge", "oj_kind": "ctf"})
     assert ctf["oj_ctf"] is True
     assert ctf["oj_code"] is False
+
+    code = derive_context({"project_type": "online_judge", "oj_kind": "atcoder"})
+    assert code["oj_code"] is True
+    assert code["ds_stack"] is False
 
 
 @pytest.mark.parametrize(
@@ -152,3 +157,66 @@ def test_gate_eval_rejects_malformed_expressions(gate):
 def test_gate_eval_rejects_unbound_flag():
     with pytest.raises(ValueError, match="unbound"):
         gate_eval("mystery_flag", derive_context({}))
+
+
+def test_answers_to_when_cli_scraping():
+    """A cli project with the scraping layer converts to cli + scraping."""
+    assert answers_to_when({"project_type": "cli", "include_scraping": True}) == ["cli", "scraping"]
+    assert answers_to_when({"project_type": "web_api", "include_scraping": True}) == ["web_api"]
+
+
+def test_answers_to_when_mirrors_template_derivation():
+    """Every derivation the template's daimonion-when macro spells lands here."""
+    assert answers_to_when({"project_type": "library"}) == ["library"]
+    assert answers_to_when({"project_type": "micropython"}) == ["embedded"]
+    assert answers_to_when({"project_type": "web_api", "distribution": ["commercial"]}) == [
+        "web_api",
+        "commercial",
+    ]
+    assert answers_to_when({"project_type": "data_science"}) == ["data_science"]
+    assert answers_to_when({"project_type": "online_judge", "oj_kind": "kaggle"}) == ["kaggle"]
+    assert answers_to_when({"project_type": "online_judge", "oj_kind": "atcoder"}) == ["oj_code"]
+    assert answers_to_when({"project_type": "cli", "include_mcp": True}) == ["cli", "mcp"]
+    assert answers_to_when({"project_type": "library", "include_web_api": True}) == ["library", "web_api"]
+    assert answers_to_when({"project_type": "script"}) == []
+    assert answers_to_when({}) == []
+
+
+def test_answers_to_when_traits_map_to_conditions():
+    """domain_traits convert 1:1 to personal_data/face_recognition/medtech."""
+    assert answers_to_when({"domain_traits": ["personal-data"]}) == ["personal_data"]
+    assert answers_to_when({"domain_traits": ["face-recognition", "medtech"]}) == [
+        "face_recognition",
+        "medtech",
+    ]
+
+
+def test_answers_to_when_scraping_needs_cli():
+    """The scraping layer only converts on a cli base (template guard)."""
+    assert "scraping" not in answers_to_when({"project_type": "script", "include_scraping": True})
+
+
+def test_every_builtin_gate_scopes_via_when(tmp_path=None):
+    """Each builtin rule applies under some `when` set (no rule is dead under config scoping)."""
+    from daimonion.engine import Linter
+
+    all_conditions = [
+        "library",
+        "cli",
+        "embedded",
+        "personal_data",
+        "face_recognition",
+        "medtech",
+        "scraping",
+        "oj_code",
+        "kaggle",
+        "mcp",
+        "data_science",
+        "web_api",
+        "commercial",
+        "eu_market",
+        "jp",
+        "ai_assisted",
+    ]
+    scoped = {rule.id for rule in Linter().for_when(all_conditions).rules}
+    assert {rule.id for rule in Linter().rules} <= scoped

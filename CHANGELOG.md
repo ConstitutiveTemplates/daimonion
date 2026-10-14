@@ -9,6 +9,17 @@ everything below is unreleased.
 
 ### Changed
 
+- Config is unified on `.daimonion.yml`: `daimonion init` reads
+  `.copier-answers.yml` once and converts the answers to `when` conditions
+  (mirroring the template's answer-to-condition derivation); `scan` and
+  `agents-md` read only `.daimonion.yml`. Nothing reads the answers file at
+  scan time.
+- Subcommands are exactly `init` / `agents-md` / `scan`: `scan` takes
+  optional paths (no paths scans the git diff, `--staged` for staged), and
+  `scan --list-rules` (`--list-format {human,json}`) replaces `list-rules`.
+  `prepare`, `check`, `diff`, and the `.daimonion-rules.yml` auto-loading
+  are removed; an empty `when` scans everything, like `--all`.
+
 - Keyword rules are reminders: a rule's `kind` is `keyword` (default) or
   `structural`, and keyword rules are capped at L1. Every builtin is a keyword
   rule, so the builtins no longer fail `--strict`; only `kind: structural`

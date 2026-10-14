@@ -10,9 +10,9 @@ inputs:
     required: false
     default: "false"
   args:
-    description: Arguments passed to daimonion (e.g. "diff" or "check src/"), split on whitespace.
+    description: Arguments passed to daimonion (e.g. "scan" or "scan src/"), split on whitespace.
     required: false
-    default: diff
+    default: scan
 runs:
   using: composite
   steps:

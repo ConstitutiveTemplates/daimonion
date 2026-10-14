@@ -108,6 +108,31 @@ def test_init_targets_claude_md_when_it_is_the_only_guide(tmp_path, capsys):
     assert load_config(tmp_path / ".daimonion.yml").agents_md == "CLAUDE.md"
 
 
+def test_init_converts_copier_answers_into_when(tmp_path, capsys):
+    """A fixture dir with .copier-answers.yml produces a .daimonion.yml carrying the converted `when`."""
+    import yaml
+
+    (tmp_path / ".copier-answers.yml").write_text(
+        yaml.safe_dump({"project_type": "cli", "include_mcp": True, "domain_traits": ["personal-data"]}),
+        encoding="utf-8",
+    )
+    assert main(["init", "--repo", str(tmp_path), "--write"]) == 0
+    out = capsys.readouterr().out
+    assert "Converted" in out and ".copier-answers.yml" in out
+    assert load_config(tmp_path / ".daimonion.yml").when == ("cli", "personal_data", "mcp")
+
+
+def test_init_answers_and_manifest_signals_merge_without_duplicates(tmp_path, capsys):
+    """Answers-derived and manifest-derived conditions merge; neither duplicates the other."""
+    import yaml
+
+    (tmp_path / ".copier-answers.yml").write_text(yaml.safe_dump({"project_type": "cli"}), encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text("[project]\nname = 'x'\n[project.scripts]\nx = 'x:main'\n")
+    assert main(["init", "--repo", str(tmp_path), "--write"]) == 0
+    capsys.readouterr()
+    assert load_config(tmp_path / ".daimonion.yml").when == ("cli",)
+
+
 def test_agents_md_write_check_cycle(tmp_path, capsys):
     _config(tmp_path, "version: 1\nwhen: [scraping]\n")
     guide = tmp_path / "AGENTS.md"

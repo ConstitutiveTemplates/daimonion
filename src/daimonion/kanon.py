@@ -242,7 +242,7 @@ def render_block(conditions: Iterable[str], sections: Iterable[Section] | None =
         "Rules from [kanon](https://github.com/politeuma/kanon) that match this project's `.daimonion.yml`",
         "conditions. Follow the lines under each rule; its sources say where the rule comes from, and the",
         "linked kanon section holds the facts, cases, and prohibited patterns behind it.",
-        "Before committing, run `daimonion diff` to match changed lines against these rules. Not legal advice.",
+        "Before committing, run `daimonion scan` to match changed lines against these rules. Not legal advice.",
     ]
     if any(not section.directives for section in chosen):
         lines.append("Rules without an agent directive yet show their kanon summary, which is in Japanese.")

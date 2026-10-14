@@ -18,8 +18,8 @@ sed -n '1,20p' "$FIX/app.py"
 pause "$@"
 
 echo ""
-echo '$ daimonion check fixture/app.py'
-$DAIMONION check "$FIX/app.py" --repo "$FIX" || true
+echo '$ daimonion scan fixture/app.py'
+$DAIMONION scan "$FIX/app.py" --repo "$FIX" || true
 pause "$@"
 
 echo ""
@@ -30,4 +30,4 @@ pause "$@"
 echo ""
 # fix: a pseudonym replaces the raw identifier, then re-scan
 sed -n '1,20p' "$FIX/app_fixed.py"
-$DAIMONION check "$FIX/app_fixed.py" --repo "$FIX"
+$DAIMONION scan "$FIX/app_fixed.py" --repo "$FIX"
