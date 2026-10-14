@@ -30,6 +30,7 @@ WHEN_VOCABULARY: tuple[str, ...] = (
     "medtech",
     "scraping",
     "oj_code",
+    "kaggle",
     "mcp",
     "data_science",
     "web_api",

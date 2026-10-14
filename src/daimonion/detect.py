@@ -24,6 +24,7 @@ WHEN_DESCRIPTIONS: dict[str, str] = {
     "embedded": "an embedded / microcontroller project",
     "scraping": "the project fetches the web (any engine)",
     "oj_code": "a code-submission judge workspace",
+    "kaggle": "a kaggle (data competition) workspace",
     "mcp": "the project ships an MCP server",
     "data_science": "a data-science / kaggle layout",
     "web_api": "an HTTP API project",
@@ -84,8 +85,7 @@ DEPENDENCY_SIGNALS: dict[str, frozenset[str]] = {
             "jupyter",
             "jupyterlab",
             "notebook",
-            "kaggle",
-        }
+                    }
     ),
     "web_api": frozenset(
         {
@@ -116,6 +116,7 @@ DEPENDENCY_SIGNALS: dict[str, frozenset[str]] = {
         }
     ),
     "oj_code": frozenset({"online-judge-tools", "online-judge-api-client", "ac-library-python", "atcoder-cli"}),
+    "kaggle": frozenset({"kaggle"}),
 }
 
 #: Files whose presence means AI coding agents already work in the repository.
