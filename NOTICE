@@ -3,16 +3,20 @@ Copyright 2026 politeuma Contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
-This product bundles a snapshot of kanon (https://github.com/politeuma/kanon)
-under src/daimonion/kanon/: sections/MANIFEST.yml and the section files it
-lists. The exact kanon commit is recorded in src/daimonion/kanon/KANON_SHA.
-kanon is Copyright 2026 politeuma Contributors and is licensed under the
-Apache License, Version 2.0. The bundled section prose is redistributed
-unmodified. `daimonion agents-md` copies excerpts of it (each section's title,
-the items of its summary, and its source links) into a project's agent guide
-(AGENTS.md / CLAUDE.md) between the daimonion:rules markers (daimonion:ethics
-before the rename), and that copied text remains kanon content under the same
-license.
+This product bundles a snapshot of law-map's rulebook
+(https://github.com/politeuma/law-map) under src/daimonion/rulebook/:
+guidance sections (sections/MANIFEST.yml, sections/VOCABULARY.yml,
+sections/LICENSE, and the section files the manifest lists) plus the check
+specs (checks/). The exact law-map commit is recorded in
+src/daimonion/rulebook/LAWMAP_SHA. law-map is Copyright 2026 politeuma
+Contributors; the code and check specs are licensed under the Apache
+License, Version 2.0, and the section prose under CC BY 4.0 (see
+src/daimonion/rulebook/sections/LICENSE). Both are redistributed
+unmodified. `daimonion agents-md` copies excerpts of the prose (each
+section's title, the items of its summary, and its source links) into a
+project's agent guide (AGENTS.md / CLAUDE.md) between the daimonion:rules
+markers (daimonion:ethics before the rename), and that copied text remains
+rulebook content under the same CC BY 4.0 license.
 
-The kanon sections summarise laws, standards, and court decisions for
+The rulebook sections summarise laws, standards, and court decisions for
 engineering guidance. They are not legal advice.

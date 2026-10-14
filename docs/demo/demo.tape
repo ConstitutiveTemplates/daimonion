@@ -1,5 +1,5 @@
 # 15-second demo: personal data reaches a log sink -> daimonion flags it ->
-# the AGENTS.md rule (GDPR + APPI + FTC Wyndham) -> the masked fix scans clean.
+# the AGENTS.md rule (GDPR + APPI + CCPA) -> the masked fix scans clean.
 #
 # Render: `vhs docs/demo/demo.tape` (run from the repo root) writes
 # docs/demo/demo.gif. Uses the REAL daimonion CLI via `uv run` on
@@ -24,7 +24,7 @@ Sleep 1s
 Type "uv run daimonion --no-emoji scan docs/demo/fixture/app.py --repo docs/demo/fixture" Sleep 400ms Enter
 Sleep 2s
 
-Type "sed -n '/個人データ/,/kanon/p' docs/demo/fixture/AGENTS.md" Sleep 400ms Enter
+Type "sed -n '/個人データ/,/rulebook/p' docs/demo/fixture/AGENTS.md" Sleep 400ms Enter
 Sleep 2s
 
 Type "cat docs/demo/fixture/app_fixed.py" Sleep 400ms Enter

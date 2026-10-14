@@ -9,6 +9,33 @@ everything below is unreleased.
 
 ### Changed
 
+- **Rulebook cutover (kanon merged into law-map).** The vendored snapshot
+  moved from `src/daimonion/kanon/` (archived kanon repo, `KANON_SHA`) to
+  `src/daimonion/rulebook/` (law-map `guidance/sections/` at `LAWMAP_SHA`
+  `8ba7170`, plus `checks/`): sections are Markdown with YAML front matter
+  and an `en:` block, and `tools/vendor_rulebook.py` / the weekly
+  `rulebook-parity` workflow target law-map instead. `daimonion.kanon` and
+  `KANON_CONDITIONS` remain as backwards-compatible aliases of
+  `daimonion.rulebook` / `RULEBOOK_CONDITIONS`.
+- **Lint rules load from the vendored check specs (BRK-3/DM-3).**
+  `DEFAULT_RULES` is deleted: the default rule set is one rule per vendored
+  `rulebook/checks/` spec (14 rules, ids like
+  `privacy/cleartext-pii-logging-prohibited`). Specs name obligations, not
+  project conditions, so the builtins carry no gates and `scan` always runs
+  all of them — project scoping lives in `agents-md`. Inline ignores and
+  baselines must name the new ids (e.g.
+  `daimonion: ignore[crypto/deprecated-algorithms-prohibited]`).
+- **Bilingual rules block.** `agents-md` renders each section's `en:` title
+  and summary under the default English UI and the Japanese h1 plus `> 要約:`
+  items under `--lang ja`; the block header records
+  `rulebook=<sha> when=... packs=... lang=...`, so a stale language fails
+  `--check`. New optional `packs:` key in `.daimonion.yml` opts into
+  extension packs (`competitive-programming`); `core` always applies.
+- **Keyword enforcement confirmed.** All vendored rules are keyword matchers
+  capped at L1 (law-map L2 specs keep `blocking` + `fixtures` for their own
+  structural engines; daimonion borrows only the trigger vocabulary), so
+  `daimonion scan` on this repository reports findings but no L2, and
+  `--strict` passes.
 - Config is unified on `.daimonion.yml`: `daimonion init` reads
   `.copier-answers.yml` once and converts the answers to `when` conditions
   (mirroring the template's answer-to-condition derivation); `scan` and

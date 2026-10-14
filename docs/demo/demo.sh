@@ -23,8 +23,8 @@ $DAIMONION scan "$FIX/app.py" --repo "$FIX" || true
 pause "$@"
 
 echo ""
-echo '$ sed -n "/個人データ/,/kanon/p" fixture/AGENTS.md  # GDPR + APPI + FTC Wyndham'
-sed -n '/個人データ/,/kanon/p' "$FIX/AGENTS.md"
+echo '$ sed -n "/個人データ/,/rulebook/p" fixture/AGENTS.md  # GDPR + APPI + CCPA'
+sed -n '/個人データ/,/rulebook/p' "$FIX/AGENTS.md"
 pause "$@"
 
 echo ""

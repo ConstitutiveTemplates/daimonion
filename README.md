@@ -33,11 +33,12 @@ uv tool install "git+https://github.com/politeuma/daimonion@v0.1.0"
 
 ## Rules block for any repository
 
-daimonion carries a pinned snapshot of
-[kanon](https://github.com/politeuma/kanon)
-(the commit is in `src/daimonion/kanon/KANON_SHA`), so any project can pull
-the reviewed rules that apply to it into its agent guide, whatever template
-or toolchain it started from:
+daimonion carries a pinned snapshot of the
+[rulebook](https://github.com/politeuma/law-map/tree/main/guidance/sections)
+(law-map's guidance sections plus its `checks/` specs; the law-map commit is
+in `src/daimonion/rulebook/LAWMAP_SHA`), so any project can pull the reviewed
+rules that apply to it into its agent guide, whatever template or toolchain
+it started from:
 
 ```sh
 # 1. Suggest conditions from pyproject.toml / requirements*.txt /
@@ -45,14 +46,15 @@ or toolchain it started from:
 daimonion init --write          # writes .daimonion.yml; review it
 
 # 2. Insert or refresh the matching sections in AGENTS.md (or CLAUDE.md)
-daimonion agents-md --write
+daimonion agents-md --write                 # English `en:` title + summary (default UI lang)
+daimonion --lang ja agents-md --write       # Japanese h1 + summary items
 
 # 3. In CI: fail when the block is missing or stale
 daimonion agents-md --check
 ```
 
 
-`.daimonion.yml` speaks the kanon's abstract `when` vocabulary and never a
+`.daimonion.yml` speaks the rulebook's abstract `when` vocabulary and never a
 template's flag names:
 
 ```yaml
@@ -61,6 +63,8 @@ agents_md: AGENTS.md   # guide file that receives the block
 when:                  # `always` sections apply without being listed
   - scraping           # scraping, oj_code, mcp, data_science, web_api,
   - jp                 # commercial, eu_market, jp, ai_assisted
+packs: [core]          # optional: opt into extension packs
+                       # (e.g. `competitive-programming` for contest rules)
 ```
 
 `init` only proposes. It cannot detect `commercial`, `eu_market`, or `jp`
@@ -68,26 +72,27 @@ from files, so it leaves those commented out for you to decide.
 
 The block is short on purpose: each rule is 1-3 imperative lines plus its
 sources, and the long prose (facts, cases, prohibited patterns) stays behind a
-link to the kanon section at the pinned commit:
+link to the rulebook section at the pinned commit:
 
 ```markdown
-### Personal data -- minimise before you collect
+### Personal data — minimise before collecting, and build the deletion path first
 
-- NEVER pass raw user identifiers to logging or error trackers.
+- Ask whether each item is needed before collecting it; default to the minimum.
 - ...
 
-Sources: [eur-lex.europa.eu](https://eur-lex.europa.eu/eli/reg/2016/679/oj), [ppc.go.jp](https://www.ppc.go.jp/personalinfo/legal/) · Details: [kanon `baseline-personal-data`](https://github.com/politeuma/kanon/blob/<sha>/sections/baseline/personal-data.md)
+Sources: [eur-lex.europa.eu](https://eur-lex.europa.eu/eli/reg/2016/679/oj), [ppc.go.jp](https://www.ppc.go.jp/personalinfo/legal/) · Details: [rulebook `baseline-personal-data`](https://github.com/politeuma/law-map/blob/<sha>/guidance/sections/baseline/personal-data.md)
 ```
 
-The lines are the agent-facing `directives.agent` wording (as kept in
-[law-map](https://github.com/politeuma/law-map)) when the vendored kanon
-manifest carries it for a section, and otherwise the numbered items of the
-section's summary, which kanon currently writes in Japanese.
+`--lang en` (or the default English UI) renders each section's `en:` title
+and summary; `--lang ja` renders the Japanese h1 and the numbered items of
+the `> 要約:` blockquote. The block header records the pin, the conditions,
+the packs, and the language (`rulebook=<sha> when=... packs=... lang=...`),
+so a stale language or pack choice fails `--check`.
 
 The block sits between `<!-- daimonion:rules:begin ... -->` and
 `<!-- daimonion:rules:end -->` markers; text outside them is never touched.
 The same daimonion version always renders the same text, offline. Upgrading
-daimonion is how new kanon text arrives.
+daimonion is how new rulebook text arrives.
 
 **Migrating from the "ethics block".** Earlier releases wrote the block
 between `daimonion:ethics:begin` / `daimonion:ethics:end` markers. Those
@@ -96,11 +101,11 @@ stale, and `agents-md --write` replaces it in place with the rules block and
 the new markers. Templates that pre-seed empty markers may keep the old ones
 or switch to the new ones.
 
-Maintainers refresh the snapshot from a kanon checkout:
+Maintainers refresh the snapshot from a law-map checkout:
 
 ```sh
-python tools/vendor_kanon.py ../kanon          # vendor + record KANON_SHA
-python tools/vendor_kanon.py ../kanon --check  # exit 1 when stale
+python tools/vendor_rulebook.py ../law-map          # vendor + record LAWMAP_SHA
+python tools/vendor_rulebook.py ../law-map --check  # exit 1 when stale
 ```
 
 ## Usage in CI / pre-commit
@@ -141,20 +146,28 @@ the vocabulary is specific, L0 when it is broad. Only a rule declared
 `kind: structural` (one that matches the violating construct itself, e.g. via
 AST, semgrep, or dependency analysis) may be L2, and only L2 fails `--strict`.
 A keyword rule declared L2 in a custom rule file or law-map check spec is
-capped to L1.
+capped to L1. The builtins come from the vendored `checks/` specs, whose
+trigger vocabulary is keyword by nature, so every builtin is capped at L1 and
+`--strict` never fails on the default rule set: structural L2 enforcement
+lives in the spec's own engine (semgrep, file-presence gates), not in
+`daimonion scan`.
 
-**Scope.** Directory scans read source code only (`.py .ts .js .go .rs
-.java`); `diff` skips `.md .yml .yaml .toml` changes. Opt documents in with
-`--include-docs` or in `.daimonion.yml`. A file named explicitly on the
-command line is always scanned.
+**Scope.** The builtins carry no gates, so `scan` always runs all of them:
+project scoping lives in `agents-md`, which renders only the sections whose
+`when` matches `.daimonion.yml` (and whose `pack` is opted in). Directory
+scans read source code only (`.py .ts .js .go .rs .java`); `diff` skips
+`.md .yml .yaml .toml` changes. Opt documents in with `--include-docs` or in
+`.daimonion.yml`. A file named explicitly on the command line is always
+scanned. Custom `--rules` files may still carry gates; those scope through
+`for_when` as before.
 
 **Inline ignores.** Silence named rules on one line, with a reason and an
 optional expiry; a directive alone on a comment line covers the next line:
 
 ```python
-ua = "crawler-agent/1.0"  # daimonion: ignore[llm-appsec] reason=HTTP User-Agent until=2027-01-31
+ua = "crawler-agent/1.0"  # daimonion: ignore[ai/llm-tool-allowlist-gate] reason=HTTP User-Agent until=2027-01-31
 
-# daimonion: ignore[deprecated-crypto] reason=cache key, not a signature
+# daimonion: ignore[crypto/deprecated-algorithms-prohibited] reason=cache key, not a signature
 key = hashlib.md5(url.encode(), usedforsecurity=False).hexdigest()
 ```
 
@@ -198,25 +211,26 @@ leading icons. Both work before or after the subcommand. JSON and SARIF are
 always English. SARIF keeps inline-ignored and baselined results, marked with
 `inSource` / `external` suppressions.
 
-## Ethics parity
+## Rulebook parity
 
-`.github/workflows/ethics-parity.yml` runs weekly against upstream
-[kanon](https://github.com/politeuma/kanon)'s `sections/MANIFEST.yml` and fails
-when an active section drifts from its daimonion rule (unmapped active section,
-uncovered trigger keyword, or a conditional `when` whose rule is ungated),
-filing a `drift`-labelled issue. The test suite runs the same check against the
-vendored snapshot. The mapping lives in `tools/check_ethics_parity.py`
-(`SECTION_TO_RULE` — add a line when adding a section). The agent-eval
+`.github/workflows/rulebook-parity.yml` runs weekly against upstream
+[law-map](https://github.com/politeuma/law-map)'s `guidance/sections/MANIFEST.yml`
+and `checks/` specs and fails when the vendored snapshot drifts from the
+rulebook's own contracts (front matter vs the generated manifest, missing
+`en:` blocks on active sections, unknown packs, L2 specs without `blocking`
+and `fixtures`, disagreeing trigger regexes), filing a `drift`-labelled
+issue. The test suite runs the same check against the vendored snapshot
+(`tools/check_rulebook_parity.py`). The agent-eval
 harness in `evals/` replays coding tasks with and without the rules block
 and counts violations (`python evals/run.py --dry-run`).
 
 ## Features
 
 - **Scan Mode (`daimonion scan`)**: Scans modified lines in `git diff` (`--staged` for staged) or, with path arguments, entire files/directories (source code by default; docs opt-in) and flags touched compliance areas.
-- **Rules block (`daimonion init` / `daimonion agents-md`)**: Suggests a template-independent `.daimonion.yml` from the repository's manifests, then writes, refreshes, or checks the matching kanon rules (imperative lines, sources, and a link to the full section) in `AGENTS.md`/`CLAUDE.md` from the bundled, SHA-pinned snapshot.
-- **Rule Bundles**: Ships with built-in default rule profiles (licensing, crypto, personal data, scraping, AI safety), and can load custom rule YAMLs (`--rules path/to/rules.yml`).
-- **law-map check specs**: `--rules` also accepts a law-map checkout's `checks/` directory — each `checks/<domain>/<slug>.yml` spec maps to a rule (enforcement from the spec's `level`, triggers from its `triggers:` regex list), so `daimonion --rules ../law-map/checks scan <file>` scans with the same vocabulary law-map validates.
-- **Project-Aware Scoping (`daimonion init`)**: Reads `.copier-answers.yml` (architekton-py/copier history) once, converts the answers to `when` conditions, and writes `.daimonion.yml` (`init --write`) alongside manifest-detected signals — e.g. a `web_api` project gets the Japanese third-party-transmission and EU accessibility duties, while a `script` project skips them. `scan`, `agents-md`, and `scan --list-rules` scope themselves from `.daimonion.yml`; without a config file they scan everything.
+- **Rules block (`daimonion init` / `daimonion agents-md`)**: Suggests a template-independent `.daimonion.yml` from the repository's manifests, then writes, refreshes, or checks the matching rulebook rules (English `en:` lines or Japanese summary lines, sources, and a link to the full section) in `AGENTS.md`/`CLAUDE.md` from the bundled, SHA-pinned snapshot.
+- **Rule Bundles**: Ships with one builtin rule per vendored check spec (licensing, crypto, personal data, scraping, AI safety), and can load custom rule YAMLs (`--rules path/to/rules.yml`).
+- **law-map check specs**: the builtins *are* the vendored `rulebook/checks/` specs — each `checks/<domain>/<slug>.yml` spec maps to a rule (enforcement from the spec's `level`, triggers from its `triggers:` regex list). `--rules` also accepts an external law-map checkout's `checks/` directory, so `daimonion --rules ../law-map/checks scan <file>` scans with the same vocabulary law-map validates.
+- **Project-Aware Scoping (`daimonion init` / `agents-md`)**: Reads `.copier-answers.yml` (architekton-py/copier history) once, converts the answers to `when` conditions, and writes `.daimonion.yml` (`init --write`) alongside manifest-detected signals — e.g. a `web_api` project renders the Japanese third-party-transmission and EU accessibility duties, while a `script` project skips them. `agents-md` scopes itself from `.daimonion.yml`; `scan` always runs every rule.
 - **Zero Heavy Dependencies**: Lightweight (`pyyaml` only), instant execution in CI and local pre-commit hooks.
 
 ## Previous name
