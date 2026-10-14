@@ -37,6 +37,10 @@ everything below is unreleased.
   `daimonion:ethics:*` markers reads as stale and `agents-md --write`
   replaces it in place.
 
+- README install commands pin a git ref
+  (`uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" ...`), as
+  do the pre-commit and Action examples.
+
 ### Added
 
 - Inline ignores: `# daimonion: ignore[rule-id] reason=... until=YYYY-MM-DD`.
@@ -45,6 +49,8 @@ everything below is unreleased.
 - Adoption mode: `--adoption` or `mode: adoption` reports without ever
   failing; `mode: strict` enables strict from config. Action input `adoption`.
 - SARIF output marks ignored and baselined results as suppressions.
+- PyPI-ready metadata: authors, classifiers, keywords, project URLs, and
+  `LICENSE`/`NOTICE` as license files (not yet published).
 - `--lang {en,ja}` (or `DAIMONION_LANG`, or a `ja_*` locale) and `--no-emoji`
   (or `DAIMONION_NO_EMOJI=1`) for human-readable output, accepted before or
   after the subcommand.

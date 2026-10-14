@@ -10,16 +10,23 @@ Rather than dumping thousands of lines of full legal commentary into your AI sys
 
 ## Installation & Quickstart
 
+daimonion is not on PyPI yet. Run it from a pinned git ref: a release tag
+(`v0.1.0` below) or a full commit SHA. An unpinned `git+https://...` URL runs
+whatever `main` is at that moment, so always pin.
+
 ```sh
 # Run via uvx without installing
-uvx --from git+https://github.com/politeuma/daimonion daimonion diff
+uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" daimonion diff
 
 # In a copier/architekton-py-generated project, prepare the applicable
 # obligations from .copier-answers.yml (project_type, domain_traits, ...)
-uvx --from git+https://github.com/politeuma/daimonion daimonion prepare --write
+uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" daimonion prepare --write
 
 # Or check specific files or directories
-uvx --from git+https://github.com/politeuma/daimonion daimonion check src/
+uvx --from "git+https://github.com/politeuma/daimonion@v0.1.0" daimonion check src/
+
+# Or install the pinned release as a tool; later examples call `daimonion` directly
+uv tool install "git+https://github.com/politeuma/daimonion@v0.1.0"
 ```
 
 ## Rules block for any repository
@@ -103,7 +110,7 @@ filenames are passed):
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/politeuma/daimonion
-    rev: <ref>
+    rev: v0.1.0 # a release tag or a full commit SHA
     hooks:
       - id: daimonion-diff
 ```
@@ -111,7 +118,7 @@ repos:
 Or run the composite action in a workflow:
 
 ```yaml
-- uses: politeuma/daimonion@<ref>
+- uses: politeuma/daimonion@v0.1.0 # better: the tag's full commit SHA
   with:
     args: diff # default; any `check ...` / `diff ...` tail works
     strict: "true" # default; fail the job on structural L2 findings
@@ -180,7 +187,13 @@ scan:
 
 `check` and `diff` accept `--format {human,json,sarif}` (default `human`)
 for CI annotations and SARIF upload; `list-rules` accepts `--format
-{human,json}`. SARIF keeps inline-ignored and baselined results, marked with
+{human,json}`.
+
+Human-readable output is English. `--lang ja` (or `DAIMONION_LANG=ja`, or a
+`ja_*` locale) switches it, including the builtin rules' titles and
+summaries, to Japanese; `--no-emoji` (or `DAIMONION_NO_EMOJI=1`) drops the
+leading icons. Both work before or after the subcommand. JSON and SARIF are
+always English. SARIF keeps inline-ignored and baselined results, marked with
 `inSource` / `external` suppressions.
 
 ## Ethics parity

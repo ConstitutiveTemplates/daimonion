@@ -42,6 +42,26 @@ python tools/vendor_kanon.py ../kanon --check
 
 Commit the snapshot on its own (`chore: re-vendor kanon at <sha>`).
 
+## Human-readable text
+
+English is canonical. A new or changed message goes into `MESSAGES` in
+`src/daimonion/i18n.py` and its Japanese translation into
+`src/daimonion/locales/ja.yml` (same key, same `{placeholders}`); the same
+holds for a builtin rule's `title` and `summary`. `tests/test_i18n.py` fails
+when the two drift apart.
+
+## Releasing
+
+Not automated yet, and nothing is on PyPI. A release is:
+
+1. Move `[Unreleased]` in `CHANGELOG.md` under the version and bump
+   `version` in `pyproject.toml`.
+2. `uv build` and check the wheel: `daimonion/locales/ja.yml`,
+   `daimonion/kanon/`, and `LICENSE`/`NOTICE` under `licenses/` must be in it.
+3. Tag `vX.Y.Z`, push the tag, and update the pinned `@vX.Y.Z` / `rev:`
+   examples in `README.md`.
+4. Publish with `uv publish` (PyPI trusted publishing once it is set up).
+
 ## Commits
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) and add a
