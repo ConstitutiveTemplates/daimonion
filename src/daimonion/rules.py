@@ -7,7 +7,7 @@ from typing import Any
 
 import yaml
 
-from law_lint.models import Rule
+from daimonion.models import Rule
 
 # Canonical compliance rules derived from ConstitutiveTemplates ethical and legal baseline
 DEFAULT_RULES: list[dict[str, str]] = [

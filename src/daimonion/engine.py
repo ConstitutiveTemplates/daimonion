@@ -7,9 +7,9 @@ from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
 from typing import Any, NamedTuple
 
-from law_lint.context import derive_context, load_answers, scope_rules
-from law_lint.models import Finding, Rule
-from law_lint.rules import BUILTIN_RULES, load_rules_from_yaml
+from daimonion.context import derive_context, load_answers, scope_rules
+from daimonion.models import Finding, Rule
+from daimonion.rules import BUILTIN_RULES, load_rules_from_yaml
 
 #: File suffixes ``scan_paths`` descends into.
 SOURCE_SUFFIXES: frozenset[str] = frozenset(
@@ -107,7 +107,7 @@ class Linter:
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> Linter:
-        """Load rules from an external YAML file (e.g. from good-future-codex, law-map, or REGISTRY.yml)."""
+        """Load rules from an external YAML file (e.g. from kanon, law-map, or REGISTRY.yml)."""
         return cls(load_rules_from_yaml(path))
 
     def for_context(self, context: Mapping[str, Any]) -> Linter:

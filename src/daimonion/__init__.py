@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from law_lint.engine import Linter
-from law_lint.models import Finding, MatchFinding, Rule
+from daimonion.engine import Linter
+from daimonion.models import Finding, MatchFinding, Rule
 
 __all__ = ["Finding", "Linter", "MatchFinding", "Rule"]

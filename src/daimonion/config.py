@@ -2,7 +2,7 @@
 
 The file speaks the kanon's abstract ``when`` vocabulary, so a hand-written
 config and one a template generator emits look the same and take the same
-path through law-lint::
+path through daimonion::
 
     version: 1
     agents_md: AGENTS.md      # where `agents-md --write` puts the ethics block
@@ -18,7 +18,7 @@ from pathlib import Path
 
 import yaml
 
-from law_lint.kanon import WHEN_VOCABULARY
+from daimonion.kanon import WHEN_VOCABULARY
 
 CONFIG_NAME = ".daimonion.yml"
 CONFIG_VERSION = 1

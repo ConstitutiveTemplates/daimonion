@@ -6,13 +6,18 @@ from pathlib import Path
 
 import yaml
 
-from law_lint import kanon
-from law_lint.config import CONFIG_NAME, ConfigError, find_config, load_config
-from law_lint.context import derive_context, describe_context, find_answers_file, load_answers
-from law_lint.detect import UNDETECTABLE, default_agents_md, detect, render_config
-from law_lint.engine import Linter
-from law_lint.models import Finding
-from law_lint.report import build_json_report, build_rules_json_report, build_sarif_report, dumps
+from daimonion import kanon
+from daimonion.config import CONFIG_NAME, ConfigError, find_config, load_config
+from daimonion.context import derive_context, describe_context, find_answers_file, load_answers
+from daimonion.detect import UNDETECTABLE, default_agents_md, detect, render_config
+from daimonion.engine import Linter
+from daimonion.models import Finding
+from daimonion.report import build_json_report, build_rules_json_report, build_sarif_report, dumps
+
+#: Prepared per-project rule file written by ``prepare --write``.
+PREPARED_RULES_NAME = ".daimonion-rules.yml"
+#: Previous name of the prepared rule file; still read when the new name is absent.
+LEGACY_PREPARED_RULES_NAME = ".law-lint-rules.yml"
 
 #: Output formats for finding-producing subcommands.
 FORMAT_CHOICES = ("human", "json", "sarif")
@@ -31,7 +36,7 @@ def format_findings(findings: list[Finding], *, verbose: bool = False) -> str:
         by_rule.setdefault(f.rule.id, []).append(f)
 
     lines: list[str] = [
-        f"⚠️  law-lint: Detected {len(findings)} trigger match(es) across {len(by_rule)} compliance area(s):\n"
+        f"⚠️  daimonion: Detected {len(findings)} trigger match(es) across {len(by_rule)} compliance area(s):\n"
     ]
 
     for rule_id, rule_findings in by_rule.items():
@@ -68,7 +73,7 @@ def prepare(args: argparse.Namespace) -> int:
     scoped = base.for_context(context)
     skipped = [r for r in base.rules if r not in scoped.rules]
 
-    print(f"📋 law-lint prepare — {answers_path}")
+    print(f"📋 daimonion prepare — {answers_path}")
     for line in describe_context(context):
         print(f"   {line}")
     print()
@@ -82,12 +87,12 @@ def prepare(args: argparse.Namespace) -> int:
 
     if args.write:
         payload = {"rules": [r.to_dict() for r in scoped.rules]}
-        out = answers_path.parent / ".law-lint-rules.yml"
+        out = answers_path.parent / PREPARED_RULES_NAME
         out.write_text(yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), encoding="utf-8")
         print(f"\n📝 Wrote {out}")
-        print("   Commit it: check/diff loads .law-lint-rules.yml automatically when --rules is not given.")
+        print(f"   Commit it: check/diff loads {PREPARED_RULES_NAME} automatically when --rules is not given.")
     else:
-        print("\nℹ️  Pass --write to materialize .law-lint-rules.yml next to the answers file.")
+        print(f"\nℹ️  Pass --write to materialize {PREPARED_RULES_NAME} next to the answers file.")
     return 0
 
 
@@ -98,7 +103,7 @@ def init(args: argparse.Namespace) -> int:
     text = render_config(signals, agents_md=default_agents_md(repo))
     target = repo / CONFIG_NAME
 
-    print(f"🔍 law-lint init — {repo.resolve()}")
+    print(f"🔍 daimonion init — {repo.resolve()}")
     if signals:
         for signal in signals:
             print(f"   {signal.condition}: {signal.source} ({signal.detail})")
@@ -116,7 +121,7 @@ def init(args: argparse.Namespace) -> int:
         return 2
     target.write_text(text, encoding="utf-8")
     print(f"📝 Wrote {target}")
-    print("   Next: review the conditions, then run `law-lint agents-md --write`.")
+    print("   Next: review the conditions, then run `daimonion agents-md --write`.")
     return 0
 
 
@@ -124,7 +129,7 @@ def agents_md(args: argparse.Namespace) -> int:
     """Render the kanon ethics block for .daimonion.yml; print, write, or check it."""
     config_path = Path(args.config) if args.config else find_config(args.repo)
     if config_path is None:
-        print(f"⚠️  No {CONFIG_NAME} under {args.repo!r}; run `law-lint init --write` first.", file=sys.stderr)
+        print(f"⚠️  No {CONFIG_NAME} under {args.repo!r}; run `daimonion init --write` first.", file=sys.stderr)
         return 2
     try:
         config = load_config(config_path)
@@ -146,7 +151,7 @@ def agents_md(args: argparse.Namespace) -> int:
             print(f"✅ {target} carries the current ethics block (kanon {kanon.kanon_sha()[:12]}).")
             return 0
         state = "is missing" if kanon.extract_block(current) is None else "is stale"
-        print(f"❌ The ethics block in {target} {state}; run `law-lint agents-md --write`.", file=sys.stderr)
+        print(f"❌ The ethics block in {target} {state}; run `daimonion agents-md --write`.", file=sys.stderr)
         return 1
     if args.write:
         if updated != current:
@@ -161,14 +166,22 @@ def agents_md(args: argparse.Namespace) -> int:
 
 
 def resolve_linter(args: argparse.Namespace) -> Linter:
-    """Select the active rule set: --rules > prepared file > copier-answers scope > all builtins."""
+    """Select the active rule set: --rules > prepared file > copier-answers scope > all builtins.
+
+    The prepared file is :data:`PREPARED_RULES_NAME`; a project that prepared
+    under the previous release name still has :data:`LEGACY_PREPARED_RULES_NAME`,
+    which is read only when the new name is absent.
+    """
     repo = Path(getattr(args, "repo", "."))
     if args.rules:
         return Linter.from_yaml(args.rules)
-    prepared = repo / ".law-lint-rules.yml"
+    prepared = repo / PREPARED_RULES_NAME
+    legacy = repo / LEGACY_PREPARED_RULES_NAME
     answers = find_answers_file(repo)
     if prepared.is_file():
         return Linter.from_yaml(prepared)
+    if legacy.is_file():
+        return Linter.from_yaml(legacy)
     if answers is not None and not getattr(args, "all", False):
         scoped = Linter.for_project(answers)
         print(
@@ -181,7 +194,7 @@ def resolve_linter(args: argparse.Namespace) -> Linter:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="law-lint",
+        prog="daimonion",
         description="Fast linter matching source files and git diffs against legal and ethical triggers.",
     )
     parser.add_argument("--rules", type=Path, default=None, help="Custom rules YAML file")
@@ -197,7 +210,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_prep.add_argument("--repo", default=".", help="Project root containing .copier-answers.yml")
     p_prep.add_argument("--answers", default=None, help="Explicit path to a copier answers file")
-    p_prep.add_argument("--write", action="store_true", help="Write .law-lint-rules.yml next to the answers file")
+    p_prep.add_argument("--write", action="store_true", help=f"Write {PREPARED_RULES_NAME} next to the answers file")
 
     # init
     p_init = sub.add_parser("init", help=f"Suggest a {CONFIG_NAME} from the repository's manifests")
@@ -206,7 +219,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_init.add_argument("--force", action="store_true", help=f"Overwrite an existing {CONFIG_NAME}")
 
     # agents-md
-    p_agents = sub.add_parser("agents-md", help=f"Render the good-future-codex ethics block selected by {CONFIG_NAME}")
+    p_agents = sub.add_parser("agents-md", help=f"Render the kanon ethics block selected by {CONFIG_NAME}")
     p_agents.add_argument("--repo", default=".", help=f"Project root containing {CONFIG_NAME}")
     p_agents.add_argument("--config", default=None, help=f"Explicit path to a {CONFIG_NAME}")
     mode = p_agents.add_mutually_exclusive_group()

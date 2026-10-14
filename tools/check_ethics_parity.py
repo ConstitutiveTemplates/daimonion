@@ -1,19 +1,19 @@
-"""Fail loudly when daimonion ethics sections drift from law-lint rules.
+"""Fail loudly when architekton-py ethics sections drift from daimonion rules.
 
-Run from a law-lint checkout with a ``../daimonion`` sibling (or pass
+Run from a daimonion checkout with a ``../architekton-py`` sibling (or pass
 explicit paths)::
 
     python tools/check_ethics_parity.py
     python tools/check_ethics_parity.py --registry path/to/REGISTRY.yml --rules path/to/rules.py
 
 Exit 0 when every distributed (``status: active``) registry section is
-covered by a law-lint rule whose trigger regex and gate agree; exit 1 with
+covered by a daimonion rule whose trigger regex and gate agree; exit 1 with
 a per-pair report otherwise. Draft sections are skipped with a note unless
 a same-named rule exists, in which case they need a mapping too.
 
 Only ``pyyaml`` plus the standard library is used. The rules file is parsed
 with :mod:`ast` and never imported, so the script stays runnable even when
-``law_lint`` itself is not installed.
+``daimonion`` itself is not installed.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from pathlib import Path
 
 import yaml
 
-# Map a daimonion registry section id to the law-lint rule id that enforces
+# Map an architekton-py registry section id to the daimonion rule id that enforces
 # it. ADD A LINE HERE when adding a section (or acknowledge a deliberately
 # unmapped active section in KNOWN_UNMAPPED_ACTIVE below).
 SECTION_TO_RULE: dict[str, str] = {
@@ -43,7 +43,7 @@ SECTION_TO_RULE: dict[str, str] = {
     "domain-prompt-injection": "prompt-injection",
 }
 
-# Active sections with deliberately no law-lint rule yet. A NEW active id
+# Active sections with deliberately no daimonion rule yet. A NEW active id
 # outside this set fails the check until it gains a rule (add a
 # SECTION_TO_RULE line) or is acknowledged here — that is the drift this
 # script guards.
@@ -65,17 +65,17 @@ WORD_RE = re.compile(r"[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*")
 
 
 def _default_registry() -> Path:
-    """REGISTRY.yml next to a ``../daimonion`` sibling of this checkout."""
-    return Path(__file__).resolve().parent.parent.parent / "daimonion" / "_shared" / "ethics" / "REGISTRY.yml"
+    """REGISTRY.yml next to a ``../architekton-py`` sibling of this checkout."""
+    return Path(__file__).resolve().parent.parent.parent / "architekton-py" / "_shared" / "ethics" / "REGISTRY.yml"
 
 
 def _default_rules() -> Path:
-    """The law-lint rules file inside this checkout."""
-    return Path(__file__).resolve().parent.parent / "src" / "law_lint" / "rules.py"
+    """The daimonion rules file inside this checkout."""
+    return Path(__file__).resolve().parent.parent / "src" / "daimonion" / "rules.py"
 
 
-def _daimonion_root(registry: Path) -> Path:
-    """Recover the daimonion repo root from a REGISTRY.yml path."""
+def _architekton_root(registry: Path) -> Path:
+    """Recover the architekton-py repo root from a REGISTRY.yml path."""
     parts = registry.resolve().parts
     if len(parts) >= 4 and parts[-3] == "_shared" and parts[-2] == "ethics":
         return Path(*parts[:-3])
@@ -166,7 +166,7 @@ def _probes_from_pattern(pattern: str) -> list[str]:
 
 
 def _read_section_file(root: Path, registry: Path, rel: str) -> str | None:
-    """Read a section file, resolved against the daimonion repo root."""
+    """Read a section file, resolved against the architekton-py repo root."""
     for candidate in (root / rel, registry.parent / rel):
         if candidate.is_file():
             return candidate.read_text(encoding="utf-8")
@@ -201,7 +201,7 @@ def _check_pair(section_id: str, rule_id: str, text: str, rule: dict, gate: str)
         shared = [probe for probe in probes if file_rx.search(probe) and rule_rx.search(probe)]
         rx_ok = len(shared) >= 3
 
-    # The header list is daimonion's copier-QA vocabulary (prefix-style
+    # The header list is architekton-py's copier-QA vocabulary (prefix-style
     # hints such as "scraping" or "tls"); the trailing-\b rule regexes only
     # cover full tokens, so partial misses are review notes. Total
     # divergence (zero keywords covered and no agreeing file regex) fails.
@@ -248,9 +248,11 @@ def _check_pair(section_id: str, rule_id: str, text: str, rule: dict, gate: str)
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Check daimonion ethics sections against law-lint rules.")
-    parser.add_argument("--registry", type=Path, default=None, help="Path to daimonion _shared/ethics/REGISTRY.yml")
-    parser.add_argument("--rules", type=Path, default=None, help="Path to law-lint src/law_lint/rules.py")
+    parser = argparse.ArgumentParser(description="Check architekton-py ethics sections against daimonion rules.")
+    parser.add_argument(
+        "--registry", type=Path, default=None, help="Path to architekton-py _shared/ethics/REGISTRY.yml"
+    )
+    parser.add_argument("--rules", type=Path, default=None, help="Path to daimonion src/daimonion/rules.py")
     args = parser.parse_args(argv)
 
     registry_path = args.registry or _default_registry()
@@ -275,7 +277,7 @@ def main(argv: list[str] | None = None) -> int:
 
     ok_count = 0
     skip_count = 0
-    root = _daimonion_root(registry_path)
+    root = _architekton_root(registry_path)
     for section in sections:
         if not isinstance(section, dict) or not section.get("id"):
             lines.append("FAIL registry entry lacks an id")
@@ -287,10 +289,12 @@ def main(argv: list[str] | None = None) -> int:
         if rule_id is None:
             if status == "active":
                 if section_id in KNOWN_UNMAPPED_ACTIVE:
-                    lines.append(f"NOTE {section_id}: active, acknowledged without a law-lint rule; skipped")
+                    lines.append(f"NOTE {section_id}: active, acknowledged without a daimonion rule; skipped")
                     skip_count += 1
                 else:
-                    lines.append(f"FAIL {section_id}: active section has no law-lint rule (add a SECTION_TO_RULE line)")
+                    lines.append(
+                        f"FAIL {section_id}: active section has no daimonion rule (add a SECTION_TO_RULE line)"
+                    )
                     failed = True
             elif section_id in rules_by_id:
                 lines.append(f"FAIL {section_id}: draft section has a same-named rule but no SECTION_TO_RULE entry")

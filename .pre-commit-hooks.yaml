@@ -1,8 +1,15 @@
 # One hook: scan staged changes. `diff` mode reads git itself, so no
 # filenames are passed through (pass_filenames: false).
-- id: law-lint-diff
-  name: law-lint diff (staged)
+- id: daimonion-diff
+  name: daimonion diff (staged)
   description: Scan staged git changes against legal and ethical triggers.
   language: python
-  entry: law-lint --strict diff --staged
+  entry: daimonion --strict diff --staged
+  pass_filenames: false
+# Deprecated alias for the previous hook id; same entry point, removed next release.
+- id: law-lint-diff
+  name: law-lint diff (staged, deprecated alias)
+  description: Deprecated alias of daimonion-diff; Scan staged git changes against legal and ethical triggers.
+  language: python
+  entry: daimonion --strict diff --staged
   pass_filenames: false

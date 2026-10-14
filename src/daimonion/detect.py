@@ -1,6 +1,6 @@
 """Suggest kanon ``when`` conditions from what a repository already contains.
 
-``law-lint init`` proposes, it does not decide: every suggestion carries the
+``daimonion init`` proposes, it does not decide: every suggestion carries the
 file and dependency it came from, and the conditions no file can reveal
 (commercial distribution, target markets, governing law) are always left to
 the user. Only the repository root's manifests are read -- no network, no
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-#: One-line meaning of each condition (good-future-codex MANIFEST.yml).
+#: One-line meaning of each condition (kanon MANIFEST.yml).
 WHEN_DESCRIPTIONS: dict[str, str] = {
     "scraping": "the project fetches the web (any engine)",
     "oj_code": "a code-submission judge workspace",
@@ -266,8 +266,8 @@ def render_config(signals: list[Signal], agents_md: str = "AGENTS.md") -> str:
         detected.setdefault(signal.condition, []).append(signal)
     width = max(len(name) for name in WHEN_DESCRIPTIONS)
     lines = [
-        "# law-lint project conditions, in good-future-codex's `when` vocabulary.",
-        "# `law-lint agents-md --write` renders the matching ethics sections into",
+        "# daimonion project conditions, in kanon's `when` vocabulary.",
+        "# `daimonion agents-md --write` renders the matching ethics sections into",
         "# the guide file below; `always` sections apply without being listed.",
         "version: 1",
         f"agents_md: {agents_md}",

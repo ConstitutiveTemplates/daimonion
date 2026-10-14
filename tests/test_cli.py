@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from law_lint.cli import main
-from law_lint.models import Finding, Rule
+from daimonion.cli import main
+from daimonion.models import Finding, Rule
 
 
 def _write_answers(root: Path, answers: dict) -> Path:
@@ -29,7 +29,7 @@ def test_default_format_is_human_and_unchanged(tmp_path, capsys):
     target.write_text("import hashlib\nreturn hashlib.md5(pwd)\n", encoding="utf-8")
     assert main(["check", str(target), "--all"]) == 0
     out = capsys.readouterr().out
-    assert out.startswith("⚠️  law-lint: Detected")
+    assert out.startswith("⚠️  daimonion: Detected")
     assert "[L2]" in out
     assert "deprecated-crypto" in out
     assert not out.lstrip().startswith("{")
@@ -50,7 +50,7 @@ def test_prepare_write_then_check_autoloads_prepared_rules(tmp_path, capsys):
 
     assert main(["prepare", "--repo", str(tmp_path), "--write"]) == 0
     capsys.readouterr()
-    prepared = tmp_path / ".law-lint-rules.yml"
+    prepared = tmp_path / ".daimonion-rules.yml"
     assert prepared.is_file()
 
     # Remove the answers file: only the prepared rule file can scope the next run.
@@ -190,7 +190,7 @@ def test_check_sarif_payload(tmp_path, capsys):
     assert len(payload["runs"]) == 1
 
     driver = payload["runs"][0]["tool"]["driver"]
-    assert driver["name"] == "law-lint"
+    assert driver["name"] == "daimonion"
     assert driver["version"]
     rules = {rule["id"]: rule for rule in driver["rules"]}
     assert "deprecated-crypto" in rules
@@ -210,7 +210,7 @@ def test_check_sarif_payload(tmp_path, capsys):
 
 
 def test_sarif_level_mapping():
-    from law_lint.report import build_sarif_report
+    from daimonion.report import build_sarif_report
 
     def finding(enforcement: str) -> Finding:
         rule = Rule(id="r", title="t", triggers="x", summary="s", enforcement=enforcement)
@@ -222,7 +222,7 @@ def test_sarif_level_mapping():
 
 
 def test_sarif_rules_only_cover_referenced_rule_ids():
-    from law_lint.report import build_sarif_report
+    from daimonion.report import build_sarif_report
 
     rule_a = Rule(id="a", title="A", triggers="x", summary="s", enforcement="L2")
     rule_b = Rule(id="b", title="B", triggers="x", summary="s", enforcement="L1")
@@ -257,5 +257,59 @@ def test_check_unreadable_file_is_graceful(tmp_path, capsys, monkeypatch):
 
     monkeypatch.setattr(Path, "read_text", _denied)
     rc, payload = _json_output(capsys, ["check", str(target), "--format", "json", "--all"])
+    assert rc == 0
+    assert payload["findings"] == []
+
+
+def test_legacy_prepared_rules_file_is_used_as_fallback(tmp_path, capsys):
+    """A `.law-lint-rules.yml` from the previous release still scopes check runs."""
+    _write_answers(tmp_path, {"project_type": "cli"})
+    assert main(["prepare", "--repo", str(tmp_path), "--write"]) == 0
+    capsys.readouterr()
+    prepared = tmp_path / ".daimonion-rules.yml"
+    assert prepared.is_file()
+    legacy = tmp_path / ".law-lint-rules.yml"
+    prepared.rename(legacy)
+
+    target = tmp_path / "app.py"
+    target.write_text("import hashlib\nhashlib.md5(b'x')\ncookie = True\n", encoding="utf-8")
+    (tmp_path / ".copier-answers.yml").unlink()
+
+    rc, payload = _json_output(capsys, ["check", str(target), "--repo", str(tmp_path), "--format", "json"])
+    ids = {finding["rule_id"] for finding in payload["findings"]}
+    assert rc == 0
+    assert "deprecated-crypto" in ids
+    assert "jp-external-transmission" not in ids
+
+
+def test_new_prepared_rules_file_wins_over_legacy(tmp_path, capsys):
+    """When both names exist, `.daimonion-rules.yml` takes precedence."""
+    _write_answers(tmp_path, {"project_type": "cli"})
+    assert main(["prepare", "--repo", str(tmp_path), "--write"]) == 0
+    capsys.readouterr()
+    assert (tmp_path / ".daimonion-rules.yml").is_file()
+    legacy = tmp_path / ".law-lint-rules.yml"
+    legacy.write_text(
+        yaml.safe_dump(
+            {
+                "rules": [
+                    {
+                        "id": "legacy-only",
+                        "title": "Legacy",
+                        "triggers": "legacy-marker-xyz",
+                        "summary": "s",
+                    }
+                ]
+            },
+            allow_unicode=True,
+        ),
+        encoding="utf-8",
+    )
+
+    target = tmp_path / "app.py"
+    target.write_text("legacy-marker-xyz\n", encoding="utf-8")
+    (tmp_path / ".copier-answers.yml").unlink()
+
+    rc, payload = _json_output(capsys, ["check", str(target), "--repo", str(tmp_path), "--format", "json"])
     assert rc == 0
     assert payload["findings"] == []

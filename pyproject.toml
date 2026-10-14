@@ -1,5 +1,5 @@
 [project]
-name = "law-lint"
+name = "daimonion"
 version = "0.1.0"
 description = "Fast, lightweight linter that matches code and git diffs against legal and ethical triggers"
 readme = "README.md"
@@ -10,7 +10,9 @@ dependencies = [
 ]
 
 [project.scripts]
-law-lint = "law_lint.cli:main"
+daimonion = "daimonion.cli:main"
+# Deprecated alias for the previous distribution name; same entry point, removed next release.
+law-lint = "daimonion.cli:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -6,8 +6,8 @@ import re
 
 import pytest
 
-from law_lint import kanon
-from law_lint.kanon import BEGIN_MARKER, END_MARKER, WHEN_VOCABULARY, Section
+from daimonion import kanon
+from daimonion.kanon import BEGIN_MARKER, END_MARKER, WHEN_VOCABULARY, Section
 
 
 def _section(id_: str, when: tuple[str, ...], status: str = "active", placement: str = "agents_md") -> Section:

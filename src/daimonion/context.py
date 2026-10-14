@@ -8,9 +8,9 @@ from typing import Any
 
 import yaml
 
-from law_lint.models import Rule
+from daimonion.models import Rule
 
-# Project types daimonion's questionnaire offers (copier.yml).
+# Project types architekton-py's questionnaire offers (copier.yml).
 OJ_CODE_KINDS = ("atcoder", "codeforces", "kattis", "kaggle")
 ANSWERS_NAMES = (".copier-answers.yml", ".copier-answers.yaml")
 
@@ -52,7 +52,7 @@ def _choices(answers: Mapping[str, Any], key: str) -> list[str]:
 def derive_context(answers: Mapping[str, Any]) -> dict[str, Any]:
     """The flag set a project's copier answers imply.
 
-    Mirrors daimonion tools/ethics.py::leaf_context: the same names, the same
+    Mirrors architekton-py tools/ethics.py::leaf_context: the same names, the same
     conditions, so a REGISTRY gate string means one thing in both places.
     """
     project_type = str(answers.get("project_type") or "")
@@ -143,7 +143,7 @@ def scope_rules(rules: Iterable[Rule], context: Mapping[str, Any]) -> list[Rule]
             active = gate_eval(rule.gate, context)
         except (TypeError, ValueError) as exc:
             warnings.warn(
-                f"law-lint: excluding rule {rule.id!r}: malformed gate {rule.gate!r} ({exc})",
+                f"daimonion: excluding rule {rule.id!r}: malformed gate {rule.gate!r} ({exc})",
                 UserWarning,
                 stacklevel=2,
             )

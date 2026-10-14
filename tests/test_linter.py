@@ -3,8 +3,8 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from law_lint.cli import format_findings, main
-from law_lint.engine import Linter
+from daimonion.cli import format_findings, main
+from daimonion.engine import Linter
 
 
 def test_default_rules_loaded():
@@ -48,14 +48,14 @@ def test_scan_file_and_format():
         findings = linter.scan_file(f_path)
         assert len(findings) >= 1
         output = format_findings(findings)
-        assert "law-lint: Detected" in output
+        assert "daimonion: Detected" in output
         assert "個人データ" in output
     finally:
         f_path.unlink()
 
 
 def test_cli_list_rules(capsys):
-    """law-lint list-rules outputs the active rules."""
+    """daimonion list-rules outputs the active rules."""
     rc = main(["list-rules"])
     assert rc == 0
     captured = capsys.readouterr().out
@@ -64,7 +64,7 @@ def test_cli_list_rules(capsys):
 
 
 def test_cli_check_clean_file(capsys):
-    """law-lint check on clean code outputs no findings."""
+    """daimonion check on clean code outputs no findings."""
     with tempfile.NamedTemporaryFile("w+", suffix=".py", delete=False) as f:
         f.write("def add(a: int, b: int) -> int:\n    return a + b\n")
         f.flush()
@@ -125,7 +125,7 @@ def test_prepare_scopes_rules_from_copier_answers(tmp_path, capsys):
 def test_prepare_write_emits_rules_file(tmp_path, capsys):
     _write_answers(tmp_path, {"project_type": "cli", "include_scraping": True})
     assert main(["prepare", "--repo", str(tmp_path), "--write"]) == 0
-    generated = tmp_path / ".law-lint-rules.yml"
+    generated = tmp_path / ".daimonion-rules.yml"
     assert generated.is_file()
     import yaml
 
@@ -154,7 +154,7 @@ def test_diff_scopes_via_copier_answers(tmp_path, capsys):
 
 
 def test_gate_eval_rejects_hostile_constructs():
-    from law_lint.context import gate_eval
+    from daimonion.context import gate_eval
 
     ctx = {"project_type": "cli", "true": True}
     assert gate_eval("", ctx) is True

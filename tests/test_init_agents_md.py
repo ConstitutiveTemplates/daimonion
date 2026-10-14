@@ -1,4 +1,4 @@
-"""`.daimonion.yml`, `law-lint init` detection, and `law-lint agents-md` end to end."""
+"""`.daimonion.yml`, `daimonion init` detection, and `daimonion agents-md` end to end."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from law_lint import kanon
-from law_lint.cli import main
-from law_lint.config import ConfigError, load_config
-from law_lint.detect import detect, render_config
+from daimonion import kanon
+from daimonion.cli import main
+from daimonion.config import ConfigError, load_config
+from daimonion.detect import detect, render_config
 
 
 def _config(root: Path, text: str) -> Path:

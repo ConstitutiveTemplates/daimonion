@@ -1,4 +1,4 @@
-name: law-lint
+name: daimonion
 description: Scan git diffs and files against legal and ethical triggers.
 inputs:
   strict:
@@ -6,7 +6,7 @@ inputs:
     required: false
     default: "true"
   args:
-    description: Arguments passed to law-lint (e.g. "diff" or "check src/").
+    description: Arguments passed to daimonion (e.g. "diff" or "check src/").
     required: false
     default: diff
 runs:
@@ -14,7 +14,7 @@ runs:
   steps:
     - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
 
-    - name: Run law-lint
+    - name: Run daimonion
       shell: bash
       run: |
         strict=""
@@ -22,4 +22,4 @@ runs:
           strict="--strict"
         fi
         # Intentionally unquoted: inputs.args may itself hold several words.
-        uvx --from git+https://github.com/ConstitutiveTemplates/law-lint law-lint $strict ${{ inputs.args }}
+        uvx --from git+https://github.com/ConstitutiveTemplates/daimonion daimonion $strict ${{ inputs.args }}

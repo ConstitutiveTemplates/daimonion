@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Vendor a good-future-codex checkout into src/law_lint/kanon/.
+"""Vendor a kanon checkout into src/daimonion/kanon/.
 
-law-lint ships the kanon sections inside its own package so a pinned
-law-lint release always renders the same ethics text, offline. This script
+daimonion ships the kanon sections inside its own package so a pinned
+daimonion release always renders the same ethics text, offline. This script
 is the only writer of that snapshot: it copies ``sections/MANIFEST.yml`` and
 every file the manifest lists, then records the checkout's commit in
 ``KANON_SHA``. Bumping the snapshot is a deliberate, reviewable commit.
 
 Usage:
-    python tools/vendor_kanon.py ../good-future-codex          # refresh the snapshot
-    python tools/vendor_kanon.py ../good-future-codex --check  # exit 1 when stale
+    python tools/vendor_kanon.py ../kanon          # refresh the snapshot
+    python tools/vendor_kanon.py ../kanon --check  # exit 1 when stale
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from pathlib import Path
 import yaml
 
 TOP = Path(__file__).resolve().parent.parent
-TARGET = TOP / "src" / "law_lint" / "kanon"
+TARGET = TOP / "src" / "daimonion" / "kanon"
 
 
 def _checkout_sha(kanon: Path) -> str:
@@ -56,7 +56,7 @@ def _stale(kanon: Path, files: list[str], sha: str) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("kanon", type=Path, help="Path to a good-future-codex git checkout")
+    parser.add_argument("kanon", type=Path, help="Path to a kanon git checkout")
     parser.add_argument("--check", action="store_true", help="Exit 1 when the snapshot differs from the checkout")
     args = parser.parse_args(argv)
 

@@ -1,7 +1,7 @@
 """Fixture-based unit tests for tools/check_ethics_parity.py (offline).
 
 Builds a miniature registry, section files, and rules.py under ``tmp_path``
-and injects their paths — no sibling daimonion checkout is needed.
+and injects their paths — no sibling architekton-py checkout is needed.
 """
 
 from __future__ import annotations
@@ -89,7 +89,7 @@ def test_unmapped_active_section_fails(tmp_path, capsys):
     )
     rc, out = _run(module, registry, rules, capsys)
     assert rc == 1
-    assert "FAIL x-brand-new: active section has no law-lint rule" in out
+    assert "FAIL x-brand-new: active section has no daimonion rule" in out
 
 
 def test_uncovered_keyword_fails(tmp_path, capsys):

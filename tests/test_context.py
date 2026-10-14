@@ -6,9 +6,9 @@ import warnings
 
 import pytest
 
-from law_lint.context import derive_context, gate_eval, scope_rules
-from law_lint.models import Rule
-from law_lint.rules import BUILTIN_RULES
+from daimonion.context import derive_context, gate_eval, scope_rules
+from daimonion.models import Rule
+from daimonion.rules import BUILTIN_RULES
 
 
 def _rule(rule_id: str, gate: str) -> Rule:

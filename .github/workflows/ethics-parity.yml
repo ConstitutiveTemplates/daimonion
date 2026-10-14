@@ -1,7 +1,7 @@
 name: ethics-parity
 
-# Weekly guard: every distributed daimonion ethics section must stay covered
-# by a law-lint rule with agreeing triggers and gates. On drift it files one
+# Weekly guard: every distributed architekton-py ethics section must stay covered
+# by a daimonion rule with agreeing triggers and gates. On drift it files one
 # `drift`-labelled issue (reuses the open one when it exists).
 
 on:
@@ -23,8 +23,8 @@ jobs:
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          repository: ConstitutiveTemplates/daimonion
-          path: daimonion
+          repository: ConstitutiveTemplates/architekton-py
+          path: architekton-py
           sparse-checkout: _shared/ethics
           persist-credentials: false
 
@@ -37,7 +37,7 @@ jobs:
 
       - name: Check ethics parity
         run: |
-          uv run --no-sync python tools/check_ethics_parity.py --registry daimonion/_shared/ethics/REGISTRY.yml > parity.txt 2>&1
+          uv run --no-sync python tools/check_ethics_parity.py --registry architekton-py/_shared/ethics/REGISTRY.yml > parity.txt 2>&1
           rc=$?
           cat parity.txt
           exit $rc

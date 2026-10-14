@@ -6,10 +6,10 @@ from pathlib import Path
 
 import yaml
 
-from law_lint.cli import main
-from law_lint.engine import Linter
-from law_lint.models import Rule
-from law_lint.rules import load_rules_from_checks_dir, load_rules_from_yaml
+from daimonion.cli import main
+from daimonion.engine import Linter
+from daimonion.models import Rule
+from daimonion.rules import load_rules_from_checks_dir, load_rules_from_yaml
 
 
 def _write_spec(checks_root: Path, ref: str, spec: dict) -> Path:

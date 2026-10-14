@@ -1,6 +1,6 @@
-"""Machine-readable serialization of law-lint results (JSON and SARIF 2.1.0).
+"""Machine-readable serialization of daimonion results (JSON and SARIF 2.1.0).
 
-Both formats are plain Python structures serialized with :mod:`json`; law-lint
+Both formats are plain Python structures serialized with :mod:`json`; daimonion
 keeps ``pyyaml`` as its only third-party runtime dependency.
 """
 
@@ -12,7 +12,7 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _distribution_version
 from typing import Any
 
-from law_lint.models import Finding, Rule
+from daimonion.models import Finding, Rule
 
 SARIF_VERSION = "2.1.0"
 SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json"
@@ -27,7 +27,7 @@ DEFAULT_LEVEL = "warning"
 def tool_version() -> str:
     """Installed distribution version, or a placeholder when running from a source tree."""
     try:
-        return _distribution_version("law-lint")
+        return _distribution_version("daimonion")
     except PackageNotFoundError:
         return "0.0.0+unknown"
 
@@ -120,7 +120,7 @@ def build_sarif_report(findings: Sequence[Finding]) -> dict[str, Any]:
             {
                 "tool": {
                     "driver": {
-                        "name": "law-lint",
+                        "name": "daimonion",
                         "version": tool_version(),
                         "rules": [_sarif_rule(rule) for rule in matched.values()],
                     }
