@@ -49,7 +49,7 @@ def test_scan_file_and_format():
         assert len(findings) >= 1
         output = format_findings(findings)
         assert "daimonion: Detected" in output
-        assert "個人データ" in output
+        assert "Personal data" in output
     finally:
         f_path.unlink()
 

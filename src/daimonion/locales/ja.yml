@@ -1,0 +1,84 @@
+# Japanese translation of daimonion's human-facing CLI text.
+#
+# English (src/daimonion/i18n.py MESSAGES and the builtin rules in
+# src/daimonion/rules.py) is canonical; this file translates it for
+# `--lang ja` or a ja_* locale. A key missing here falls back to English.
+# Keep the `{placeholders}` identical to the English strings.
+
+messages:
+  findings.none: 法令・コンプライアンス上のトリガーには一致しませんでした。
+  findings.header: "daimonion: {areas} 件のコンプライアンス領域で {findings} 件のトリガーに一致しました:"
+  findings.summary: "要約: {summary}"
+  findings.where: "検出箇所:"
+  findings.hit: 一致
+  findings.line: 行
+  findings.more: "... ほか {count} 件"
+  findings.ignore_expired: "ignore の期限切れ {until}"
+  findings.ignore_invalid: "ignore には reason=... が必要"
+  footer.suppressed: "{count} 件はインラインの `daimonion: ignore[...]` 指定で抑制されました。"
+  footer.baselined: "{count} 件はベースラインに記録済みのため数えていません。"
+  baseline.wrote: "{count} 件を {path} に記録しました。以後は新しい検出だけを報告します。"
+  baseline.missing: "ベースライン {path} がありません。--write-baseline で作成してください。"
+  adoption.note: "導入モード: {count} 件の L2 検出は --strict なら失敗しますが、導入中は失敗させません。"
+  scope.note: "{answers} により {count} 件のルールに絞りました（すべて走査するには --all）"
+  rules.header: "有効なコンプライアンスルール（{count} 件）:"
+  rules.summary: "要約: {summary}"
+  prepare.no_answers: "{repo!r} に .copier-answers.yml がありません。copier テンプレートで生成したプロジェクトではないか、回答ファイルが別の場所にあります（--answers PATH で指定）。"
+  prepare.header: "daimonion prepare — {path}"
+  prepare.applicable: "該当するルール（{total} 件中 {count} 件）:"
+  prepare.skipped: "このプロジェクトでは対象外（{count} 件）: {ids}"
+  prepare.wrote: "{path} を書き込みました"
+  prepare.commit: "コミットしてください。--rules を指定しないとき、check/diff は {name} を自動で読みます。"
+  prepare.hint: "--write を付けると回答ファイルの隣に {name} を書き出します。"
+  init.header: "daimonion init — {path}"
+  init.none: マニフェストやエージェント用ファイルから検出できた条件はありません。
+  init.ask: "次の条件はファイルからは分からないので、必ず自分で判断してください: {conditions}"
+  init.hint: "--write を付けると {name} として保存します。コメントアウトされた条件を見直してください。"
+  init.exists: "{path} は既にあります。上書きするには --force を付けてください。"
+  init.wrote: "{path} を書き込みました"
+  init.next: "次に条件を見直し、`daimonion agents-md --write` を実行してください。"
+  agents.no_config: "{repo!r} に {name} がありません。先に `daimonion init --write` を実行してください。"
+  agents.current: "{path} のルールブロックは最新です（kanon {sha}）。"
+  agents.missing: "{path} にルールブロックがありません。`daimonion agents-md --write` を実行してください。"
+  agents.stale: "{path} のルールブロックが古くなっています。`daimonion agents-md --write` を実行してください。"
+  agents.updated: "{path} のルールブロックを更新しました"
+  agents.up_to_date: "{path} は既に最新です。"
+
+# Builtin rule titles and summaries (src/daimonion/rules.py DEFAULT_RULES).
+rules:
+  licensing-drift:
+    title: ライセンス変動 — 依存の現行ライセンス確認とBSL/SSPL等の混入防止
+    summary: 依存追加・更新時に現行ライセンスを確認し、BSL/SSPL等のソース可用ライセンスや強copyleftを不注意に混入させない。
+  deprecated-crypto:
+    title: 枯れた暗号 — MD5/SHA1署名・DES・TLS 1.0/1.1 の新規採用禁止
+    summary: 署名や完全性用途にMD5/SHA-1を用いない。TLSは1.2以上を強制し、レガシー暗号の新規コード混入を避ける。
+  pqc-standards:
+    title: PQC標準 — 新規暗号選択はML-KEM/ML-DSA系またはハイブリッド
+    summary: FIPS 203/204/205標準名で扱い、KEMと署名の役割を分離し、旧暗号単独の新規採用を避ける。
+  pki-trust-chain:
+    title: PKIチェーン再編 — 中間証明書・発行チェーンのハードコード禁止
+    summary: 中間証明書や特定CAチェーンをコード内に固定・同梱しない。OS/システムのtrust storeに従う。
+  personal-data-privacy:
+    title: 個人データ — 取得の最小化と削除経路・ログマスキング
+    summary: 個人識別情報を取得・保存する前に必要性を問い、ログへの平文出力や外部API流出を防ぎ、削除経路を確保する。
+  ai-copyright:
+    title: AIと著作権 — 取得・学習・RAGコードの適法性とrobots.txt遵守
+    summary: robots.txtやサイト拒否措置を回避しない。表現そのものを無許諾で再出力するRAG設計を避ける。
+  llm-appsec:
+    title: LLMアプリ/MCP安全設計 — 最小権限・人間承認・出力検証
+    summary: ツール権限は最小CRUDに絞り、破壊的・不可逆操作には人間承認を挟み、LLM出力を直接shellに渡さない。
+  prompt-injection:
+    title: プロンプトインジェクション — 外部入力を指示として直接実行しない
+    summary: 指示と外部データを厳格に分離し、外部テキストをシステム指示として信用しない。
+  eu-cra-compliance:
+    title: EU CRA — 商用製品の脆弱性報告(24h)とSBOM義務
+    summary: 能動的悪用を知ったら24時間以内に報告する。SBOMを作成し、依存関係の出所を説明可能にする。
+  eu-eaa-accessibility:
+    title: 欧州アクセシビリティ法 (EAA) — EN 301 549 / WCAG 2.1 AA 準拠
+    summary: EU市場向けUI/フロントエンドコンポーネントにおいて、EN 301 549 (WCAG 2.1 AA相当)を満たす設計を行う。
+  jp-external-transmission:
+    title: 外部送信規律 (電気通信事業法) — サードパーティ送信の事前開示
+    summary: 日本向けWeb/アプリでサードパーティタグやSDKを使用する場合、送信先・情報・目的を平易に事前開示する。
+  kyushu-ntp-hygiene:
+    title: NTPハイジーン — 福岡大などの静的NTP参照禁止
+    summary: 単一の教育機関・特定NTPサーバーをコードにハードコードせず、ntp.pool.org等のプールを使用する。

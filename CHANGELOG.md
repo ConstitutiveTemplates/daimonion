@@ -24,6 +24,11 @@ everything below is unreleased.
 - Re-vendored kanon at `6f40ba3` (EU AI Act high-risk dates after the AI
   Omnibus; section files renamed `*.md`).
 
+- Human-readable output is English by default: result headings and the
+  builtin rules' titles and summaries are English, with the Japanese text kept
+  in `src/daimonion/locales/ja.yml` for `--lang ja`. JSON and SARIF carry the
+  English text.
+
 ### Added
 
 - Inline ignores: `# daimonion: ignore[rule-id] reason=... until=YYYY-MM-DD`.
@@ -32,6 +37,9 @@ everything below is unreleased.
 - Adoption mode: `--adoption` or `mode: adoption` reports without ever
   failing; `mode: strict` enables strict from config. Action input `adoption`.
 - SARIF output marks ignored and baselined results as suppressions.
+- `--lang {en,ja}` (or `DAIMONION_LANG`, or a `ja_*` locale) and `--no-emoji`
+  (or `DAIMONION_NO_EMOJI=1`) for human-readable output, accepted before or
+  after the subcommand.
 - zizmor in CI; full Apache-2.0 `LICENSE` and a `NOTICE` for the bundled
   kanon prose.
 
