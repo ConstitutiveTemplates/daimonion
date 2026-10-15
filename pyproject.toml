@@ -47,3 +47,6 @@ line-length = 120
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The evals/ package is imported by tests/test_evals.py; bare `pytest` does
+# not put rootdir on sys.path, so the import needs an explicit path entry.
+pythonpath = ["."]
