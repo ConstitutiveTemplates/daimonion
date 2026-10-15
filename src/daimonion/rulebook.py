@@ -3,9 +3,10 @@
 ``rulebook/`` inside this package is written only by
 ``tools/vendor_rulebook.py``: ``sections/MANIFEST.yml``,
 ``sections/VOCABULARY.yml``, ``sections/LICENSE``, every section file the
-manifest lists, the whole ``checks/`` tree, and ``LAWMAP_SHA``. A daimonion
-release therefore pins exactly one law-map commit, and both rendering and
-linting never touch the network.
+manifest lists, the whole ``checks/`` tree, the whole ``obligations/`` tree
+(grounding ``strength`` values drive the binding-tier labels), and
+``LAWMAP_SHA``. A daimonion release therefore pins exactly one law-map
+commit, and both rendering and linting never touch the network.
 
 A section file is Markdown with YAML front matter (id, version, status,
 placement, when, obligations, triggers, sources, license) plus an ``en:``
@@ -27,7 +28,10 @@ block (English title/summary/prohibited) ahead of the Japanese prose body::
 
 ``render_block`` localises per rule: ``--lang en`` renders the ``en:``
 title and summary; any other language renders the section's Japanese h1
-and the numbered items of its ``> 要約:`` blockquote.
+and the numbered items of its ``> 要約:`` blockquote. Each rule also
+carries a binding-tier label derived from its obligations' grounding
+``strength`` values (``binding`` = legal duty, ``persuasive`` = public
+recommendation, ``background`` = private rule or lesson).
 """
 
 from __future__ import annotations
@@ -99,6 +103,8 @@ class Section:
     pack: str = "core"
     en_title: str = ""
     en_summary: tuple[str, ...] = ()
+    obligations: tuple[str, ...] = ()
+    tier: str = ""
 
     @property
     def title(self) -> str:
@@ -146,6 +152,71 @@ class Section:
 def lawmap_sha() -> str:
     """The law-map commit this daimonion build vendors."""
     return (RULEBOOK_ROOT / "LAWMAP_SHA").read_text(encoding="utf-8").strip()
+
+
+#: Binding tiers for the rules block (PHI-5): the strongest grounding
+#: ``strength`` across a section's obligations. ``binding`` = legal duty
+#: (statute/regulation), ``persuasive`` = public recommendation
+#: (guidance/standard), ``background`` = private rule or incident lesson.
+#: Mixed sections report the strongest tier present.
+TIER_RANK: dict[str, int] = {"background": 0, "persuasive": 1, "binding": 2}
+
+#: Human labels for each tier, keyed by UI language.
+TIER_LABELS: dict[str, dict[str, str]] = {
+    "en": {
+        "binding": "Legal duty — statute or regulation requires this",
+        "persuasive": "Public recommendation — official guidance or standard",
+        "background": "Private rule or lesson — contest rule, incident report, or community practice",
+    },
+    "ja": {
+        "binding": "法的義務 — 法令が求めるもの",
+        "persuasive": "公的推奨 — 公式ガイダンス・標準",
+        "background": "私的規約・教訓 — 競技規約・事故報告・コミュニティ慣行",
+    },
+}
+
+
+def _obligation_strengths(root: Traversable = RULEBOOK_ROOT) -> dict[str, set[str]]:
+    """Map obligation id → its grounding ``strength`` values from vendored ``obligations/``."""
+    out: dict[str, set[str]] = {}
+    obligations_dir = root / "obligations"
+    try:
+        names = [p.name for p in obligations_dir.iterdir()]
+    except OSError:
+        return out
+    for domain in sorted(names):
+        domain_dir = obligations_dir / domain
+        try:
+            files = sorted(p.name for p in domain_dir.iterdir())
+        except OSError:
+            continue
+        for name in files:
+            if not name.endswith(".yml") or name.startswith("_"):
+                continue
+            try:
+                data = yaml.safe_load((domain_dir / name).read_text(encoding="utf-8"))
+            except (OSError, yaml.YAMLError):
+                continue
+            if not isinstance(data, dict):
+                continue
+            oid = str(data.get("id", ""))
+            groundings = data.get("groundings", [])
+            strengths = {str(g.get("strength", "")).strip() for g in groundings if isinstance(g, dict)}
+            strengths.discard("")
+            if oid and strengths:
+                out[oid] = strengths
+    return out
+
+
+def section_tier(obligation_ids: Iterable[str], strengths: dict[str, set[str]] | None = None) -> str:
+    """Strongest tier across ``obligation_ids`` (``binding`` > ``persuasive`` > ``background``)."""
+    table = _obligation_strengths() if strengths is None else strengths
+    best = ""
+    for oid in obligation_ids:
+        for strength in table.get(oid, ()):
+            if TIER_RANK.get(strength, -1) > TIER_RANK.get(best, -1):
+                best = strength
+    return best
 
 
 def parse_front_matter(text: str) -> tuple[dict[str, Any], str]:
@@ -218,12 +289,14 @@ def load_sections(root: Traversable = RULEBOOK_ROOT) -> list[Section]:
     """Every manifest section, in manifest order."""
     sections_dir = root / "sections"
     manifest = yaml.safe_load((sections_dir / "MANIFEST.yml").read_text(encoding="utf-8"))
+    strengths = _obligation_strengths(root)
     sections: list[Section] = []
     for row in manifest["sections"]:
         fields, body = parse_front_matter((sections_dir / row["file"]).read_text(encoding="utf-8"))
         triggers = fields.get("triggers")
         keywords: object = triggers.get("keywords") if isinstance(triggers, dict) else []
         en_title, en_summary = _en_block(fields)
+        obligation_ids = _as_tuple(fields.get("obligations", []))
         sections.append(
             Section(
                 id=str(row["id"]),
@@ -238,6 +311,8 @@ def load_sections(root: Traversable = RULEBOOK_ROOT) -> list[Section]:
                 pack=str(row.get("pack", "core")),
                 en_title=en_title,
                 en_summary=en_summary,
+                obligations=obligation_ids,
+                tier=section_tier(obligation_ids, strengths),
             )
         )
     return sections
@@ -260,9 +335,13 @@ def _source_link(url: str) -> str:
 
 
 def render_rule(section: Section, sha: str, lang: str = "ja") -> str:
-    """One rule: heading, 1-3 imperative lines, sources, and a link to the full section."""
+    """One rule: heading, binding tier, 1-3 imperative lines, sources, and a link to the full section."""
     heading, lines = section.localized(lang)
     out = [f"### {heading}", ""]
+    if section.tier:
+        label = TIER_LABELS["ja" if lang == "ja" else "en"].get(section.tier, section.tier)
+        prefix = "拘束力" if lang == "ja" else "Binding"
+        out += [f"*{prefix}: {label}*", ""]
     out += [f"- {line}" for line in lines]
     details = f"[rulebook `{section.id}`]({RULEBOOK_REPO_URL}/blob/{sha}/{RULEBOOK_GUIDANCE_PATH}/{section.file})"
     refs = ", ".join(_source_link(url) for url in section.sources)
@@ -345,6 +424,8 @@ __all__ = [
     "RULEBOOK_GUIDANCE_PATH",
     "RULEBOOK_REPO_URL",
     "RULEBOOK_ROOT",
+    "TIER_LABELS",
+    "TIER_RANK",
     "WHEN_VOCABULARY",
     "Section",
     "extract_block",
@@ -353,6 +434,7 @@ __all__ = [
     "parse_front_matter",
     "render_block",
     "render_rule",
+    "section_tier",
     "select_sections",
     "splice_block",
 ]

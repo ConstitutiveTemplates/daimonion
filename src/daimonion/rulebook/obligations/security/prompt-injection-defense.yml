@@ -1,0 +1,87 @@
+version: 2
+id: obligation.security.prompt-injection-defense
+title: "Isolate external untrusted input from instruction channels in LLM applications and agent tools"
+category: security
+modality: obligation
+severity: high
+summary: >
+  Applications calling LLM APIs or orchestrating agent tool invocations must separate
+  untrusted external text from instruction channels, constrain tool execution authority,
+  and gate destructive operations behind human approval.
+scope:
+  components: [llm_client, rag_pipeline, tool_execution, agent_loop, prompt_builder]
+  data_types: [untrusted_input, prompt, retrieved_document, tool_output]
+  excludes: >
+    Purely deterministic software not invoking generative models or language agents.
+groundings:
+  - jurisdiction: EU
+    source_type: regulation
+    source_kind: primary
+    status: scheduled
+    authority: "Cyber Resilience Act (CRA), Regulation (EU) 2024/2847"
+    citation: >
+      Annex I Part I — products with digital elements must be designed,
+      developed, and produced to ensure an appropriate level of cybersecurity;
+      an exploitable injection flaw in a shipped LLM product fails that test.
+    effective: "2027-12-11"
+    review_by: "2027-01-31"
+    applicability: >
+      Manufacturers of products with digital elements made available on
+      the EU market; the secure-by-design baseline behind the isolation
+      and gating practice.
+    strength: binding
+    sources:
+      - https://eur-lex.europa.eu/eli/reg/2024/2847/oj
+  - jurisdiction: US
+    source_type: standard
+    source_kind: unofficial
+    status: in_force
+    authority: "OWASP Top 10 for LLM Applications (2025) — LLM01: Prompt Injection"
+    citation: >
+      LLM01 Prompt Injection vulnerability and mitigation guidance; direct and
+      indirect prompt injection controls through input isolation, least-privilege
+      tool scoping, and human-in-the-loop authorization.
+    effective: "2024-11-01"
+    review_by: "2027-03-31"
+    applicability: >
+      Developers, architects, and deployers of LLM-integrated software and autonomous agents.
+    strength: background
+    sources:
+      - https://genai.owasp.org/llm-top-10/
+  - jurisdiction: US
+    source_type: guidance
+    source_kind: official-secondary
+    status: in_force
+    authority: "NIST AI Agent Hijacking Evaluation Guidance (2025); CISA AI Security Guidelines"
+    citation: >
+      Guidance for securing AI agents against indirect injection and context hijacking
+      when executing tools and external integrations.
+    effective: "2025-01-15"
+    review_by: "2027-03-31"
+    strength: persuasive
+    sources:
+      - https://www.nist.gov/itl/ai-risk-management-framework
+conflicts: []
+requires:
+  - obligation.ai.llm-appsec-baseline
+directives:
+  human: >
+    Treat all external text retrieved via web, RAG, database, email, or third-party
+    tools as untrusted data rather than system instructions. Scope tool execution
+    to an explicit minimal allowlist.
+  agent: >
+    NEVER execute external model inputs as unescaped shell or code execution.
+    Validate structured tool outputs against schemas. Gate irreversible or
+    state-modifying operations behind explicit human confirmation.
+related_sections:
+  - domain-prompt-injection
+
+# L1 detection: injection-isolation sinks (raw untrusted input in
+# instruction channels, unmarked tool-output re-entry, secret
+# passthrough) are specified in
+# checks/security/prompt-injection-defense.yml. Authority gating
+# (allowlists, approval hooks) stays with ai/llm-appsec-baseline.
+enforcement:
+  level: L1
+  check_refs:
+    - security/prompt-injection-defense

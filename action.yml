@@ -2,13 +2,13 @@ name: daimonion
 description: Scan git diffs and files against legal and ethical triggers.
 inputs:
   strict:
-    description: Fail the job when a structural L2 rule triggers.
+    description: Fail the job when a structural L2 rule triggers. New projects should start with adoption mode instead.
     required: false
-    default: "true"
+    default: "false"
   adoption:
     description: Warn-only adoption mode; report findings but never fail the job (overrides strict).
     required: false
-    default: "false"
+    default: "true"
   args:
     description: Arguments passed to daimonion (e.g. "scan" or "scan src/"), split on whitespace.
     required: false

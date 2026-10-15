@@ -7,16 +7,32 @@ everything below is unreleased.
 
 ## [Unreleased]
 
+### Added
+
+- **Binding tiers in the rules block (PHI-5).** Each rendered rule now
+  carries a one-line tier derived from its obligations' grounding
+  `strength` values — *Binding* (legal duty), *Persuasive* (public
+  recommendation), or *Background* (private rule or lesson) — in both
+  English and Japanese. The snapshot vendors law-map's `obligations/`
+  tree (16 files) alongside `sections/` and `checks/`; the parity check
+  and test suite verify every section obligation resolves to a file
+  with known strengths. Re-vendored at law-map `c4aaf02`.
+- **Warn-only Action default.** The composite action now defaults to
+  `adoption: "true"` / `strict: "false"`, so the first install never
+  turns CI red; the README documents the switch to `strict: "true"`.
+- **`python -m daimonion`** works (same entry point as the console
+  script), and `.rove/init.sh` holds the one-time `uv sync` for fresh
+  worktrees.
 ### Changed
 
 - **Rulebook cutover (kanon merged into law-map).** The vendored snapshot
   moved from `src/daimonion/kanon/` (archived kanon repo, `KANON_SHA`) to
   `src/daimonion/rulebook/` (law-map `guidance/sections/` at `LAWMAP_SHA`
-  `8ba7170`, plus `checks/`): sections are Markdown with YAML front matter
-  and an `en:` block, and `tools/vendor_rulebook.py` / the weekly
-  `rulebook-parity` workflow target law-map instead. `daimonion.kanon` and
-  `KANON_CONDITIONS` remain as backwards-compatible aliases of
-  `daimonion.rulebook` / `RULEBOOK_CONDITIONS`.
+  `c4aaf02`, plus `checks/` and `obligations/`): sections are Markdown with
+  YAML front matter and an `en:` block, and `tools/vendor_rulebook.py` /
+  the weekly `rulebook-parity` workflow target law-map instead.
+  `daimonion.kanon` and `KANON_CONDITIONS` remain as backwards-compatible
+  aliases of `daimonion.rulebook` / `RULEBOOK_CONDITIONS`.
 - **Lint rules load from the vendored check specs (BRK-3/DM-3).**
   `DEFAULT_RULES` is deleted: the default rule set is one rule per vendored
   `rulebook/checks/` spec (14 rules, ids like
@@ -47,12 +63,9 @@ everything below is unreleased.
   `prepare`, `check`, `diff`, and the `.daimonion-rules.yml` auto-loading
   are removed; an empty `when` scans everything, like `--all`.
 
-- Keyword rules are reminders: a rule's `kind` is `keyword` (default) or
-  `structural`, and keyword rules are capped at L1. Every builtin is a keyword
-  rule, so the builtins no longer fail `--strict`; only `kind: structural`
-  rules may be L2.
-- `check` scans source code only by default and `diff` skips
-  `.md`/`.yml`/`.yaml`/`.toml`; opt documents in with `--include-docs` or
+- `scan` reads source code only by default (directory scans descend into
+  `.py`/`.ts`/`.js`/`.go`/`.rs`/`.java`; the git-diff mode skips
+  `.md`/`.yml`/`.yaml`/`.toml`); opt documents in with `--include-docs` or
   `scan: {docs: true}` in `.daimonion.yml`.
 - The GitHub Action installs daimonion from its own checkout, so a pinned
   `politeuma/daimonion@<ref>` runs that ref, and it passes inputs through

@@ -71,14 +71,19 @@ packs: [core]          # optional: opt into extension packs
 from files, so it leaves those commented out for you to decide.
 
 The block is short on purpose: each rule is 1-3 imperative lines plus its
-sources, and the long prose (facts, cases, prohibited patterns) stays behind a
-link to the rulebook section at the pinned commit:
-
+binding tier and its sources, and the long prose (facts, cases, prohibited
+patterns) stays behind a link to the rulebook section at the pinned commit.
+The tier says how strongly the rule binds: *Binding* (legal duty — a statute
+or regulation requires it), *Persuasive* (public recommendation — official
+guidance or standard), or *Background* (private rule or lesson — contest
+rule, incident report, community practice). Tiers come from the grounding
+`strength` values in the vendored `obligations/`.
 ```markdown
 ### Personal data — minimise before collecting, and build the deletion path first
 
+*Binding: Legal duty — statute or regulation requires this*
+
 - Ask whether each item is needed before collecting it; default to the minimum.
-- ...
 
 Sources: [eur-lex.europa.eu](https://eur-lex.europa.eu/eli/reg/2016/679/oj), [ppc.go.jp](https://www.ppc.go.jp/personalinfo/legal/) · Details: [rulebook `baseline-personal-data`](https://github.com/politeuma/law-map/blob/<sha>/guidance/sections/baseline/personal-data.md)
 ```
@@ -110,8 +115,8 @@ python tools/vendor_rulebook.py ../law-map --check  # exit 1 when stale
 
 ## Usage in CI / pre-commit
 
-Scan staged changes on every commit (`diff` mode reads git itself, so no
-filenames are passed):
+Scan staged changes on every commit (`scan` with no paths reads the git diff
+itself, so no filenames are passed):
 
 ```yaml
 # .pre-commit-config.yaml
@@ -122,14 +127,16 @@ repos:
       - id: daimonion-diff
 ```
 
-Or run the composite action in a workflow:
+Or run the composite action in a workflow. It defaults to adoption mode
+(warn-only, never fails), so the first install never turns CI red; switch
+to `strict: "true"` once the baseline is clean:
 
 ```yaml
 - uses: politeuma/daimonion@v0.1.0 # better: the tag's full commit SHA
   with:
-    args: diff # default; any `check ...` / `diff ...` tail works
-    strict: "true" # default; fail the job on structural L2 findings
-    adoption: "false" # "true": report only, never fail (overrides strict)
+    args: scan # default; e.g. "scan src/" or "scan --staged"
+    strict: "false" # default; "true": fail the job on structural L2 findings
+    adoption: "true" # default; report only, never fail (overrides strict)
 ```
 
 The action installs daimonion from its own checkout (`github.action_path`),
@@ -155,9 +162,9 @@ lives in the spec's own engine (semgrep, file-presence gates), not in
 **Scope.** The builtins carry no gates, so `scan` always runs all of them:
 project scoping lives in `agents-md`, which renders only the sections whose
 `when` matches `.daimonion.yml` (and whose `pack` is opted in). Directory
-scans read source code only (`.py .ts .js .go .rs .java`); `diff` skips
-`.md .yml .yaml .toml` changes. Opt documents in with `--include-docs` or in
-`.daimonion.yml`. A file named explicitly on the command line is always
+scans read source code only (`.py .ts .js .go .rs .java`); the git-diff mode
+skips `.md .yml .yaml .toml` changes. Opt documents in with `--include-docs`
+or in `.daimonion.yml`. A file named explicitly on the command line is always
 scanned. Custom `--rules` files may still carry gates; those scope through
 `for_when` as before.
 

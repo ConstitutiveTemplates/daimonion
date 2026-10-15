@@ -285,10 +285,12 @@ def main(argv: list[str] | None = None) -> int:
         root = args.lawmap.resolve()
         sections_dir = root / "guidance" / "sections"
         checks_dir = root / "checks"
+        obligations_dir = root / "obligations"
     else:
         root = _default_root()
         sections_dir = root / "sections"
         checks_dir = root / "checks"
+        obligations_dir = root / "obligations"
 
     manifest_path = sections_dir / "MANIFEST.yml"
     try:
@@ -311,7 +313,6 @@ def main(argv: list[str] | None = None) -> int:
         lines.append(f"FAIL {packs_error}")
         failed = True
         packs = {"core"}
-
     obligations: dict[str, list[str]] = {}
     ok_count = 0
     for row in rows:
@@ -356,6 +357,42 @@ def main(argv: list[str] | None = None) -> int:
         failed = spec_failed or failed
         spec_count += 1
         ok_count += 0 if spec_failed else 1
+
+    # Obligations coverage: every obligation a section names must resolve to
+    # a vendored obligation file with grounding strengths (the binding-tier
+    # labels in the rules block come from there).
+    for oid in sorted(obligations):
+        parts = oid.split(".")
+        if len(parts) != 3 or parts[0] != "obligation":
+            lines.append(f"FAIL {oid}: obligation id does not look like obligation.<domain>.<slug>")
+            failed = True
+            continue
+        rel = f"{parts[1]}/{parts[2]}.yml"
+        obl_path = obligations_dir / rel
+        try:
+            data = yaml.safe_load(obl_path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError) as exc:
+            lines.append(f"FAIL {oid}: vendored obligation {rel} unreadable ({exc})")
+            failed = True
+            continue
+        if not isinstance(data, dict) or data.get("id") != oid:
+            lines.append(f"FAIL {oid}: vendored obligation {rel} id mismatch")
+            failed = True
+            continue
+        strengths = {
+            str(g.get("strength", "")).strip() for g in (data.get("groundings", []) or []) if isinstance(g, dict)
+        } - {""}
+        if not strengths:
+            lines.append(f"FAIL {oid}: vendored obligation {rel} has no grounding strengths")
+            failed = True
+            continue
+        unknown = strengths - {"binding", "persuasive", "background"}
+        if unknown:
+            lines.append(f"FAIL {oid}: unknown strength values {sorted(unknown)} in {rel}")
+            failed = True
+            continue
+        lines.append(f"OK   {oid}: strengths={','.join(sorted(strengths))}")
+        ok_count += 1
 
     fail_count = sum(line.startswith("FAIL") for line in lines)
     lines.append(f"summary: {ok_count} items ok, {fail_count} failures")

@@ -160,6 +160,37 @@ def test_render_block_ja_renders_japanese_titles():
     assert "lang=ja" in block.split("\n", 1)[0]
 
 
+def test_section_tier_prefers_strongest_strength():
+    strengths = {
+        "obligation.x.legal": {"binding"},
+        "obligation.x.mixed": {"background", "persuasive"},
+        "obligation.x.lesson": {"background"},
+    }
+    assert rulebook.section_tier(["obligation.x.legal", "obligation.x.lesson"], strengths) == "binding"
+    assert rulebook.section_tier(["obligation.x.mixed"], strengths) == "persuasive"
+    assert rulebook.section_tier(["obligation.x.lesson"], strengths) == "background"
+    assert rulebook.section_tier(["obligation.x.unknown"], strengths) == ""
+    assert rulebook.section_tier([], strengths) == ""
+
+
+def test_render_rule_shows_binding_tier_in_both_languages():
+    base = _section("baseline-a", ("always",))
+    section = rulebook.Section(**{**base.__dict__, "tier": "binding"})
+    en = rulebook.render_rule(section, "a" * 40, "en")
+    assert "*Binding: Legal duty — statute or regulation requires this*" in en
+    ja = rulebook.render_rule(section, "a" * 40, "ja")
+    assert "*拘束力: 法的義務 — 法令が求めるもの*" in ja
+    untiered = rulebook.Section(**{**base.__dict__, "tier": ""})
+    assert "Binding:" not in rulebook.render_rule(untiered, "a" * 40, "en")
+
+
+def test_vendored_sections_all_carry_tiers():
+    """Every vendored section resolves its obligations to a binding tier."""
+    for section in rulebook.load_sections():
+        assert section.tier in ("binding", "persuasive", "background"), section.id
+        assert section.obligations, section.id
+
+
 def test_splice_appends_then_replaces_in_place():
     doc = "# Guide\n\nkeep me\n"
     first = rulebook.splice_block(doc, f"{BEGIN_MARKER} v1 -->\nold\n{END_MARKER}\n")
