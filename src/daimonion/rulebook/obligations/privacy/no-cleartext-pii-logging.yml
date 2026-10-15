@@ -1,0 +1,119 @@
+version: 2
+id: obligation.privacy.no-cleartext-pii-logging
+title: "No cleartext personal identifiers in logs, telemetry, or error reports"
+category: privacy
+modality: prohibition
+severity: critical
+summary: >
+  Application logs, error trackers, and telemetry pipelines must not receive
+  raw personal identifiers (emails, phone numbers, real names, government
+  IDs, full IP addresses, credentials). Mask, hash, or drop before emitting.
+scope:
+  components: [logging, telemetry, error_reporting, observability, crash_reporting]
+  data_types: [email, phone, person_name, ip_address, government_id, credential]
+  excludes: >
+    Synthetic or deliberately flagged canary values in tests; identifiers the
+    data subject explicitly pasted into a free-text field they control.
+groundings:
+  - jurisdiction: JP
+    source_type: statute
+    source_kind: primary
+    status: in_force
+    authority: "個人情報の保護に関する法律 (Act on the Protection of Personal Information, APPI)"
+    citation: "第23条 (個人データの安全管理措置)"
+    effective: "2022-04-01"
+    review_by: "2027-04-01"
+    applicability: "個人情報取扱事業者 — any business handling personal data"
+    scope: "personal-information handlers, with no size threshold"
+    strength: binding
+    sources:
+      - https://laws.e-gov.go.jp/document?lawid=415AC0000000057
+    open_law:
+      source: jp
+      id: "415AC0000000057"
+    verified_text_sha256: "92a2dfdfbe80e99f35a14af8a53f7494a88d1315912808acebe9853fabadbe85"
+  - jurisdiction: EU
+    source_type: regulation
+    source_kind: primary
+    status: in_force
+    authority: "General Data Protection Regulation (GDPR)"
+    citation: "Art. 5(1)(f) integrity and confidentiality; Art. 32 security of processing"
+    effective: "2018-05-25"
+    review_by: "2027-03-31"
+    applicability: "controllers and processors of personal data of data subjects in the Union"
+    scope: "controllers and processors offering goods/services to, or monitoring, people in the Union (extraterritorial)"
+    exceptions: "purely household activity (Art. 2(2)(c)); competent-authority processing under the Law Enforcement Directive"
+    strength: binding
+    sources:
+      - https://eur-lex.europa.eu/eli/reg/2016/679/oj
+    open_law:
+      source: eu
+      id: "32016R0679"
+  - jurisdiction: GB
+    source_type: statute
+    source_kind: official-secondary
+    status: in_force
+    authority: "UK GDPR and Data Protection Act 2018"
+    citation: "UK GDPR Art. 5(1)(f), Art. 32; ICO guidance on logging and monitoring"
+    effective: "2021-01-01"
+    review_by: "2027-03-31"
+    scope: "controllers and processors as under UK GDPR; post-Brexit text may diverge from EU GDPR"
+    strength: binding
+    sources:
+      - https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/
+  - jurisdiction: US
+    subdivision: CA
+    source_type: statute
+    source_kind: official-secondary
+    status: in_force
+    authority: "California Consumer Privacy Act as amended by CPRA"
+    citation: "Cal. Civ. Code §1798.150 (private right of action for unredacted personal information)"
+    effective: "2023-01-01"
+    review_by: "2027-01-31"
+    applicability: "businesses meeting CCPA thresholds processing CA residents' data"
+    scope: "for-profit businesses meeting the revenue/data-volume thresholds"
+    exceptions: "sectoral carve-outs (GLBA, HIPAA, FCRA-covered data)"
+    strength: binding
+    sources:
+      - https://oag.ca.gov/privacy/ccpa
+  - jurisdiction: US
+    source_type: precedent
+    source_kind: official-secondary
+    status: in_force
+    authority: "FTC Act Section 5 — unfair or deceptive acts or practices"
+    citation: "FTC v. Wyndham Worldwide Corp., 799 F.3d 236 (3d Cir. 2015); In re LabMD, Inc. (order vacated — see negative_history)"
+    review_by: "2027-03-31"
+    applicability: >
+      Companies whose data-security practices are unfair or deceptive;
+      enforcement-established baseline that careless handling (including
+      exposure via logs and error reports) is actionable.
+    scope: "companies subject to FTC unfairness jurisdiction (banks, common carriers, and most nonprofits are outside it)"
+    strength: binding
+    negative_history:
+      - date: "2018-06-06"
+        court: "11th Cir."
+        holding: >
+          Vacated the FTC's 2016 cease-and-desist order against LabMD as
+          unenforceably vague (894 F.3d 1304). The order no longer binds, and
+          LabMD cannot be cited as decided authority that the logging practice
+          itself was held unlawful; Wyndham remains the binding precedent.
+    sources:
+      - https://www.ftc.gov/legal-library/browse/cases-proceedings
+conflicts: []
+requires: []
+directives:
+  human: >
+    Treat every log line and error report as publishable. Mask emails, phone
+    numbers, names, and IPs before they reach a logger; never attach raw
+    request bodies to exception tracking; scrub before shipping telemetry.
+  agent: >
+    NEVER pass raw user identifiers (email, phone, real name, IP, government
+    ID, credentials) to logging, telemetry, or error-reporting calls. Mask or
+    hash before serializing. Do not include request bodies or headers in
+    exception reports without scrubbing.
+related_sections:
+  - baseline-personal-data
+enforcement:
+  level: L2
+  check_refs:
+    - privacy/cleartext-pii-logging-prohibited

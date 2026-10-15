@@ -47,6 +47,16 @@ def _write_project(root: Path, *, manifest_extra: str = "", spec_extra: str = ""
         "id: x/a\nobligation: obligation.x.y\nlevel: L1\ntriggers: ['(?i)md5']\n" + spec_extra,
         encoding="utf-8",
     )
+    obligations = root / "obligations" / "x"
+    obligations.mkdir(parents=True)
+    (obligations / "y.yml").write_text(
+        "version: 2\nid: obligation.x.y\ntitle: 'Rule Y'\ncategory: x\nmodality: prohibition\n"
+        "summary: 'Do x.'\ngroundings:\n"
+        "  - jurisdiction: EU\n    source_type: regulation\n    source_kind: primary\n"
+        "    status: in_force\n    authority: 'Example regulation'\n"
+        "    strength: binding\n    sources: ['https://example.org/law']\n",
+        encoding="utf-8",
+    )
     return root, checks
 
 
@@ -63,6 +73,37 @@ def test_happy_path(tmp_path, capsys):
     assert rc == 0, out
     assert "OK   baseline-a" in out
     assert "OK   x/a" in out
+    assert "OK   obligation.x.y: strengths=binding" in out
+
+
+def test_missing_obligation_file_fails(tmp_path, capsys):
+    """A section naming an obligation with no vendored file fails."""
+    import shutil
+
+    module = load_script()
+    root, _ = _write_project(tmp_path)
+    shutil.rmtree(tmp_path / "obligations")
+    rc, out = _run(module, root, capsys)
+    assert rc == 1
+    assert "vendored obligation x/y.yml unreadable" in out
+
+
+def test_obligation_without_strengths_fails(tmp_path, capsys):
+    """An obligation file with no grounding strengths fails (tiers need them)."""
+    module = load_script()
+    root, _ = _write_project(tmp_path)
+    obl = tmp_path / "obligations" / "x" / "y.yml"
+    obl.write_text(
+        "version: 2\nid: obligation.x.y\ntitle: 'Rule Y'\ncategory: x\nmodality: prohibition\n"
+        "summary: 'Do x.'\ngroundings:\n"
+        "  - jurisdiction: EU\n    source_type: regulation\n    source_kind: primary\n"
+        "    status: in_force\n    authority: 'Example regulation'\n"
+        "    sources: ['https://example.org/law']\n",
+        encoding="utf-8",
+    )
+    rc, out = _run(module, root, capsys)
+    assert rc == 1
+    assert "has no grounding strengths" in out
 
 
 def test_stale_manifest_triggers_fail(tmp_path, capsys):
